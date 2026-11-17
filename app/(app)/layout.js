@@ -38,6 +38,20 @@ export default async function AppLayout({ children }) {
         { href: '/orders', label: 'Orders & billing', icon: 'card' }
       ]
     });
+    const sc = await one(
+      `select count(*) filter (where status <> 'cancelled')::int as total,
+              count(*) filter (where status in ('pending','payment_needed'))::int as setting_up
+         from console.subscriptions where workspace_id = $1`,
+      [ctx.workspaceId]
+    );
+    groups.push({
+      label: 'SUBSCRIPTIONS',
+      items: [
+        { href: '/subscriptions', label: 'Automated SSL', icon: 'loop', count: sc.setting_up || sc.total || null, tone: sc.setting_up ? 'amber' : null },
+        { href: '/subscriptions/new', label: 'New subscription', icon: 'bolt' },
+        { href: '/subscriptions/endpoints', label: 'API v2 endpoints', icon: 'code' }
+      ]
+    });
     groups.push({ label: 'ACCOUNT', items: [{ href: '/account', label: 'Profile & password', icon: 'key' }] });
   }
 

@@ -40,6 +40,8 @@ Private keys are generated in the customer's browser with WebCrypto and download
 | `GOGETSSL_USER` | GoGetSSL client-area login |
 | `GOGETSSL_PASS` | GoGetSSL API password (Reseller Modules → API settings) |
 | `GOGETSSL_API_URL` | Optional, defaults to `https://my.gogetssl.com/api` |
+| `GOGETSSL_PARTNER_CODE` | Partner code for API v2 (Plan + Automate, ACME CaaS) |
+| `GOGETSSL_V2_PASS` | Optional. API v2 password, if different from `GOGETSSL_PASS` |
 | `CRON_SECRET` | Protects the daily sync endpoint |
 
 ## Database
@@ -51,3 +53,15 @@ Tables live in the `console` schema: `workspaces`, `users`, `sessions`, `product
 Order status is refreshed when a page is opened (pending orders, at most every few minutes), with the “Check status now” button, and by a daily Vercel cron job at `/api/cron/sync`.
 
 GoGetSSL allows “re-check” (revalidate) and “resend approval email” only once every 5 minutes per order. CertDesk remembers each lock and shows a countdown on the button instead of calling again.
+
+## Automated SSL subscriptions (API v2)
+
+Plan + Automate (products 400–403) and Sectigo ACME Certificate-as-a-Service (product 300) live in their own section, **Automated SSL**. They use GoGetSSL API v2 (`https://my.gogetssl.com/api/v2`, header `Authorization: GGS <partner code>:<API password>`).
+
+- Order a subscription, see its status, term dates and next renewal
+- ACME CaaS: EAB key ID, HMAC key and directory URL, add and remove domains
+- Plan + Automate: AutoInstall SSL sign-in links, switch between AutoInstall and ACME
+- Turn auto-renewal on or off, cancel with an optional refund request
+- Every endpoint used is listed under Automated SSL → API v2 endpoints, with the last call made to it
+
+The tables are in `db/subscriptions.sql`. The manual certificate pages are unchanged.

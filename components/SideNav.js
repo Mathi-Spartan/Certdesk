@@ -6,6 +6,7 @@ import Icon from './Icon';
 
 function isOn(pathname, href) {
   if (href === '/') return pathname === '/';
+  if (href === '/subscriptions') return pathname === '/subscriptions' || /^\/subscriptions\/[0-9a-f-]{36}/.test(pathname);
   if (href === '/partner') return pathname === '/partner' || pathname.startsWith('/partner/workspaces');
   return pathname === href || pathname.startsWith(href + '/');
 }

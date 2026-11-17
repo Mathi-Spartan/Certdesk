@@ -51,7 +51,7 @@ export default async function Catalogue({ searchParams }) {
                     <tr key={p.id}>
                       <td>
                         {p.automation ? (
-                          <span className="badge tone-gray" title="Automation products (Plan + Automate, ACME, CaaS) come in a later phase">Later</span>
+                          <a className="badge tone-violet" href="/subscriptions/new" title="Plan + Automate and ACME CaaS are ordered through API v2 under Automated SSL">Automated SSL</a>
                         ) : (
                           <form action={setProductEnabled}>
                             <input type="hidden" name="product_id" value={p.id} />

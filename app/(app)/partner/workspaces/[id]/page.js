@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth';
 import { q, one } from '@/lib/db';
 import { openWorkspace, importOrder, setUserActive, unassignOrder } from '@/app/actions/admin';
+import { importSubscription, unassignSubscription } from '@/app/actions/subscriptions';
+import { subDisplay, KIND_LABEL } from '@/lib/subscriptions';
 import TopBar from '@/components/TopBar';
 import { StatusBadge, Empty, FlashFromSearch, fmtDate, timeAgo } from '@/components/ui';
 import { CreateUserForm, ResetPasswordButton } from './UserForms';
@@ -18,6 +20,7 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
   if (!ws) notFound();
   const users = await q(`select * from console.users where workspace_id = $1 order by created_at`, [id]);
   const orders = await q(`select * from console.orders where workspace_id = $1 order by created_at desc`, [id]);
+  const subs = await q(`select * from console.subscriptions where workspace_id = $1 order by created_at desc`, [id]);
 
   return (
     <>
@@ -103,6 +106,54 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
             <form action={importOrder} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input type="hidden" name="workspace_id" value={ws.id} />
               <div className="field"><label htmlFor="gid">GoGetSSL order ID</label><input className="input mono" id="gid" name="gg_order_id" inputMode="numeric" required placeholder="1234567" /></div>
+              <button className="btn primary" type="submit">Assign to {ws.name}</button>
+            </form>
+          </section>
+        </div>
+        <div className="row top">
+          <section className="card" style={{ flex: '2 1 560px', minWidth: 0 }}>
+            <div className="card-head"><h2>Automated SSL subscriptions</h2><span className="small muted">{subs.length}</span></div>
+            {subs.length === 0 ? <Empty title="No subscriptions yet">Assign an existing Plan + Automate or ACME CaaS item, or open the workspace and order one.</Empty> : (
+              <div className="table-wrap">
+                <table className="t" style={{ minWidth: 640 }}>
+                  <thead><tr><th>Domain</th><th>Type</th><th>GoGetSSL item</th><th>Status</th><th /></tr></thead>
+                  <tbody>
+                    {subs.map((s) => {
+                      const st = subDisplay(s);
+                      return (
+                        <tr key={s.id}>
+                          <td className="mono">{s.primary_domain || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-geist)' }}>{s.product_name}</div></td>
+                          <td>{KIND_LABEL[s.kind]}</td>
+                          <td className="mono">{s.item_id}</td>
+                          <td><span className={`badge tone-${st.tone}`}>{st.label}</span></td>
+                          <td style={{ textAlign: 'right' }}>
+                            <form action={unassignSubscription}>
+                              <input type="hidden" name="sub_id" value={s.id} />
+                              <input type="hidden" name="workspace_id" value={ws.id} />
+                              <button className="btn sm ghost" type="submit">Remove</button>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          <section className="card pad" style={{ flex: '1 1 300px' }}>
+            <h2 style={{ marginBottom: 6 }}>Assign a subscription</h2>
+            <p className="small muted" style={{ margin: '0 0 14px' }}>Enter the item ID of a Plan + Automate or ACME CaaS subscription. CertDesk reads it through API v2.</p>
+            <form action={importSubscription} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input type="hidden" name="workspace_id" value={ws.id} />
+              <div className="field">
+                <label htmlFor="skind">Type</label>
+                <select className="input" id="skind" name="kind" defaultValue="caas">
+                  <option value="caas">ACME CaaS</option>
+                  <option value="ais">Plan + Automate</option>
+                </select>
+              </div>
+              <div className="field"><label htmlFor="sitem">GoGetSSL item ID</label><input className="input mono" id="sitem" name="item_id" inputMode="numeric" required placeholder="1234567" /></div>
               <button className="btn primary" type="submit">Assign to {ws.name}</button>
             </form>
           </section>
