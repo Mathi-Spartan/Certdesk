@@ -24,7 +24,7 @@ export default async function AppLayout({ children }) {
     const c = await one(
       `select count(*) filter (where status not in ('cancelled','draft'))::int as total,
               count(*) filter (where status in ('validating','incomplete','reissuing'))::int as validating,
-              count(*) filter (where status = 'issued' and valid_till <= current_date + 30)::int as expiring
+              count(*) filter (where status = 'issued' and (valid_till <= current_date + reminder_days or order_expires_at <= current_date + 30))::int as expiring
          from console.orders where workspace_id = $1`,
       [ctx.workspaceId]
     );
@@ -33,7 +33,7 @@ export default async function AppLayout({ children }) {
         { href: '/', label: 'Overview', icon: 'overview' },
         { href: '/certificates', label: 'Certificates', icon: 'lock', count: c.total },
         { href: '/validation', label: 'Validation', icon: 'check', count: c.validating || null, tone: c.validating ? 'amber' : null },
-        { href: '/renewals', label: 'Renewals & automation', icon: 'renew', count: c.expiring || null, tone: c.expiring ? 'red' : null },
+        { href: '/renewals', label: 'Reissues & renewals', icon: 'renew', count: c.expiring || null, tone: c.expiring ? 'red' : null },
         { label: 'Endpoint monitoring', icon: 'pulse', disabled: true },
         { href: '/orders', label: 'Orders & billing', icon: 'card' }
       ]

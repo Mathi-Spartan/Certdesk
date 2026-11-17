@@ -10,6 +10,7 @@ import { Kpi, Empty, timeAgo, fmtDateTime } from '@/components/ui';
 export const metadata = { title: 'Overview · CertDesk' };
 
 const TONES = { red: 'var(--red-dot)', amber: '#F59E0B', violet: 'var(--accent-mid)' };
+
 const LIFETIME_CUT = new Date('2027-03-15T00:00:00Z');
 
 export default async function Overview() {
@@ -52,30 +53,34 @@ export default async function Overview() {
           <>
             <div className="kpis">
               <Kpi label="Certificates" value={total} icon="lock" foot={<span className="small muted">{s.issued.length} active</span>} />
-              <Kpi label="Expiring in 30 days" value={s.expiring.length} icon="clock" tone={s.expiring.length ? 'red' : undefined}
-                foot={<span className="small muted">{s.autoOffExpiring} with auto-renew off</span>} />
+              <Kpi label="Reissue due" value={s.reissueDue.length} icon="clock" tone={s.reissueDue.length ? 'red' : undefined}
+                foot={<span className="small muted">Certificate expiring, order still active</span>} />
+              <Kpi label="Renewal due" value={s.renewDue.length} icon="renew" tone={s.renewDue.length ? 'red' : undefined}
+                foot={<span className="small muted">Order ending, buy again</span>} />
               <Kpi label="Awaiting validation" value={s.validating.length} icon="check" tone={s.validating.length ? 'amber' : undefined}
                 foot={<Link className="small" href="/validation">Open validation center</Link>} />
-              <Kpi label="Auto-renew coverage" value={`${Math.round(s.pctAuto * 100)}%`} icon="renew"
-                foot={<div className="bar"><span style={{ width: `${Math.round(s.pctAuto * 100)}%` }} /></div>} />
             </div>
 
             <div className="row">
               <section className="card pad" style={{ flex: '2 1 520px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div className="between">
-                  <div><h2>Expiry horizon</h2><div className="small muted">Active certificates reaching end of life, per week</div></div>
+                  <div><h2>Next 12 weeks</h2><div className="small muted">Certificates to reissue and orders to renew, per week</div></div>
                   <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--muted)' }}>
-                    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: TONES.red }} />Under 2 weeks</span>
-                    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: TONES.amber }} />2–4 weeks</span>
-                    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: TONES.violet }} />Later</span>
+                    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: 'var(--accent)' }} />Reissue (certificate expires)</span>
+                    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: '#F59E0B' }} />Renew (order ends)</span>
                   </div>
                 </div>
-                <div role="img" aria-label={`Certificates expiring per week: ${s.weeks.map((w) => w.n).join(', ')}`}
+                <div role="img" aria-label={`Reissues and renewals per week: ${s.weeks.map((w) => `${w.reissues} reissue, ${w.renewals} renew`).join('; ')}`}
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 10, alignItems: 'end', height: 180, borderBottom: '1px solid var(--line)' }}>
                   {s.weeks.map((w, i) => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 6, height: '100%' }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: w.n ? 'var(--ink)' : 'var(--muted)' }}>{w.n}</span>
-                      <div style={{ width: '100%', height: w.n ? `${Math.max(6, (w.n / maxWeek) * 85)}%` : 2, background: w.n ? TONES[w.tone] : 'var(--line)', borderRadius: w.n ? '5px 5px 0 0' : 0 }} />
+                      {w.n ? (
+                        <div style={{ width: '100%', height: `${Math.max(6, (w.n / maxWeek) * 85)}%`, display: 'flex', flexDirection: 'column', borderRadius: '5px 5px 0 0', overflow: 'hidden' }}>
+                          <div style={{ flex: w.renewals, background: '#F59E0B' }} />
+                          <div style={{ flex: w.reissues, background: 'var(--accent)' }} />
+                        </div>
+                      ) : <div style={{ width: '100%', height: 2, background: 'var(--line)' }} />}
                     </div>
                   ))}
                 </div>
@@ -101,13 +106,13 @@ export default async function Overview() {
                     </div>
                   </div>
                   <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)' }}>
-                    {s.health >= 85 ? 'Good.' : s.health >= 60 ? 'Fair.' : 'At risk.'} Turning on auto-renew and DNS validation everywhere brings this to 100.
+                    {s.health >= 85 ? 'Good.' : s.health >= 60 ? 'Fair.' : 'At risk.'} Reissue and renew on time, and keep DNS validation records in place, to stay near 100.
                   </p>
                 </div>
                 <dl style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                  <div className="between"><dt className="muted">Auto-renew on</dt><dd style={{ margin: 0, fontWeight: 600 }}>{s.autoOn} / {total}</dd></div>
-                  <div className="between"><dt className="muted">DNS validation (reusable)</dt><dd style={{ margin: 0, fontWeight: 600 }}>{s.methods.DNS} / {total}</dd></div>
-                  <div className="between"><dt className="muted">Expiring in 30 days</dt><dd style={{ margin: 0, fontWeight: 600 }}>{s.expiring.length}</dd></div>
+                  <div className="between"><dt className="muted">Expired certificates</dt><dd style={{ margin: 0, fontWeight: 600, color: s.expired.length ? 'var(--red-strong)' : undefined }}>{s.expired.length}</dd></div>
+                  <div className="between"><dt className="muted">Reissues / renewals due</dt><dd style={{ margin: 0, fontWeight: 600 }}>{s.reissueDue.length} / {s.renewDue.length}</dd></div>
+                  <div className="between"><dt className="muted">DNS validation (faster reissues)</dt><dd style={{ margin: 0, fontWeight: 600 }}>{s.methods.DNS} / {total}</dd></div>
                 </dl>
               </section>
             </div>
@@ -140,8 +145,9 @@ export default async function Overview() {
                   <span style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-0.03em' }}>{daysToCut}</span>
                   <span style={{ color: '#D4D4D8' }}>days to go</span>
                 </div>
+                <p style={{ margin: 0, fontSize: 13, color: '#D4D4D8', lineHeight: 1.5 }}>Each certificate will need reissuing about every 3 months inside its order. Validating by DNS keeps each reissue quick.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div className="between" style={{ fontSize: 13, color: '#D4D4D8' }}><span>Your readiness</span><span>{s.methods.DNS} of {total} use DNS</span></div>
+                  <div className="between" style={{ fontSize: 13, color: '#D4D4D8' }}><span>Validation methods</span><span>{s.methods.DNS} of {total} use DNS</span></div>
                   <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 2, background: '#3F3F46' }}>
                     <div style={{ width: `${(s.methods.DNS / total) * 100}%`, background: 'var(--accent-mid)' }} />
                     <div style={{ width: `${(s.methods.Email / total) * 100}%`, background: '#F59E0B' }} />
@@ -151,7 +157,7 @@ export default async function Overview() {
                     <span>DNS {s.methods.DNS}</span><span>Email {s.methods.Email}</span><span>HTTP {s.methods.HTTP}</span>
                   </div>
                 </div>
-                <Link href="/renewals" className="btn" style={{ marginTop: 'auto' }}>Get ready</Link>
+                <Link href="/renewals" className="btn" style={{ marginTop: 'auto' }}>See reissue schedule</Link>
               </section>
             </div>
 

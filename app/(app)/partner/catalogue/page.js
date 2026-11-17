@@ -32,7 +32,7 @@ export default async function Catalogue({ searchParams }) {
       <main className="page">
         <div>
           <h1 className="title">Catalogue</h1>
-          <p className="sub">Turn on the certificates customers can order. {products.length ? `${enabled} of ${products.length} on · synced ${timeAgo(synced)}` : ''}</p>
+          <p className="sub">Turn on the certificates customers can order. Automation products (Plan + Automate, ACME, CaaS) are kept for a later phase. {products.length ? `${enabled} of ${products.length} on · synced ${timeAgo(synced)}` : ''}</p>
         </div>
         <FlashFromSearch searchParams={sp} />
         {syncErr ? <div className="alert red">Could not load products from GoGetSSL: {syncErr}</div> : null}
@@ -50,11 +50,15 @@ export default async function Catalogue({ searchParams }) {
                   {products.map((p) => (
                     <tr key={p.id}>
                       <td>
-                        <form action={setProductEnabled}>
-                          <input type="hidden" name="product_id" value={p.id} />
-                          <input type="hidden" name="enabled" value={p.enabled ? 'false' : 'true'} />
-                          <button type="submit" className="switch" role="switch" aria-checked={p.enabled ? 'true' : 'false'} aria-label={`Offer ${p.name}`} />
-                        </form>
+                        {p.automation ? (
+                          <span className="badge tone-gray" title="Automation products (Plan + Automate, ACME, CaaS) come in a later phase">Later</span>
+                        ) : (
+                          <form action={setProductEnabled}>
+                            <input type="hidden" name="product_id" value={p.id} />
+                            <input type="hidden" name="enabled" value={p.enabled ? 'false' : 'true'} />
+                            <button type="submit" className="switch" role="switch" aria-checked={p.enabled ? 'true' : 'false'} aria-label={`Offer ${p.name}`} />
+                          </form>
+                        )}
                       </td>
                       <td style={{ fontWeight: 600 }}>{p.name}</td>
                       <td>{p.brand}</td>

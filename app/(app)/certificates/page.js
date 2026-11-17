@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { syncStale, daysLeft, displayStatus, primaryMethod } from '@/lib/orders';
-import { toggleAutoRenew } from '@/app/actions/orders';
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
 import { StatusBadge, Empty, fmtDate, FlashFromSearch } from '@/components/ui';
@@ -11,7 +10,7 @@ export const metadata = { title: 'Certificates · CertDesk' };
 
 const TABS = [
   { key: 'all', label: 'All' },
-  { key: 'expiring', label: 'Expiring soon', tone: 'var(--red-strong)' },
+  { key: 'due', label: 'Reissue / renewal due', tone: 'var(--red-strong)' },
   { key: 'validation', label: 'In validation', tone: '#B45309' },
   { key: 'active', label: 'Active' },
   { key: 'closed', label: 'Expired & cancelled' }
@@ -19,9 +18,9 @@ const TABS = [
 
 function tabOf(o) {
   const s = displayStatus(o).key;
-  if (s === 'expiring') return 'expiring';
+  if (['reissue_due', 'renew_due', 'expired'].includes(s)) return 'due';
   if (s === 'active') return 'active';
-  if (['expired', 'cancelled', 'cancel_requested'].includes(s)) return 'closed';
+  if (['order_ended', 'cancelled', 'cancel_requested'].includes(s)) return 'closed';
   return 'validation';
 }
 
@@ -101,7 +100,7 @@ export default async function Certificates({ searchParams }) {
               <table className="t" style={{ minWidth: 980 }}>
                 <thead>
                   <tr>
-                    <th>Common name</th><th>Product</th><th>Status</th><th>Expires</th><th>Validation</th><th>Auto-renew</th><th>Tags</th><th>Order</th>
+                    <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Order ends</th><th>Validation</th><th>Tags</th><th>GoGetSSL order</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -117,20 +116,22 @@ export default async function Certificates({ searchParams }) {
                         <td>{o.product_name || `Product ${o.product_id || '?'}`}</td>
                         <td><StatusBadge order={o} /></td>
                         <td>
-                          {o.valid_till ? (
+                          {o.valid_till && o.status === 'issued' ? (
                             <>
                               <div style={{ fontWeight: 600, color: urgent ? 'var(--red-strong)' : undefined }}>{d < 0 ? `${-d} days ago` : `${d} days`}</div>
                               <div className="small muted">{fmtDate(o.valid_till)}</div>
                             </>
                           ) : <span className="muted">Not issued</span>}
                         </td>
-                        <td>{primaryMethod(o)}</td>
                         <td>
-                          <form action={toggleAutoRenew}>
-                            <input type="hidden" name="order_id" value={o.id} />
-                            <button type="submit" className="switch" role="switch" aria-checked={o.auto_renew ? 'true' : 'false'} aria-label={`Auto-renew for ${o.common_name}`} />
-                          </form>
+                          {o.order_expires_at ? (
+                            <>
+                              <div style={{ fontWeight: 600, color: daysLeft(o.order_expires_at) <= 30 ? 'var(--red-strong)' : undefined }}>{daysLeft(o.order_expires_at)} days</div>
+                              <div className="small muted">{fmtDate(o.order_expires_at)}</div>
+                            </>
+                          ) : <span className="muted">—</span>}
                         </td>
+                        <td>{primaryMethod(o)}</td>
                         <td>{(o.tags || []).map((t) => <span key={t} className="tag" style={{ marginRight: 4 }}>{t}</span>)}</td>
                         <td className="mono small muted">{o.gg_order_id || '—'}</td>
                       </tr>

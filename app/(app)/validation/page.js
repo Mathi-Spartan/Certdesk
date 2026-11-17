@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { syncStale, primaryMethod } from '@/lib/orders';
+import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
 import DcvPanel from '@/components/DcvPanel';
@@ -23,6 +24,10 @@ export default async function Validation({ searchParams }) {
       order by created_at asc`,
     [ctx.workspaceId]
   );
+  const locks = {};
+  for (const o of pending) {
+    if (o.gg_order_id) locks[o.id] = { revalidate: await lockRemaining(revalidatePath(o.gg_order_id)), resend: await lockRemaining(resendPath(o.gg_order_id)) };
+  }
   const methods = await q(
     `select count(*) filter (where lower(coalesce(dcv_method,'')) like '%dns%')::int as dns, count(*)::int as total
        from console.orders where workspace_id = $1 and status = 'issued'`,
@@ -51,7 +56,7 @@ export default async function Validation({ searchParams }) {
                 <span className="small muted">{o.gg_status_description || ''}</span>
               </div>
               <div style={{ padding: '18px 20px' }}>
-                <DcvPanel order={o} back="/validation" approverEmails={basicEmails(o.common_name)} />
+                <DcvPanel order={o} back="/validation" approverEmails={basicEmails(o.common_name)} locks={locks[o.id] || {}} />
               </div>
             </section>
           ))
@@ -59,10 +64,10 @@ export default async function Validation({ searchParams }) {
         <section className="alert violet">
           <Icon name="renew" stroke="var(--accent)" size={20} />
           <div style={{ flex: '1 1 420px' }}>
-            <strong>How long a validation can be reused is getting shorter every year, down to 10 days by 2029.</strong> Leaving DNS records in place means renewals never wait on a person.
+            <strong>How long a validation can be reused is getting shorter every year, down to 10 days by 2029.</strong> Leaving your DNS record in place makes every reissue faster.
             {methods[0]?.total ? ` ${methods[0].dns} of ${methods[0].total} active certificates use DNS today.` : ''}
           </div>
-          <Link href="/renewals" style={{ fontWeight: 600 }}>Renewal settings →</Link>
+          <Link href="/renewals" style={{ fontWeight: 600 }}>Reissue schedule →</Link>
         </section>
       </main>
     </>

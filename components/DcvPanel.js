@@ -2,6 +2,7 @@ import CopyButton from './CopyButton';
 import Icon from './Icon';
 import { checkNow, changeDcvMethod, resendEmail, revalidateDomain } from '@/app/actions/orders';
 import { timeAgo } from './ui';
+import SubmitButton from './SubmitButton';
 
 function Record({ item }) {
   if (item.dns?.raw || item.dns?.value) {
@@ -44,7 +45,7 @@ function Record({ item }) {
   return <div className="small muted">Validation details will appear here once GoGetSSL provides them. Use “Check now” in a minute.</div>;
 }
 
-export default function DcvPanel({ order, back, approverEmails }) {
+export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
   const items = Array.isArray(order.dcv) && order.dcv.length ? order.dcv : [{ domain: order.common_name, method: order.dcv_method }];
   const method = String(order.dcv_method || '').toLowerCase();
   const isEmail = method.includes('mail') || method.includes('@');
@@ -64,20 +65,24 @@ export default function DcvPanel({ order, back, approverEmails }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <form action={checkNow}>
           <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
-          <button className="btn sm primary" type="submit">Check now</button>
+          <SubmitButton className="btn sm primary" pendingText="Checking…">Check status now</SubmitButton>
         </form>
         <form action={revalidateDomain}>
           <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
           <input type="hidden" name="domain" value={order.common_name || ''} />
-          <button className="btn sm" type="submit">Ask the CA to re-check</button>
+          <SubmitButton pendingText="Asking the CA…" lockedSeconds={locks.revalidate || 0} lockLabel="Re-check available in">Ask the CA to re-check</SubmitButton>
         </form>
         {isEmail ? (
           <form action={resendEmail}>
             <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
-            <button className="btn sm" type="submit">Resend approval email</button>
+            <SubmitButton pendingText="Sending…" lockedSeconds={locks.resend || 0} lockLabel="Resend available in">Resend approval email</SubmitButton>
           </form>
         ) : null}
         <span className="small muted" style={{ marginLeft: 'auto' }}>Last checked {timeAgo(order.last_synced_at)}</span>
+      </div>
+      <div className="small muted">
+        <strong>Check status now</strong> asks GoGetSSL for the latest state and can be used any time.{' '}
+        <strong>Ask the CA to re-check</strong> makes Sectigo look for your DNS record or file again. Use it once the record is live. GoGetSSL allows it once every 5 minutes per order.
       </div>
 
       <details>
@@ -100,7 +105,7 @@ export default function DcvPanel({ order, back, approverEmails }) {
               {(approverEmails || []).map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
           </div>
-          <button className="btn sm dark-btn" type="submit">Change</button>
+          <SubmitButton className="btn sm dark-btn" pendingText="Changing…">Change</SubmitButton>
         </form>
       </details>
     </div>

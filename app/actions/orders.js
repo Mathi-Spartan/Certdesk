@@ -2,7 +2,6 @@
 
 import dns from 'node:dns/promises';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { q, one } from '@/lib/db';
 import { requireWorkspace } from '@/lib/auth';
 import * as gg from '@/lib/gogetssl';
@@ -91,7 +90,7 @@ export async function decodeCsr(csr) {
 /** Place a new order (or a renewal) from the wizard. */
 export async function placeOrder(input) {
   const ctx = await requireWorkspace();
-  const product = await one('select * from console.products where id = $1 and enabled', [Number(input.productId)]);
+  const product = await one('select * from console.products where id = $1 and enabled and not automation', [Number(input.productId)]);
   if (!product) return { error: 'That certificate is not available. Pick another one.' };
   const cn = cleanDomain(input.commonName);
   if (!DOMAIN_RE.test(cn)) return { error: 'The domain name is not valid.' };
@@ -200,7 +199,7 @@ export async function placeOrder(input) {
       res.currency || null,
       renewalOf ? renewalOf.tags : (input.tags || []).filter(Boolean),
       ctx.user.id,
-      input.autoRenew !== false
+      false
     ]
   );
   await addEvent(row.id, 'ordered', `${renewalOf ? 'Renewal' : 'Order'} placed with GoGetSSL (order ${res.order_id})`, ctx.user.id);
@@ -237,26 +236,17 @@ export async function checkNow(formData) {
   redirect(withMsg(back, 'ok', msg));
 }
 
-export async function toggleAutoRenew(formData) {
-  const { ctx, order } = await loadOrder(formData);
-  const on = !order.auto_renew;
-  await q('update console.orders set auto_renew = $2, updated_at = now() where id = $1', [order.id, on]);
-  await addEvent(order.id, 'settings', `Auto-renew turned ${on ? 'on' : 'off'}`, ctx.user.id);
-  revalidatePath('/', 'layout');
-}
-
-export async function saveRenewalSettings(formData) {
+export async function saveReminderSettings(formData) {
   const { ctx, order, back } = await loadOrder(formData);
-  const lead = Math.min(90, Math.max(1, Number(formData.get('renew_lead_days')) || 30));
-  const auto = formData.get('auto_renew') === 'on';
+  const days = Math.min(90, Math.max(1, Number(formData.get('reminder_days')) || 30));
   const tags = String(formData.get('tags') || '')
     .split(',')
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean)
     .slice(0, 8);
-  await q('update console.orders set renew_lead_days = $2, auto_renew = $3, tags = $4, updated_at = now() where id = $1', [order.id, lead, auto, tags]);
-  await addEvent(order.id, 'settings', `Renewal settings saved (auto-renew ${auto ? 'on' : 'off'}, ${lead} days before expiry)`, ctx.user.id);
-  redirect(withMsg(back, 'ok', 'Renewal settings saved'));
+  await q('update console.orders set reminder_days = $2, tags = $3, updated_at = now() where id = $1', [order.id, days, tags]);
+  await addEvent(order.id, 'settings', `Reminder set to ${days} days before the certificate expires`, ctx.user.id);
+  redirect(withMsg(back, 'ok', 'Settings saved'));
 }
 
 export async function changeDcvMethod(formData) {

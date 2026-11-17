@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import CsrStep from '@/components/CsrStep';
 import { preflight, approverEmails, placeOrder } from '@/app/actions/orders';
 
-const STEPS = ['Certificate', 'Domains', 'Plan length', 'Key & CSR', 'Validation', 'Review'];
+const STEPS = ['Certificate', 'Domains', 'Order term', 'Key & CSR', 'Validation', 'Review'];
 const VLABEL = { dv: 'DV', ov: 'OV', ev: 'EV', code: 'Code signing' };
 
 function kindLabel(p) {
@@ -36,7 +36,6 @@ export default function BuyWizard({ products, renewal, defaults }) {
   const [approver, setApprover] = useState('');
   const [contact, setContact] = useState({ firstname: defaults.firstname, lastname: defaults.lastname, email: defaults.email, phone: defaults.phone, title: defaults.title });
   const [org, setOrg] = useState({ name: '', division: '', addressline1: '', city: '', region: '', postalcode: '', country: '', phone: '', ...(defaults.org || {}) });
-  const [autoRenew, setAutoRenew] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -84,7 +83,6 @@ export default function BuyWizard({ products, renewal, defaults }) {
       approverEmail: approver,
       contact,
       org: needsOrg ? org : null,
-      autoRenew,
       renewalOf: renewal?.id || null,
       tags: renewal?.tags || []
     });
@@ -97,16 +95,16 @@ export default function BuyWizard({ products, renewal, defaults }) {
   }
 
   const dcvOptions = [
-    { id: 'dns', label: 'DNS CNAME record', note: 'Add one record once. Best for wildcards and automatic renewals.', badge: 'Recommended' },
+    { id: 'dns', label: 'DNS CNAME record', note: 'Add one record. Best for wildcards, and keeping it in place speeds up reissues.', badge: 'Recommended' },
     { id: 'http', label: 'HTTP file', note: 'Upload a small text file to /.well-known/pki-validation/.', badge: 'Single server', disabled: wildcard },
     { id: 'https', label: 'HTTPS file', note: 'Same as HTTP, served over HTTPS.', badge: 'Single server', disabled: wildcard },
-    { id: 'email', label: 'Approver email', note: 'Click a link sent to admin@, webmaster@ or similar.', badge: 'Manual each time', disabled: sans.length > 0 }
+    { id: 'email', label: 'Approver email', note: 'Click a link sent to admin@, webmaster@ or similar.', badge: 'Email', disabled: sans.length > 0 }
   ];
 
   return (
     <div style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '28px 24px 48px', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       <nav aria-label="Steps" style={{ flex: '1 1 200px', maxWidth: 230 }}>
-        {renewal ? <div className="alert violet small" style={{ marginBottom: 12 }}>Renewing <span className="mono">{renewal.commonName}</span>. Settings are copied from the current certificate.</div> : null}
+        {renewal ? <div className="alert violet small" style={{ marginBottom: 12 }}>Renewing the order for <span className="mono">{renewal.commonName}</span>. This places a new order. Settings are copied from the current one.</div> : null}
         <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {STEPS.map((label, i) => (
             <li key={label}>
@@ -179,7 +177,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
 
           {step === 2 ? (
             <>
-              <div><h1 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Plan length</h1><p className="sub">Each certificate lasts at most 200 days, so longer plans are covered by free reissues during the term.</p></div>
+              <div><h1 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Order term</h1><p className="sub">The order covers the whole term. Each certificate lasts at most 200 days, and you reissue it for free during the term.</p></div>
               <div className="choices" role="radiogroup" aria-label="Plan length">
                 {periodList.map((m) => (
                   <button key={m} type="button" role="radio" aria-checked={Number(period) === m} className={`choice ${Number(period) === m ? 'on' : ''}`} onClick={() => setPeriod(m)}>
@@ -187,7 +185,6 @@ export default function BuyWizard({ products, renewal, defaults }) {
                   </button>
                 ))}
               </div>
-              <label className="check"><input type="checkbox" checked={autoRenew} onChange={(e) => setAutoRenew(e.target.checked)} />Turn on auto-renew for this certificate</label>
             </>
           ) : null}
 
@@ -200,7 +197,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
 
           {step === 4 ? (
             <>
-              <div><h1 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Prove you control the domain</h1><p className="sub">DNS validation can stay in place, so future renewals need no action.</p></div>
+              <div><h1 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Prove you control the domain</h1><p className="sub">Pick how the CA checks that you control the domain.</p></div>
               <div role="radiogroup" aria-label="Validation method" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {dcvOptions.map((d) => (
                   <button key={d.id} type="button" role="radio" aria-checked={dcv === d.id} disabled={d.disabled} className={`choice ${dcv === d.id ? 'on' : ''}`}
@@ -230,7 +227,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
                 {[
                   ['Certificate', product.name],
                   ['Domain', <span className="mono" key="d">{cn}{sans.length ? ` +${sans.length}` : ''}</span>],
-                  ['Plan', months(Number(period))],
+                  ['Order term', months(Number(period))],
                   ['Key', csr.mode === 'generate' ? `Generated in your browser · ${csr.keyType === 'ec' ? 'ECDSA P-256' : csr.keyType.toUpperCase()}` : 'Your CSR'],
                   ['Validation', dcv === 'email' ? `Email · ${approver}` : dcv.toUpperCase()]
                 ].map(([k, val]) => (
@@ -277,9 +274,8 @@ export default function BuyWizard({ products, renewal, defaults }) {
         <div><div style={{ fontWeight: 600, fontSize: 16 }}>{product.name}</div><div className="small muted">{kindLabel(product)} · {product.brand}</div></div>
         <dl style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, borderTop: '1px solid var(--line-soft)', paddingTop: 12 }}>
           <div className="between"><dt className="muted">Domain</dt><dd style={{ margin: 0 }} className="mono">{cn || '—'}</dd></div>
-          <div className="between"><dt className="muted">Plan</dt><dd style={{ margin: 0 }}>{months(Number(period))}</dd></div>
+          <div className="between"><dt className="muted">Order term</dt><dd style={{ margin: 0 }}>{months(Number(period))}</dd></div>
           <div className="between"><dt className="muted">Validation</dt><dd style={{ margin: 0 }}>{dcv.toUpperCase()}</dd></div>
-          <div className="between"><dt className="muted">Auto-renew</dt><dd style={{ margin: 0 }}>{autoRenew ? 'On' : 'Off'}</dd></div>
         </dl>
         <div className="small muted">Billing is handled by your partner.</div>
       </aside>

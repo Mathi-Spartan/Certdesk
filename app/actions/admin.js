@@ -131,7 +131,7 @@ export async function setProductEnabled(formData) {
   await requireAdmin();
   const id = Number(formData.get('product_id'));
   const enabled = formData.get('enabled') === 'true';
-  await q('update console.products set enabled = $2 where id = $1', [id, enabled]);
+  await q('update console.products set enabled = $2 where id = $1 and (not automation or $2 = false)', [id, enabled]);
   revalidatePath('/partner/catalogue');
 }
 

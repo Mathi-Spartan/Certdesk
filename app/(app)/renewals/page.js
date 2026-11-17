@@ -1,22 +1,20 @@
 import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
-import { daysLeft, primaryMethod } from '@/lib/orders';
-import { toggleAutoRenew } from '@/app/actions/orders';
+import { daysLeft, primaryMethod, lifecycle } from '@/lib/orders';
 import TopBar from '@/components/TopBar';
-import Icon from '@/components/Icon';
 import { fmtDate, Empty } from '@/components/ui';
 
-export const metadata = { title: 'Renewals · CertDesk' };
+export const metadata = { title: 'Reissues & renewals · CertDesk' };
 
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const iso = (d) => d.toISOString().slice(0, 10);
+const iso = (d) => new Date(d).toISOString().slice(0, 10);
 
 export default async function Renewals({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
   const orders = await q(
-    `select * from console.orders where workspace_id = $1 and status = 'issued' and valid_till is not null order by valid_till`,
+    `select * from console.orders where workspace_id = $1 and status in ('issued','validating','reissuing','incomplete') order by valid_till nulls last`,
     [ctx.workspaceId]
   );
   const now = new Date();
@@ -32,28 +30,33 @@ export default async function Renewals({ searchParams }) {
   const byDay = {};
   const push = (k, item) => ((byDay[k] ||= []).push(item));
   for (const o of orders) {
-    const exp = new Date(o.valid_till);
-    push(iso(exp), { kind: 'exp', o });
-    if (o.auto_renew) push(iso(new Date(exp.getTime() - o.renew_lead_days * 86400000)), { kind: 'ren', o });
+    const l = lifecycle(o);
+    if (o.status === 'issued' && o.valid_till) push(iso(o.valid_till), { kind: l.canReissue ? 'reissue' : 'renew', label: l.canReissue ? 'Reissue' : 'Renew', o });
+    if (o.order_expires_at && (!o.valid_till || iso(o.order_expires_at) !== iso(o.valid_till) || l.canReissue)) push(iso(o.order_expires_at), { kind: 'renew', label: 'Order ends', o });
   }
-  const live = await q(`select auto_renew, dcv_method from console.orders where workspace_id = $1 and status not in ('cancelled','draft')`, [ctx.workspaceId]);
-  const autoOn = live.filter((o) => o.auto_renew).length;
-  const emailCount = live.filter((o) => primaryMethod(o) === 'Email').length;
-  const upcoming = orders.filter((o) => daysLeft(o.valid_till) <= 90);
+
+  const reissues = orders
+    .filter((o) => o.status === 'issued' && lifecycle(o).canReissue && daysLeft(o.valid_till) <= 60)
+    .sort((a, b) => new Date(a.valid_till) - new Date(b.valid_till));
+  const renewals = orders
+    .filter((o) => {
+      const l = lifecycle(o);
+      return (o.order_expires_at && daysLeft(o.order_expires_at) <= 90) || (o.status === 'issued' && !l.canReissue && daysLeft(o.valid_till) <= 60);
+    })
+    .sort((a, b) => new Date(a.order_expires_at || a.valid_till) - new Date(b.order_expires_at || b.valid_till));
   const today = iso(now);
-  const autoRunner = process.env.AUTO_RENEW_ENABLED === 'true';
 
   return (
     <>
-      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'Renewals & automation' }]} />
+      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'Reissues & renewals' }]} />
       <main className="page">
         <div>
-          <h1 className="title">Renewals &amp; automation</h1>
-          <p className="sub">See what expires when, and which certificates renew without anyone touching them.</p>
+          <h1 className="title">Reissues &amp; renewals</h1>
+          <p className="sub">
+            <strong>Reissue</strong> when a certificate is about to expire. It's free while the order is active.{' '}
+            <strong>Renew</strong> when the order itself ends, which means buying a new one.
+          </p>
         </div>
-        {!autoRunner ? (
-          <div className="alert amber"><Icon name="info" /><span>Automatic renewal orders are switched off while CertDesk is in testing. Auto-renew settings are saved, and you'll get reminders, but renewals are placed with “Renew now”.</span></div>
-        ) : null}
 
         <div className="row top">
           <section className="card pad" style={{ flex: '2 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -65,9 +68,9 @@ export default async function Renewals({ searchParams }) {
                 <Link className="btn sm" href={`/renewals?m=${mKey(next)}`} aria-label="Next month">›</Link>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--muted)' }}>
-              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: 'var(--red-dot)' }} />Expires</span>
-              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: 'var(--accent)' }} />Renewal starts</span>
+            <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--muted)', flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: 'var(--accent)' }} />Certificate expires: reissue</span>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="dot" style={{ borderRadius: 3, background: '#F59E0B' }} />Order ends: renew</span>
             </div>
             <div className="cal">
               {DOW.map((d) => <div key={d} className="h">{d}</div>)}
@@ -78,7 +81,8 @@ export default async function Renewals({ searchParams }) {
                   <div key={k} className={`d ${d.getUTCMonth() !== mm - 1 ? 'out' : ''} ${k === today ? 'today' : ''}`}>
                     <span>{d.getUTCDate()}</span>
                     {items.slice(0, 3).map((it, i) => (
-                      <Link key={i} href={`/certificates/${it.o.id}`} className={`chip ${it.kind}`} title={`${it.kind === 'exp' ? 'Expires' : 'Renewal starts'}: ${it.o.common_name}`}>
+                      <Link key={i} href={`/certificates/${it.o.id}`} className={`chip ${it.kind === 'reissue' ? 'ren' : 'exp'}`}
+                        style={it.kind === 'renew' ? { background: '#FEF3C7', color: '#92400E' } : undefined} title={`${it.label}: ${it.o.common_name}`}>
                         {it.o.common_name}
                       </Link>
                     ))}
@@ -90,53 +94,65 @@ export default async function Renewals({ searchParams }) {
           </section>
 
           <section style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <h2>Automation coverage</h2>
-              <div style={{ fontSize: 32, fontWeight: 600 }}>{autoOn} <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)' }}>of {live.length} on auto-renew</span></div>
-              <div className="bar"><span style={{ width: `${live.length ? (autoOn / live.length) * 100 : 0}%` }} /></div>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-                <li className="between"><span>Auto-renew off</span><Link href="/certificates" style={{ fontWeight: 600 }}>{live.length - autoOn}</Link></li>
-                <li className="between"><span>Needs manual approval (email)</span><Link href="/certificates" style={{ fontWeight: 600 }}>{emailCount}</Link></li>
-              </ul>
+            <div className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <h2>How this works</h2>
+              <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--ink-2)' }}>
+                <li>Each certificate lasts at most 200 days (100 days from 15 Mar 2027).</li>
+                <li>Before it expires, <strong>reissue</strong> it with a new key. That costs nothing while the order is active.</li>
+                <li>When the order term ends, <strong>renew</strong> it by buying a new order.</li>
+                <li>Install each new certificate on your servers yourself. CertDesk tracks the dates for you.</li>
+              </ol>
             </div>
-            <div className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <h2>Alerts</h2>
-              <div className="small muted">Reminders go to your workspace contact at 30, 14, 7, 3 and 1 days before expiry.</div>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  ['Email', ctx.workspace.contact?.email || ctx.workspace.contact_email || ctx.user.email, 'Coming next'],
-                  ['Slack', 'Incoming webhook', 'Coming next'],
-                  ['Webhook', 'For your own tooling', 'Coming next']
-                ].map(([n, d, s]) => (
-                  <li key={n} className="between"><span><strong>{n}</strong><br /><span className="small muted">{d}</span></span><span className="badge tone-gray">{s}</span></li>
-                ))}
-              </ul>
+            <div className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <h2>Reminders</h2>
+              <div className="small muted">Each certificate is marked as due a set number of days before it expires. Change that on the certificate page.</div>
+              <div className="between"><span><strong>Email reminders</strong><br /><span className="small muted">{ctx.workspace.contact?.email || ctx.workspace.contact_email || ctx.user.email}</span></span><span className="badge tone-gray">Coming next</span></div>
             </div>
           </section>
         </div>
 
         <section className="card">
-          <div className="card-head"><h2>Expiring in the next 90 days</h2><span className="small muted">{upcoming.length}</span></div>
-          {upcoming.length === 0 ? <Empty title="Nothing expires in the next 90 days" /> : (
+          <div className="card-head"><h2>Certificates to reissue</h2><span className="small muted">Expiring in the next 60 days, order still active</span></div>
+          {reissues.length === 0 ? <Empty title="Nothing to reissue in the next 60 days" /> : (
             <div className="table-wrap">
               <table className="t" style={{ minWidth: 760 }}>
-                <thead><tr><th>Certificate</th><th>Expires</th><th>Renewal starts</th><th>Validation</th><th>Auto-renew</th><th /></tr></thead>
+                <thead><tr><th>Certificate</th><th>Certificate expires</th><th>Order active until</th><th>Validation</th><th /></tr></thead>
                 <tbody>
-                  {upcoming.map((o) => {
+                  {reissues.map((o) => {
                     const d = daysLeft(o.valid_till);
                     return (
                       <tr key={o.id}>
                         <td><Link className="cn" href={`/certificates/${o.id}`}>{o.common_name}</Link><div className="small muted">{o.product_name}</div></td>
-                        <td><strong style={{ color: d <= 30 ? 'var(--red-strong)' : undefined }}>{d} days</strong><div className="small muted">{fmtDate(o.valid_till)}</div></td>
-                        <td>{o.renew_lead_days} days before</td>
+                        <td><strong style={{ color: d <= (o.reminder_days || 30) ? 'var(--red-strong)' : undefined }}>{d < 0 ? `${-d} days ago` : `${d} days`}</strong><div className="small muted">{fmtDate(o.valid_till)}</div></td>
+                        <td>{fmtDate(o.order_expires_at)}</td>
                         <td>{primaryMethod(o)}</td>
-                        <td>
-                          <form action={toggleAutoRenew}>
-                            <input type="hidden" name="order_id" value={o.id} />
-                            <button type="submit" className="switch" role="switch" aria-checked={o.auto_renew ? 'true' : 'false'} aria-label={`Auto-renew for ${o.common_name}`} />
-                          </form>
-                        </td>
-                        <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/buy?renew=${o.id}`}>Renew now</Link></td>
+                        <td style={{ textAlign: 'right' }}><Link className="btn sm primary" href={`/certificates/${o.id}/reissue`}>Reissue</Link></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="card-head"><h2>Orders to renew</h2><span className="small muted">Order ending in the next 90 days</span></div>
+          {renewals.length === 0 ? <Empty title="No orders end in the next 90 days" /> : (
+            <div className="table-wrap">
+              <table className="t" style={{ minWidth: 760 }}>
+                <thead><tr><th>Certificate</th><th>Order ends</th><th>Term</th><th>Product</th><th /></tr></thead>
+                <tbody>
+                  {renewals.map((o) => {
+                    const end = o.order_expires_at || o.valid_till;
+                    const d = daysLeft(end);
+                    return (
+                      <tr key={o.id}>
+                        <td><Link className="cn" href={`/certificates/${o.id}`}>{o.common_name}</Link></td>
+                        <td><strong style={{ color: d <= 30 ? 'var(--red-strong)' : undefined }}>{d < 0 ? 'Ended' : `${d} days`}</strong><div className="small muted">{fmtDate(end)}</div></td>
+                        <td>{o.period_months ? `${o.period_months} months` : '—'}</td>
+                        <td>{o.product_name}</td>
+                        <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/buy?renew=${o.id}`}>Renew order</Link></td>
                       </tr>
                     );
                   })}

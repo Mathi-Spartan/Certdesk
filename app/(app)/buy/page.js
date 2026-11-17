@@ -13,7 +13,7 @@ export default async function BuyPage({ searchParams }) {
   const ctx = await requireWorkspace();
   const products = await q(
     `select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices
-       from console.products where enabled order by validation, wildcard, multidomain, name`
+       from console.products where enabled and not automation order by validation, wildcard, multidomain, name`
   );
   let renewal = null;
   if (sp.renew) {
@@ -43,7 +43,7 @@ export default async function BuyPage({ searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: renewal ? `Renew ${renewal.commonName}` : 'New certificate' }]}>
+      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
         <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/'} aria-label="Close"><Icon name="x" />Close</Link>
       </TopBar>
       {products.length === 0 ? (

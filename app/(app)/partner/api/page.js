@@ -34,7 +34,6 @@ export default async function ProviderApi({ searchParams }) {
               <div className="between"><dt className="muted">API URL</dt><dd style={{ margin: 0 }} className="mono">{process.env.GOGETSSL_API_URL || 'https://my.gogetssl.com/api'}</dd></div>
               <div className="between"><dt className="muted">Username</dt><dd style={{ margin: 0 }} className="mono">{process.env.GOGETSSL_USER || '—'}</dd></div>
               <div className="between"><dt className="muted">Password</dt><dd style={{ margin: 0 }}>{configured ? 'Stored as a server secret' : '—'}</dd></div>
-              <div className="between"><dt className="muted">Automatic renewals</dt><dd style={{ margin: 0 }}>{process.env.AUTO_RENEW_ENABLED === 'true' ? 'On' : 'Off (testing)'}</dd></div>
             </dl>
             <div className="small muted">Credentials are set as environment variables in Vercel (GOGETSSL_USER, GOGETSSL_PASS).</div>
           </section>
