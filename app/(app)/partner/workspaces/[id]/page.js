@@ -1,0 +1,114 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { requireAdmin } from '@/lib/auth';
+import { q, one } from '@/lib/db';
+import { openWorkspace, importOrder, setUserActive, unassignOrder } from '@/app/actions/admin';
+import TopBar from '@/components/TopBar';
+import { StatusBadge, Empty, FlashFromSearch, fmtDate, timeAgo } from '@/components/ui';
+import { CreateUserForm, ResetPasswordButton } from './UserForms';
+
+export const metadata = { title: 'Workspace · CertDesk' };
+
+export default async function WorkspaceAdmin({ params, searchParams }) {
+  const { id } = await params;
+  const sp = await searchParams;
+  await requireAdmin();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const ws = await one('select * from console.workspaces where id = $1', [id]);
+  if (!ws) notFound();
+  const users = await q(`select * from console.users where workspace_id = $1 order by created_at`, [id]);
+  const orders = await q(`select * from console.orders where workspace_id = $1 order by created_at desc`, [id]);
+
+  return (
+    <>
+      <TopBar crumbs={[{ label: 'Customer workspaces', href: '/partner' }, { label: ws.name }]}>
+        <form action={openWorkspace}>
+          <input type="hidden" name="workspace_id" value={ws.id} />
+          <button className="btn primary" type="submit">Open as this customer</button>
+        </form>
+      </TopBar>
+      <main className="page">
+        <div>
+          <h1 className="title">{ws.name}</h1>
+          <p className="sub">{ws.contact_email || 'No contact email'} · created {fmtDate(ws.created_at)}</p>
+        </div>
+        <FlashFromSearch searchParams={sp} />
+
+        <div className="row top">
+          <section className="card" style={{ flex: '2 1 560px', minWidth: 0 }}>
+            <div className="card-head"><h2>Logins</h2><span className="small muted">Customers sign in with email and password. They cannot invite others.</span></div>
+            {users.length === 0 ? <Empty title="No logins yet">Add the first one on the right.</Empty> : (
+              <div className="table-wrap">
+                <table className="t" style={{ minWidth: 560 }}>
+                  <thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Status</th><th /></tr></thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id}>
+                        <td style={{ fontWeight: 600 }}>{u.name}</td>
+                        <td>{u.email}</td>
+                        <td>{timeAgo(u.last_login_at)}</td>
+                        <td>{u.is_active ? <span className="badge tone-green">Active</span> : <span className="badge tone-gray">Disabled</span>}</td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <ResetPasswordButton userId={u.id} />{' '}
+                          <form action={setUserActive} style={{ display: 'inline' }}>
+                            <input type="hidden" name="user_id" value={u.id} />
+                            <input type="hidden" name="active" value={u.is_active ? 'false' : 'true'} />
+                            <button className="btn sm" type="submit">{u.is_active ? 'Disable' : 'Enable'}</button>
+                          </form>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          <section className="card pad" style={{ flex: '1 1 300px' }}>
+            <h2 style={{ marginBottom: 14 }}>Add a login</h2>
+            <CreateUserForm workspaceId={ws.id} />
+          </section>
+        </div>
+
+        <div className="row top">
+          <section className="card" style={{ flex: '2 1 560px', minWidth: 0 }}>
+            <div className="card-head"><h2>Certificates in this workspace</h2><span className="small muted">{orders.length}</span></div>
+            {orders.length === 0 ? <Empty title="No orders yet">Assign an existing GoGetSSL order, or open the workspace and buy one.</Empty> : (
+              <div className="table-wrap">
+                <table className="t" style={{ minWidth: 640 }}>
+                  <thead><tr><th>Domain</th><th>GoGetSSL order</th><th>Status</th><th>Expires</th><th /></tr></thead>
+                  <tbody>
+                    {orders.map((o) => (
+                      <tr key={o.id}>
+                        <td className="mono">{o.common_name || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-geist)' }}>{o.product_name}</div></td>
+                        <td className="mono">{o.gg_order_id}</td>
+                        <td><StatusBadge order={o} /></td>
+                        <td>{fmtDate(o.valid_till)}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <form action={unassignOrder}>
+                            <input type="hidden" name="order_id" value={o.id} />
+                            <input type="hidden" name="workspace_id" value={ws.id} />
+                            <button className="btn sm ghost" type="submit">Remove</button>
+                          </form>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          <section className="card pad" style={{ flex: '1 1 300px' }}>
+            <h2 style={{ marginBottom: 6 }}>Assign an existing order</h2>
+            <p className="small muted" style={{ margin: '0 0 14px' }}>Enter the order ID from your GoGetSSL account. CertDesk pulls its details and the customer sees it straight away.</p>
+            <form action={importOrder} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input type="hidden" name="workspace_id" value={ws.id} />
+              <div className="field"><label htmlFor="gid">GoGetSSL order ID</label><input className="input mono" id="gid" name="gg_order_id" inputMode="numeric" required placeholder="1234567" /></div>
+              <button className="btn primary" type="submit">Assign to {ws.name}</button>
+            </form>
+          </section>
+        </div>
+        <p className="small muted"><Link href="/partner">← All workspaces</Link></p>
+      </main>
+    </>
+  );
+}
