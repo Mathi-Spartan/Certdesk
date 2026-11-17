@@ -18,12 +18,12 @@ function cleanDomain(d) {
 async function webserverType() {
   const cached = await one(`select value from console.kv where key = 'gg_webserver_other'`);
   if (cached?.value?.id) return cached.value.id;
-  let id = 18;
+  let id = -1;
   try {
     const res = await gg.getWebServers(1);
     const list = Array.isArray(res.webservers) ? res.webservers : Object.values(res).find(Array.isArray) || [];
-    const other = list.find((w) => /other/i.test(w.software || w.name || ''));
-    id = Number((other || list[0] || {}).id) || id;
+    const other = list.find((w) => /^other$/i.test(String(w.software || w.name || '').trim())) || list.find((w) => /other/i.test(w.software || ''));
+    if (other && !isNaN(Number(other.id))) id = Number(other.id);
   } catch {
     /* fall back to the common "Other" id */
   }

@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { syncCatalogueAction, setProductEnabled } from '@/app/actions/admin';
+import { syncCatalogue } from '@/lib/products';
 import TopBar from '@/components/TopBar';
 import { Empty, FlashFromSearch, timeAgo } from '@/components/ui';
 
@@ -11,7 +12,16 @@ const VAL = { dv: 'DV', ov: 'OV', ev: 'EV', code: 'Code signing' };
 export default async function Catalogue({ searchParams }) {
   const sp = await searchParams;
   await requireAdmin();
-  const products = await q('select * from console.products order by enabled desc, brand, validation, name');
+  let products = await q('select * from console.products order by enabled desc, brand, validation, name');
+  let syncErr = null;
+  if (products.length === 0) {
+    try {
+      await syncCatalogue();
+      products = await q('select * from console.products order by enabled desc, brand, validation, name');
+    } catch (e) {
+      syncErr = e.message;
+    }
+  }
   const enabled = products.filter((p) => p.enabled).length;
   const synced = products.reduce((m, p) => (!m || p.synced_at > m ? p.synced_at : m), null);
   return (
@@ -25,6 +35,7 @@ export default async function Catalogue({ searchParams }) {
           <p className="sub">Turn on the certificates customers can order. {products.length ? `${enabled} of ${products.length} on · synced ${timeAgo(synced)}` : ''}</p>
         </div>
         <FlashFromSearch searchParams={sp} />
+        {syncErr ? <div className="alert red">Could not load products from GoGetSSL: {syncErr}</div> : null}
         <div className="card">
           {products.length === 0 ? (
             <Empty title="No products yet">
