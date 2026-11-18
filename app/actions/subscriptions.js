@@ -58,7 +58,7 @@ export async function orderSubscription(prev, formData) {
   const primaryEmail = String(formData.get('primary_email') || '').trim();
   const technicalEmail = String(formData.get('technical_email') || '').trim() || primaryEmail;
   if (kind === 'ais' && (!EMAIL_RE.test(primaryEmail) || !EMAIL_RE.test(technicalEmail))) return { error: 'Enter valid contact emails' };
-  const installMethod = 'autoinstall';
+  const installMethod = kind === 'ais' && formData.get('install_method') === 'acme' ? 'acme' : 'autoinstall';
 
   let created;
   try {
@@ -125,12 +125,13 @@ export async function removeCaasDomain(formData) {
 export async function switchInstallMethod(formData) {
   await withSub(formData, async (sub, ctx) => {
     if (sub.kind !== 'ais') throw new Error('Install method applies to Plan + Automate');
-    if (process.env.GOGETSSL_AIS_METHOD_SWITCH !== 'true') throw new Error('Switching the install method is not available from GoGetSSL yet');
     const method = formData.get('method') === 'acme' ? 'acme' : 'autoinstall';
-    await v2.setAisInstallMethod(sub.item_id, method);
-    const label = method === 'acme' ? 'your own ACME client' : 'AutoInstall SSL';
-    await addSubEvent(sub.id, 'method', `Install method set to ${label}`, ctx.user.id, `PATCH /certificates/ais/${sub.item_id}`);
-    return `Install method set to ${label}`;
+    // GoGetSSL's API has no switch yet; the switch itself happens in AutoInstall SSL. Call it once it exists.
+    if (process.env.GOGETSSL_AIS_METHOD_SWITCH === 'true') await v2.setAisInstallMethod(sub.item_id, method);
+    await q('update console.subscriptions set install_method = $2, updated_at = now() where id = $1', [sub.id, method]);
+    const label = method === 'acme' ? 'your own ACME client' : 'the AutoInstall agent';
+    await addSubEvent(sub.id, 'method', `Switched to ${label}`, ctx.user.id);
+    return method === 'acme' ? 'Switched to ACME. Follow the steps below to get your keys.' : 'Switched to the AutoInstall agent. Follow the steps below.';
   });
 }
 
