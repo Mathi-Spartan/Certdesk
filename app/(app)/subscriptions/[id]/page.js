@@ -101,7 +101,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
     : sub.auto_renew === false && left !== null && left <= 30
       ? 'Turn auto-renewal back on to keep certificates coming after the term ends.'
       : needsAgent
-        ? 'Open AutoInstall SSL and run the one-line agent command on your server. Steps are below.'
+        ? 'Open AutoInstall SSL and set up the agent or ACME. You can switch between them at any time. Steps are below.'
         : needsAcmeSetup
           ? 'Point your ACME client at the credentials below. It requests and renews certificates on its own.'
           : item.next?.text;
@@ -190,7 +190,13 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                 <div className="between"><span className="muted">Setup status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
                 <ol className="setup-steps">
                   <li><strong>Open AutoInstall SSL.</strong> You&apos;re signed in automatically with the button below.</li>
-                  <li><strong>Install the agent.</strong> Copy the one-line install command shown there and run it on your server. The agent installs and renews every certificate.</li>
+                  <li>
+                    <strong>Choose how certificates reach your server.</strong> You can switch between these at any time in AutoInstall SSL:
+                    <ul>
+                      <li><strong>Agent</strong>: pick your environment and run the install command it shows. The agent installs and renews every certificate.</li>
+                      <li><strong>ACME</strong>: pick <em>ACME</em> as your environment, or pick your environment and click <em>Agent Options</em> → ACME. You get EAB credentials and ready-made commands for Certbot, acme.sh or your control panel.</li>
+                    </ul>
+                  </li>
                   <li><strong>Come back here.</strong> The status above changes to Installed once the first certificate is in place.</li>
                 </ol>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -198,7 +204,6 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                   {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
                 </div>
                 <span className="small muted">These sign-in links come fresh from GoGetSSL each time this page loads. If one has expired, reload the page.</span>
-                <div className="alert violet small"><Icon name="info" />This plan was ordered for the AutoInstall agent. To use your own ACME client instead, order a new Plan + Automate and choose “My ACME client”, or order ACME CaaS.</div>
               </div>                ) : null}
           </section>
         ) : null}
