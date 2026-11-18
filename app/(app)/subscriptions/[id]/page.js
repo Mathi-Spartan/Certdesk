@@ -96,8 +96,8 @@ export default async function SubscriptionDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'Automated SSL', href: '/subscriptions' }, { label: sub.primary_domain || 'Pending' }]}>
-        <span className="small muted">Item <span className="mono">{sub.item_id || '—'}</span> · Order <span className="mono">{sub.gg_order_id || '—'}</span></span>
+      <TopBar crumbs={[{ label: 'My SSL', href: '/certificates' }, { label: sub.primary_domain || 'Pending' }]}>
+        {ctx.isAdmin ? <span className="small muted">Item <span className="mono">{sub.item_id || '—'}</span> · Order <span className="mono">{sub.gg_order_id || '—'}</span></span> : null}
         <form action={refreshSubscription}>{hidden}<SubmitButton className="btn sm" pendingText="Refreshing…">Refresh</SubmitButton></form>
       </TopBar>
       <main className="page">
@@ -109,7 +109,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               <span className={`badge tone-${st.tone}`}>{st.label}</span>
               <span className="badge tone-violet">{KIND_LABEL[sub.kind]}</span>
               <span>{sub.product_name}</span>
-              {sub.gg_status ? <span className="mono small">GoGetSSL: {sub.gg_status}</span> : null}
+              {sub.gg_status && ctx.isAdmin ? <span className="mono small">GoGetSSL: {sub.gg_status}</span> : null}
               {(sub.tags || []).map((t) => <span key={t} className="tag">{t}</span>)}
             </div>
           </div>
@@ -142,7 +142,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="between">
                   <h2>Installation</h2>
-                  <span className="small muted">PATCH /certificates/ais/{sub.item_id}</span>
+                  {ctx.isAdmin ? <span className="small muted mono">PATCH /certificates/ais/{sub.item_id}</span> : null}
                 </div>
                 <div className="choices">
                   <form action={switchInstallMethod} style={{ display: 'contents' }}>
@@ -234,7 +234,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                       <span className="when">{fmtDateTime(e.created_at)}</span>
                       <span>
                         {e.message}{e.actor ? <span className="muted"> · {e.actor}</span> : null}
-                        {e.endpoint ? <span className="mono small muted" style={{ display: 'block' }}>{e.endpoint}</span> : null}
+                        {e.endpoint && ctx.isAdmin ? <span className="mono small muted" style={{ display: 'block' }}>{e.endpoint}</span> : null}
                       </span>
                     </li>
                   ))}
@@ -271,10 +271,10 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                   </SubmitButton>
                 </form>
               ) : null}
-              <span className="small muted mono">{sub.auto_renew === false || !isCaas ? `PATCH /certificates/${sub.kind}/${sub.item_id}/subscription` : `DELETE /certificates/caas/${sub.item_id}/subscription`}</span>
+              {ctx.isAdmin ? <span className="small muted mono">{sub.auto_renew === false || !isCaas ? `PATCH /certificates/${sub.kind}/${sub.item_id}/subscription` : `DELETE /certificates/caas/${sub.item_id}/subscription`}</span> : null}
             </section>
 
-            <EndpointPanel kind={sub.kind} itemId={sub.item_id} />
+            {ctx.isAdmin ? <EndpointPanel kind={sub.kind} itemId={sub.item_id} /> : null}
 
             <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2>Tags</h2>
@@ -295,11 +295,11 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                   <label className="check"><input type="checkbox" name="refund" defaultChecked /> Ask for a refund (inside the refund window)</label>
                   <div className="field"><label htmlFor="confirm">Type CANCEL to confirm</label><input id="confirm" name="confirm" className="input" autoComplete="off" required /></div>
                   <SubmitButton className="btn sm danger" pendingText="Cancelling…">Cancel subscription</SubmitButton>
-                  <span className="small muted mono">POST /certificates/{sub.kind}/{sub.item_id}/cancel</span>
+                  {ctx.isAdmin ? <span className="small muted mono">POST /certificates/{sub.kind}/{sub.item_id}/cancel</span> : null}
                 </form>
               </details>
             ) : null}
-            <Link className="small" href="/subscriptions">Back to all subscriptions</Link>
+            <Link className="small" href="/certificates">Back to My SSL</Link>
           </div>
         </div>
       </main>

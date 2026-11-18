@@ -1,5 +1,6 @@
 import { requireUser } from '@/lib/auth';
 import { one } from '@/lib/db';
+import Link from 'next/link';
 import SideNav from '@/components/SideNav';
 import Icon from '@/components/Icon';
 import { logout } from '@/app/actions/auth';
@@ -20,39 +21,26 @@ export default async function AppLayout({ children }) {
   const ctx = await requireUser();
   const groups = [];
 
+  let needs = 0;
   if (ctx.workspaceId) {
     const c = await one(
-      `select count(*) filter (where status not in ('cancelled','draft'))::int as total,
-              count(*) filter (where status in ('validating','incomplete','reissuing'))::int as validating,
-              count(*) filter (where status = 'issued' and (valid_till <= current_date + reminder_days or order_expires_at <= current_date + 30))::int as expiring
-         from console.orders where workspace_id = $1`,
+      `select
+         (select count(*) from console.orders where workspace_id = $1 and (
+            status in ('validating','incomplete','reissuing')
+            or (status = 'issued' and (valid_till <= current_date + reminder_days or order_expires_at <= current_date + 30))))::int
+       + (select count(*) from console.subscriptions where workspace_id = $1 and status = 'active' and cancel_requested_at is null
+            and auto_renew = false and coalesce(next_renewal_at, end_at) <= now() + interval '30 days')::int as needs`,
       [ctx.workspaceId]
     );
+    needs = c.needs;
     groups.push({
       items: [
-        { href: '/', label: 'Overview', icon: 'overview' },
-        { href: '/certificates', label: 'Certificates', icon: 'lock', count: c.total },
-        { href: '/validation', label: 'Validation', icon: 'check', count: c.validating || null, tone: c.validating ? 'amber' : null },
-        { href: '/renewals', label: 'Reissues & renewals', icon: 'renew', count: c.expiring || null, tone: c.expiring ? 'red' : null },
-        { label: 'Endpoint monitoring', icon: 'pulse', disabled: true },
-        { href: '/orders', label: 'Orders & billing', icon: 'card' }
+        { href: '/', label: 'Home', icon: 'home' },
+        { href: '/certificates', label: 'My SSL', icon: 'lock', count: needs || null, tone: needs ? 'red' : null },
+        { href: '/orders', label: 'Order history', icon: 'receipt' },
+        { href: '/account', label: 'Account', icon: 'key' }
       ]
     });
-    const sc = await one(
-      `select count(*) filter (where status <> 'cancelled')::int as total,
-              count(*) filter (where status in ('pending','payment_needed'))::int as setting_up
-         from console.subscriptions where workspace_id = $1`,
-      [ctx.workspaceId]
-    );
-    groups.push({
-      label: 'SUBSCRIPTIONS',
-      items: [
-        { href: '/subscriptions', label: 'Automated SSL', icon: 'loop', count: sc.setting_up || sc.total || null, tone: sc.setting_up ? 'amber' : null },
-        { href: '/subscriptions/new', label: 'New subscription', icon: 'bolt' },
-        { href: '/subscriptions/endpoints', label: 'API v2 endpoints', icon: 'code' }
-      ]
-    });
-    groups.push({ label: 'ACCOUNT', items: [{ href: '/account', label: 'Profile & password', icon: 'key' }] });
   }
 
   if (ctx.isAdmin) {
@@ -61,10 +49,11 @@ export default async function AppLayout({ children }) {
       items: [
         { href: '/partner', label: 'Customer workspaces', icon: 'building' },
         { href: '/partner/catalogue', label: 'Catalogue', icon: 'list' },
-        { href: '/partner/api', label: 'Provider API', icon: 'code' }
+        { href: '/partner/api', label: 'Provider API', icon: 'code' },
+        { href: '/partner/endpoints', label: 'API v2 reference', icon: 'list' }
       ]
     });
-    if (!ctx.workspaceId) groups.push({ label: 'ACCOUNT', items: [{ href: '/account', label: 'Profile & password', icon: 'key' }] });
+    if (!ctx.workspaceId) groups.push({ label: 'ACCOUNT', items: [{ href: '/account', label: 'Account', icon: 'key' }] });
   }
 
   const wsName = ctx.workspace ? ctx.workspace.name : 'Partner account';
@@ -82,6 +71,9 @@ export default async function AppLayout({ children }) {
           <form action={exitWorkspace}>
             <button className="btn sm" style={{ width: '100%' }} type="submit">Back to partner view</button>
           </form>
+        ) : null}
+        {ctx.workspaceId ? (
+          <Link href="/order" className="side-order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
         ) : null}
         <SideNav groups={groups} />
         <div className="side-foot">

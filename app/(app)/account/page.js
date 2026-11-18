@@ -8,7 +8,7 @@ export default async function Account() {
   const ctx = await requireUser();
   return (
     <>
-      <TopBar crumbs={[{ label: 'Account' }, { label: 'Profile & password' }]} />
+      <TopBar crumbs={[{ label: 'Account' }]} />
       <main className="page" style={{ maxWidth: 720 }}>
         <h1 className="title">Profile &amp; password</h1>
         <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

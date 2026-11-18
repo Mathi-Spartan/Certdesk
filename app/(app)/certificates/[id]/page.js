@@ -98,8 +98,8 @@ export default async function CertificateDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'Certificates', href: '/certificates' }, { label: order.common_name || 'Pending order' }]}>
-        <span className="small muted">GoGetSSL order <span className="mono">{order.gg_order_id || '—'}</span></span>
+      <TopBar crumbs={[{ label: 'My SSL', href: '/certificates' }, { label: order.common_name || 'Pending order' }]}>
+        <span className="small muted">Order <span className="mono">{order.gg_order_id || '—'}</span></span>
       </TopBar>
       <main className="page">
         <div className="between" style={{ alignItems: 'flex-start' }}>

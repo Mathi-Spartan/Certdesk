@@ -1,4 +1,4 @@
-import { requireWorkspace } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { ENDPOINTS, v2Configured } from '@/lib/gogetssl-v2';
 import TopBar from '@/components/TopBar';
@@ -15,14 +15,14 @@ const GROUP_NOTE = {
 };
 
 export default async function Endpoints() {
-  const ctx = await requireWorkspace();
+  const ctx = await requireAdmin();
   const groups = [...new Set(ENDPOINTS.map((e) => e.group))];
   const calls = ctx.isAdmin
     ? await q(`select method, path, ok, ms, error, created_at from console.api_log where api = 'v2' order by created_at desc limit 25`)
     : [];
   return (
     <>
-      <TopBar crumbs={[{ label: 'Automated SSL', href: '/subscriptions' }, { label: 'API v2 endpoints' }]} />
+      <TopBar crumbs={[{ label: 'Partner account' }, { label: 'API v2 reference' }]} />
       <main className="page" style={{ gap: 18 }}>
         <div>
           <h1 className="title">GoGetSSL API v2 · subscription endpoints</h1>

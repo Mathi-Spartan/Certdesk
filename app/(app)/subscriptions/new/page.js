@@ -18,7 +18,7 @@ export default async function NewSubscription() {
   const ws = await one('select contact_email from console.workspaces where id = $1', [ctx.workspaceId]);
   return (
     <>
-      <TopBar crumbs={[{ label: 'Automated SSL', href: '/subscriptions' }, { label: 'New subscription' }]} />
+      <TopBar crumbs={[{ label: 'Order SSL', href: '/order' }, { label: 'Automated SSL' }]} />
       <main className="page" style={{ maxWidth: 920 }}>
         <div>
           <h1 className="title">New automated SSL subscription</h1>

@@ -21,7 +21,7 @@ export default async function EndpointPanel({ kind, itemId }) {
     : [];
   return (
     <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div className="between"><h2>API v2 endpoints</h2><a className="small" href="/subscriptions/endpoints">Reference</a></div>
+      <div className="between"><h2>API v2 endpoints</h2><a className="small" href="/partner/endpoints">Reference</a></div>
       <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {list.map((e) => {
           const concrete = e.path.replace('{id}', String(itemId || '{id}'));

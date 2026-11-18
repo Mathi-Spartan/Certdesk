@@ -71,6 +71,9 @@ const PATHS = {
     </>
   ),
   loop: <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" />,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  home: <path d="M3 11 12 4l9 7M5 10v10h5v-6h4v6h5V10" />,
+  receipt: <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />,
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
   globe: (
     <>

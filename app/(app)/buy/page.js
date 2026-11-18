@@ -43,7 +43,7 @@ export default async function BuyPage({ searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
+      <TopBar crumbs={[{ label: 'Order SSL', href: '/order' }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
         <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/'} aria-label="Close"><Icon name="x" />Close</Link>
       </TopBar>
       {products.length === 0 ? (

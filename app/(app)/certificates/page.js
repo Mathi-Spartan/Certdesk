@@ -1,148 +1,107 @@
 import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
-import { q } from '@/lib/db';
-import { syncStale, daysLeft, displayStatus, primaryMethod } from '@/lib/orders';
+import { loadPortfolio } from '@/lib/portfolio';
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
-import { StatusBadge, Empty, fmtDate, FlashFromSearch } from '@/components/ui';
+import ItemRow from '@/components/ItemRow';
+import { Empty, FlashFromSearch } from '@/components/ui';
 
-export const metadata = { title: 'Certificates · CertDesk' };
+export const metadata = { title: 'My SSL · CertDesk' };
 
-const TABS = [
+const VIEWS = [
   { key: 'all', label: 'All' },
-  { key: 'due', label: 'Reissue / renewal due', tone: 'var(--red-strong)' },
-  { key: 'validation', label: 'In validation', tone: '#B45309' },
-  { key: 'active', label: 'Active' },
-  { key: 'closed', label: 'Expired & cancelled' }
+  { key: 'action', label: 'Needs action' },
+  { key: 'cert', label: 'Certificates' },
+  { key: 'auto', label: 'Automated' },
+  { key: 'ended', label: 'Closed' }
 ];
 
-function tabOf(o) {
-  const s = displayStatus(o).key;
-  if (['reissue_due', 'renew_due', 'expired'].includes(s)) return 'due';
-  if (s === 'active') return 'active';
-  if (['order_ended', 'cancelled', 'cancel_requested'].includes(s)) return 'closed';
-  return 'validation';
+function inView(i, view) {
+  if (view === 'ended') return i.group === 'ended';
+  if (i.group === 'ended') return false;
+  if (view === 'action') return i.group === 'action';
+  if (view === 'cert' || view === 'auto') return i.type === view;
+  return true;
 }
 
-export default async function Certificates({ searchParams }) {
+export default async function MySsl({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
-  await syncStale(ctx.workspaceId, 10);
-  const all = await q(`select * from console.orders where workspace_id = $1 and status <> 'draft' order by valid_till asc nulls first, created_at desc`, [ctx.workspaceId]);
-  const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab : 'all';
+  const p = await loadPortfolio(ctx.workspaceId);
+  // old links: ?tab=due|validation etc. land on Needs action
+  const legacy = { due: 'action', validation: 'action', active: 'all', closed: 'ended', caas: 'auto', ais: 'auto', automated: 'auto' };
+  const requested = sp.view || legacy[sp.tab];
+  const view = VIEWS.some((v) => v.key === requested) ? requested : 'all';
   const term = String(sp.q || '').trim().toLowerCase();
-  const tag = String(sp.tag || '').trim();
-  const counts = Object.fromEntries(TABS.map((t) => [t.key, 0]));
-  for (const o of all) {
-    counts.all++;
-    counts[tabOf(o)]++;
-  }
-  const rows = all.filter((o) => {
-    if (tab !== 'all' && tabOf(o) !== tab) return false;
-    if (tag && !(o.tags || []).includes(tag)) return false;
-    if (term) {
-      const hay = [o.common_name, ...(o.sans || []), String(o.gg_order_id || ''), o.product_name].join(' ').toLowerCase();
-      if (!hay.includes(term)) return false;
-    }
-    return true;
+  const counts = Object.fromEntries(VIEWS.map((v) => [v.key, p.items.filter((i) => inView(i, v.key)).length]));
+  const rows = p.items.filter((i) => {
+    if (!inView(i, view)) return false;
+    if (!term) return true;
+    return [i.domain, i.product, String(i.ref || ''), ...i.tags].join(' ').toLowerCase().includes(term);
   });
-  const allTags = [...new Set(all.flatMap((o) => o.tags || []))].sort();
-  const link = (patch) => {
-    const p = new URLSearchParams({ ...(tab !== 'all' ? { tab } : {}), ...(term ? { q: term } : {}), ...(tag ? { tag } : {}), ...patch });
-    for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);
-    const s = p.toString();
-    return '/certificates' + (s ? '?' + s : '');
+  const href = (v) => {
+    const params = new URLSearchParams({ ...(v !== 'all' ? { view: v } : {}), ...(term ? { q: term } : {}) }).toString();
+    return '/certificates' + (params ? '?' + params : '');
   };
 
   return (
     <>
-      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'Certificates' }]}>
-        <Link className="btn primary" href="/buy"><Icon name="plus" stroke="#fff" width={2.4} />Buy certificate</Link>
+      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'My SSL' }]}>
+        <Link className="btn primary" href="/order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
       </TopBar>
       <main className="page" style={{ gap: 16 }}>
         <div>
-          <h1 className="title">Certificates</h1>
-          <p className="sub">Every certificate in this workspace, its validation state and when it expires.</p>
+          <h1 className="title">My SSL</h1>
+          <p className="sub">All your certificates and automated subscriptions in one list. Anything that needs you is at the top.</p>
         </div>
         <FlashFromSearch searchParams={sp} />
 
-        <nav className="tabs" aria-label="Status">
-          {TABS.map((t) => (
-            <Link key={t.key} href={link({ tab: t.key === 'all' ? '' : t.key })} className={tab === t.key ? 'on' : ''}>
-              {t.label} <span style={{ color: t.tone || 'var(--muted)', fontWeight: t.tone ? 600 : 500 }}>{counts[t.key]}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <form className="between" style={{ justifyContent: 'flex-start', gap: 8 }} action="/certificates">
-          {tab !== 'all' ? <input type="hidden" name="tab" value={tab} /> : null}
-          {tag ? <input type="hidden" name="tag" value={tag} /> : null}
-          <label style={{ flex: '1 1 260px', display: 'flex', alignItems: 'center', gap: 8, height: 38, padding: '0 12px', border: '1px solid var(--input)', borderRadius: 8, background: '#fff' }}>
-            <Icon name="search" stroke="var(--muted)" />
-            <span className="sr">Filter certificates</span>
-            <input name="q" defaultValue={term} type="search" placeholder="Filter by domain, product or GoGetSSL order ID" style={{ border: 0, outline: 'none', flex: 1, font: 'inherit', background: 'transparent' }} />
-          </label>
-          {allTags.map((t) => (
-            <Link key={t} href={link({ tag: tag === t ? '' : t })} className={`btn sm ${tag === t ? '' : ''}`}
-              style={tag === t ? { background: 'var(--accent-soft)', borderColor: '#C4B8FF', color: 'var(--accent-ink)' } : { borderStyle: 'dashed' }}>
-              {tag === t ? `Tag: ${t} ×` : `#${t}`}
-            </Link>
-          ))}
-        </form>
+        <div className="between" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <nav className="pills" aria-label="Show">
+            {VIEWS.map((v) => (
+              <Link key={v.key} href={href(v.key)} className={view === v.key ? 'on' : ''} aria-current={view === v.key ? 'page' : undefined}>
+                {v.label}
+                {counts[v.key] ? <span className={`pill-count ${v.key === 'action' ? 'alert' : ''}`}>{counts[v.key]}</span> : null}
+              </Link>
+            ))}
+          </nav>
+          <form action="/certificates" style={{ flex: '0 1 320px' }}>
+            {view !== 'all' ? <input type="hidden" name="view" value={view} /> : null}
+            <label className="search">
+              <Icon name="search" stroke="var(--muted)" />
+              <span className="sr">Search</span>
+              <input name="q" defaultValue={term} type="search" placeholder="Search domain or product" />
+            </label>
+          </form>
+        </div>
 
         <div className="card">
           {rows.length === 0 ? (
-            <Empty title={all.length ? 'Nothing matches these filters' : 'No certificates yet'}>
-              {all.length ? <Link href="/certificates">Clear filters</Link> : <Link className="btn primary" href="/buy">Buy certificate</Link>}
-            </Empty>
+            p.items.length === 0 ? (
+              <Empty title="Nothing here yet">
+                <span>Order your first certificate or automated subscription. It shows up here straight away.</span>
+                <Link className="btn primary" href="/order">Order SSL</Link>
+              </Empty>
+            ) : view === 'action' ? (
+              <Empty title="You're all set">Nothing needs your attention right now.</Empty>
+            ) : (
+              <Empty title="Nothing matches">
+                <Link href="/certificates">Show everything</Link>
+              </Empty>
+            )
           ) : (
             <div className="table-wrap">
-              <table className="t" style={{ minWidth: 980 }}>
+              <table className="t list" style={{ minWidth: 900 }}>
                 <thead>
-                  <tr>
-                    <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Order ends</th><th>Validation</th><th>Tags</th><th>GoGetSSL order</th>
-                  </tr>
+                  <tr><th>Domain</th><th>Type</th><th>Status</th><th>Date</th><th>Next step</th></tr>
                 </thead>
                 <tbody>
-                  {rows.map((o) => {
-                    const d = daysLeft(o.valid_till);
-                    const urgent = d !== null && d <= 30;
-                    return (
-                      <tr key={o.id}>
-                        <td>
-                          <Link className="cn" href={`/certificates/${o.id}`}>{o.common_name || 'Pending'}</Link>
-                          {o.sans?.length ? <span className="small muted"> +{o.sans.length} SAN{o.sans.length > 1 ? 's' : ''}</span> : null}
-                        </td>
-                        <td>{o.product_name || `Product ${o.product_id || '?'}`}</td>
-                        <td><StatusBadge order={o} /></td>
-                        <td>
-                          {o.valid_till && o.status === 'issued' ? (
-                            <>
-                              <div style={{ fontWeight: 600, color: urgent ? 'var(--red-strong)' : undefined }}>{d < 0 ? `${-d} days ago` : `${d} days`}</div>
-                              <div className="small muted">{fmtDate(o.valid_till)}</div>
-                            </>
-                          ) : <span className="muted">Not issued</span>}
-                        </td>
-                        <td>
-                          {o.order_expires_at ? (
-                            <>
-                              <div style={{ fontWeight: 600, color: daysLeft(o.order_expires_at) <= 30 ? 'var(--red-strong)' : undefined }}>{daysLeft(o.order_expires_at)} days</div>
-                              <div className="small muted">{fmtDate(o.order_expires_at)}</div>
-                            </>
-                          ) : <span className="muted">—</span>}
-                        </td>
-                        <td>{primaryMethod(o)}</td>
-                        <td>{(o.tags || []).map((t) => <span key={t} className="tag" style={{ marginRight: 4 }}>{t}</span>)}</td>
-                        <td className="mono small muted">{o.gg_order_id || '—'}</td>
-                      </tr>
-                    );
-                  })}
+                  {rows.map((i) => <ItemRow key={i.type + i.id} item={i} showRef={ctx.isAdmin} />)}
                 </tbody>
               </table>
             </div>
           )}
         </div>
-        <div className="small muted">Showing {rows.length} of {all.length}</div>
       </main>
     </>
   );
