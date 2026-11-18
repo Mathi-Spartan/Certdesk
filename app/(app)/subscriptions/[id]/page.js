@@ -165,6 +165,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               <span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? 'Not finished' : sub.status === 'pending' ? 'Waiting for GoGetSSL' : 'Not started'}</span>
             </div>
 
+            <div className="small muted" style={{ marginBottom: -8 }}>How do you want to install?</div>
             <div className="method-switch" role="group" aria-label="How certificates reach your server">
               {[
                 ['autoinstall', 'AutoInstall agent', 'Installs and renews for you'],
@@ -195,8 +196,8 @@ export default async function SubscriptionDetail({ params, searchParams }) {
             ) : (
               <ol className="setup-steps">
                 <li><strong>Open AutoInstall SSL</strong> with the button below. You&apos;re signed in automatically.</li>
-                <li><strong>Choose ACME</strong> as your environment (or choose your server, then <em>Agent Options</em> → ACME).</li>
-                <li><strong>Copy your EAB key ID, HMAC key and server URL.</strong> Keep the HMAC key secret.</li>
+                <li><strong>Choose ACME</strong> as your environment. If it isn&apos;t listed, choose your server and click <em>Agent Options</em> to reveal ACME.</li>
+                <li><strong>Get your EAB key ID, HMAC key and server URL.</strong> They appear here as soon as GoGetSSL issues them. Keep the HMAC key secret.</li>
                 <li><strong>Register your ACME client</strong> with those keys, for example: <code className="inline-code">certbot --server &lt;server URL&gt; --eab-kid &lt;key ID&gt; --eab-hmac-key &lt;HMAC key&gt; -d {sub.primary_domain}</code>. It requests and renews certificates on its own.</li>
               </ol>
             )}
@@ -207,7 +208,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                 {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
               </div>
             ) : null}
-            <span className="small muted">You can switch between the agent and ACME at any time. Sign-in links come fresh each time this page loads; if one has expired, reload the page.</span>
+            <span className="small muted">The switch itself happens in AutoInstall SSL, and you can change it any time there. Sign-in links come fresh each time this page loads; if one has expired, reload the page.</span>
           </section>
         ) : null}
 

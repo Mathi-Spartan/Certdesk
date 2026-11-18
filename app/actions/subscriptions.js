@@ -130,8 +130,10 @@ export async function switchInstallMethod(formData) {
     if (process.env.GOGETSSL_AIS_METHOD_SWITCH === 'true') await v2.setAisInstallMethod(sub.item_id, method);
     await q('update console.subscriptions set install_method = $2, updated_at = now() where id = $1', [sub.id, method]);
     const label = method === 'acme' ? 'your own ACME client' : 'the AutoInstall agent';
-    await addSubEvent(sub.id, 'method', `Switched to ${label}`, ctx.user.id);
-    return method === 'acme' ? 'Switched to ACME. Follow the steps below to get your keys.' : 'Switched to the AutoInstall agent. Follow the steps below.';
+    await addSubEvent(sub.id, 'method', `Set up for ${label}`, ctx.user.id);
+    return method === 'acme'
+      ? 'Showing the ACME steps. Choose ACME in AutoInstall SSL to make the switch.'
+      : 'Showing the agent steps. Choose your server in AutoInstall SSL to make the switch.';
   });
 }
 
