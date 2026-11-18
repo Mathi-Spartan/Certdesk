@@ -300,3 +300,6 @@ details.fold[open] > summary { border-bottom: 1px solid var(--line-soft); }
 .method-switch .d { font-size: 12px; color: var(--muted); }
 .method-switch button.on .d { color: var(--accent-ink); font-weight: 500; }
 .inline-code { font-family: var(--font-geist-mono), monospace; font-size: 12px; background: #F4F4F5; padding: 2px 6px; border-radius: 6px; word-break: break-all; }
+.method-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.method-cards > div { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #FAFAFB; font-size: 13px; color: var(--ink-2); }
+.method-cards strong { color: var(--ink); font-size: 14px; }

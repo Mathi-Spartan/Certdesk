@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
 import { getSubForWorkspace, syncSubscription, daysTo, KIND_LABEL, autoInstallDone } from '@/lib/subscriptions';
 import {
-  refreshSubscription, addCaasDomains, removeCaasDomain, switchInstallMethod, setAutoRenewal, cancelSub, saveSubTags
+  refreshSubscription, addCaasDomains, removeCaasDomain, setAutoRenewal, cancelSub, saveSubTags
 } from '@/app/actions/subscriptions';
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
@@ -85,7 +85,6 @@ export default async function SubscriptionDetail({ params, searchParams }) {
   }[item.group];
   const needsAgent = !isCaas && !autoInstallDone(ai) && active;
   const needsAcmeSetup = (isCaas || method === 'acme') && sub.account?.kid && active;
-  const aisAcmeSetup = !isCaas && method === 'acme' && !autoInstallDone(ai) && active;
   const heroTitle = item.group === 'ended'
     ? 'This subscription is closed'
     : item.group === 'progress'
@@ -93,16 +92,14 @@ export default async function SubscriptionDetail({ params, searchParams }) {
       : sub.auto_renew === false && left !== null && left <= 30
         ? `Auto-renewal is off · ends in ${Math.max(0, left)} days`
         : needsAgent
-          ? aisAcmeSetup ? 'One step left: connect your ACME client' : 'One step left: install the agent'
+          ? 'One step left: finish setup in AutoInstall SSL'
           : 'Your sites are covered automatically';
   const heroText = item.group === 'progress'
     ? item.next.text
     : sub.auto_renew === false && left !== null && left <= 30
       ? 'Turn auto-renewal back on to keep certificates coming after the term ends.'
       : needsAgent
-        ? aisAcmeSetup
-          ? 'Get your ACME keys in AutoInstall SSL and register your ACME client. Steps are below.'
-          : 'Open AutoInstall SSL and run the install command on your server. Steps are below.'
+        ? 'Choose the agent or your own ACME client there. It takes a few minutes.'
         : needsAcmeSetup
           ? 'Point your ACME client at the credentials below. It requests and renews certificates on its own.'
           : item.next?.text;
@@ -155,60 +152,39 @@ export default async function SubscriptionDetail({ params, searchParams }) {
           <div><span className="small muted">{sub.next_renewal_at ? 'Renews automatically' : 'Term ends'}</span><strong style={{ color: sub.auto_renew === false && left !== null && left <= 30 ? 'var(--red-strong)' : undefined }}>{fmtDate(until)}</strong>{left !== null ? <span className="small muted">{left < 0 ? `${-left} days ago` : `in ${left} days`}</span> : null}</div>
           <div><span className="small muted">Auto-renewal</span><strong>{sub.auto_renew === null ? '—' : sub.auto_renew ? 'On' : 'Off'}</strong></div>
           <div><span className="small muted">Domains</span><strong>{(sub.domains || []).length}</strong><span className="small muted mono" style={{ overflowWrap: 'anywhere' }}>{(sub.domains || []).slice(0, 2).map((d) => d.name).join(', ')}</span></div>
-          <div><span className="small muted">Certificates issued by</span><strong>{method === 'acme' ? 'Your ACME client' : 'AutoInstall SSL'}</strong></div>
+          <div><span className="small muted">Certificates issued by</span><strong>{isCaas ? 'Your ACME client' : 'AutoInstall SSL'}</strong></div>
         </div>
 
         {!isCaas ? (
           <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="between" style={{ flexWrap: 'wrap', gap: 10 }}>
-              <h2>Installation</h2>
-              <span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? 'Not finished' : sub.status === 'pending' ? 'Waiting for GoGetSSL' : 'Not started'}</span>
+              <h2>Set up automation</h2>
+              <span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Done' : sub.status === 'pending' ? 'Waiting for GoGetSSL' : 'Not finished'}</span>
             </div>
-
-            <div className="small muted" style={{ marginBottom: -8 }}>How do you want to install?</div>
-            <div className="method-switch" role="group" aria-label="How certificates reach your server">
-              {[
-                ['autoinstall', 'AutoInstall agent', 'Installs and renews for you'],
-                ['acme', 'My ACME client', 'Certbot, acme.sh, Caddy…']
-              ].map(([m, t, d]) => (
-                <form key={m} action={switchInstallMethod}>
-                  {hidden}<input type="hidden" name="method" value={m} />
-                  <button type="submit" className={method === m ? 'on' : ''} aria-pressed={method === m} disabled={method === m || closed}>
-                    <span className="t">{t}</span>
-                    <span className="d">{method === m ? 'Selected' : d}</span>
-                  </button>
-                </form>
-              ))}
-            </div>
-
             {autoInstallDone(ai) ? (
               <div className="between" style={{ gap: 12, flexWrap: 'wrap', fontSize: 13 }}>
-                <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}><span className="ok-circle" style={{ width: 24, height: 24 }}><Icon name="tick" size={12} stroke="#fff" width={3} /></span>Installed and renewing automatically.</span>
+                <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}><span className="ok-circle" style={{ width: 24, height: 24 }}><Icon name="tick" size={12} stroke="#fff" width={3} /></span>Set up and renewing automatically.</span>
                 {ai.manage || ai.login ? <a className="btn sm" href={ai.manage || ai.login} target="_blank" rel="noreferrer">Manage in AutoInstall SSL<Icon name="ext" /></a> : null}
               </div>
-            ) : method === 'autoinstall' ? (
-              <ol className="setup-steps">
-                <li><strong>Open AutoInstall SSL</strong> with the button below. You&apos;re signed in automatically.</li>
-                <li><strong>Choose your server</strong> (Apache, NGINX or IIS) and copy the install command it shows.</li>
-                <li><strong>Run the command</strong> on your server with root or admin access. The agent installs the certificate and renews it from then on.</li>
-                <li><strong>Come back here.</strong> The status changes to Installed once the first certificate is in place.</li>
-              </ol>
             ) : (
-              <ol className="setup-steps">
-                <li><strong>Open AutoInstall SSL</strong> with the button below. You&apos;re signed in automatically.</li>
-                <li><strong>Choose ACME</strong> as your environment. If it isn&apos;t listed, choose your server and click <em>Agent Options</em> to reveal ACME.</li>
-                <li><strong>Get your EAB key ID, HMAC key and server URL.</strong> They appear here as soon as GoGetSSL issues them. Keep the HMAC key secret.</li>
-                <li><strong>Register your ACME client</strong> with those keys, for example: <code className="inline-code">certbot --server &lt;server URL&gt; --eab-kid &lt;key ID&gt; --eab-hmac-key &lt;HMAC key&gt; -d {sub.primary_domain}</code>. It requests and renews certificates on its own.</li>
-              </ol>
+              <>
+                <p style={{ margin: 0, color: 'var(--ink-2)' }}>Everything happens in AutoInstall SSL. Open it, pick your environment, and choose one of these. You can change it there any time.</p>
+                <div className="method-cards">
+                  <div>
+                    <strong>AutoInstall agent</strong>
+                    <span>Pick your server (Apache, NGINX, IIS) and run the command it gives you. The agent installs and renews every certificate.</span>
+                  </div>
+                  <div>
+                    <strong>Your ACME client</strong>
+                    <span>Pick <em>ACME</em> as the environment, or click <em>Agent Options</em> → ACME. Use the keys with Certbot, acme.sh or your control panel.</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>{sub.status === 'pending' ? 'Available once GoGetSSL finishes setting up' : 'Link not ready yet'}</button>}
+                </div>
+                <span className="small muted">This page updates by itself once setup is finished.</span>
+              </>
             )}
-
-            {!autoInstallDone(ai) ? (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>{sub.status === 'pending' ? 'Available once GoGetSSL finishes setting up' : 'Sign-in link not ready yet'}</button>}
-                {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
-              </div>
-            ) : null}
-            <span className="small muted">The switch itself happens in AutoInstall SSL, and you can change it any time there. Sign-in links come fresh each time this page loads; if one has expired, reload the page.</span>
           </section>
         ) : null}
 

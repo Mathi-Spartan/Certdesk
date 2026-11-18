@@ -58,7 +58,7 @@ export async function orderSubscription(prev, formData) {
   const primaryEmail = String(formData.get('primary_email') || '').trim();
   const technicalEmail = String(formData.get('technical_email') || '').trim() || primaryEmail;
   if (kind === 'ais' && (!EMAIL_RE.test(primaryEmail) || !EMAIL_RE.test(technicalEmail))) return { error: 'Enter valid contact emails' };
-  const installMethod = kind === 'ais' && formData.get('install_method') === 'acme' ? 'acme' : 'autoinstall';
+  const installMethod = 'autoinstall';
 
   let created;
   try {

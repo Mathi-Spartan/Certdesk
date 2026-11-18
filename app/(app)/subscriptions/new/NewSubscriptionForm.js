@@ -19,7 +19,6 @@ export default function NewSubscriptionForm({ products, defaultEmail }) {
   const [kind, setKind] = useState('caas');
   const list = products.filter((p) => p.kind === kind);
   const [productId, setProductId] = useState(list[0]?.id);
-  const [method, setMethod] = useState('autoinstall');
   const product = products.find((p) => p.id === productId) || list[0];
   const wildcard = /wildcard/i.test(product?.name || '');
 
@@ -31,7 +30,6 @@ export default function NewSubscriptionForm({ products, defaultEmail }) {
   return (
     <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <input type="hidden" name="product_id" value={product?.id || ''} />
-      <input type="hidden" name="install_method" value={kind === 'ais' ? method : 'acme'} />
       {state?.error ? <div role="alert" className="alert red"><Icon name="alert" />{state.error}</div> : null}
 
       <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -43,7 +41,7 @@ export default function NewSubscriptionForm({ products, defaultEmail }) {
           </button>
           <button type="button" className={`choice ${kind === 'ais' ? 'on' : ''}`} onClick={() => pickKind('ais')} aria-pressed={kind === 'ais'}>
             <span className="t">Plan + Automate</span>
-            <span className="d">One domain. Use the AutoInstall agent or your own ACME client, and switch any time.</span>
+            <span className="d">One domain. After ordering, choose the AutoInstall agent or your own ACME client in AutoInstall SSL, and switch any time.</span>
           </button>
         </div>
       </section>
@@ -79,24 +77,7 @@ export default function NewSubscriptionForm({ products, defaultEmail }) {
 
       {kind === 'ais' ? (
         <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h2>4 · How should certificates reach your server?</h2>
-          <div className="choices" role="radiogroup" aria-label="Install method">
-            <button type="button" role="radio" aria-checked={method === 'autoinstall'} className={`choice ${method === 'autoinstall' ? 'on' : ''}`} onClick={() => setMethod('autoinstall')}>
-              <span className="t">AutoInstall agent</span>
-              <span className="d">Run one command on your server (Apache, NGINX, IIS). The agent installs and renews every certificate.</span>
-            </button>
-            <button type="button" role="radio" aria-checked={method === 'acme'} className={`choice ${method === 'acme' ? 'on' : ''}`} onClick={() => setMethod('acme')}>
-              <span className="t">My ACME client</span>
-              <span className="d">Get EAB keys for Certbot, acme.sh, Caddy, cert-manager or your control panel.</span>
-            </button>
-          </div>
-          <span className="small muted">Not sure? Pick the agent. You can switch any time from the subscription page.</span>
-        </section>
-      ) : null}
-
-      {kind === 'ais' ? (
-        <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h2>5 · Contacts</h2>
+          <h2>4 · Contacts</h2>
           <div className="grid-form">
             <div className="field">
               <label htmlFor="primary_email">Primary contact email</label>
