@@ -2,6 +2,7 @@ import { requireUser } from '@/lib/auth';
 import { one } from '@/lib/db';
 import Link from 'next/link';
 import SideNav from '@/components/SideNav';
+import { supportEmail, helpHref } from '@/lib/support';
 import Icon from '@/components/Icon';
 import { logout } from '@/app/actions/auth';
 import { exitWorkspace } from '@/app/actions/admin';
@@ -57,6 +58,7 @@ export default async function AppLayout({ children }) {
   }
 
   const wsName = ctx.workspace ? ctx.workspace.name : 'Partner account';
+  const help = ctx.workspaceId && !ctx.isAdmin ? helpHref(await supportEmail(), { subject: `Help with CertDesk · ${wsName}` }) : null;
   return (
     <div className="shell">
       <aside className="side">
@@ -76,7 +78,8 @@ export default async function AppLayout({ children }) {
           <Link href="/order" className="side-order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
         ) : null}
         <SideNav groups={groups} />
-        <div className="side-foot">
+        {help ? <a className="help-link" href={help} style={{ marginTop: 'auto' }}><Icon name="info" />Need help? Message us</a> : null}
+        <div className="side-foot" style={help ? { marginTop: 0 } : undefined}>
           <span className="avatar">{initials(ctx.user.name)}</span>
           <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{ctx.user.name}</span>

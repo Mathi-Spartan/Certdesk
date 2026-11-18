@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
-import { getSubForWorkspace, syncSubscription, subDisplay, daysTo, KIND_LABEL } from '@/lib/subscriptions';
+import { getSubForWorkspace, syncSubscription, daysTo, KIND_LABEL } from '@/lib/subscriptions';
 import {
   refreshSubscription, addCaasDomains, removeCaasDomain, switchInstallMethod, setAutoRenewal, cancelSub, saveSubTags
 } from '@/app/actions/subscriptions';
@@ -13,12 +13,10 @@ import SecretValue from '@/components/SecretValue';
 import SubmitButton from '@/components/SubmitButton';
 import EndpointPanel from '@/components/EndpointPanel';
 import { fmtDate, fmtDateTime, FlashFromSearch, timeAgo } from '@/components/ui';
+import { itemFromSub } from '@/lib/portfolio';
+import { supportEmail, helpHref } from '@/lib/support';
 
 export const metadata = { title: 'Subscription · CertDesk' };
-
-function Node({ kind }) {
-  return <span className={`node ${kind}`}>{kind === 'done' ? <Icon name="tick" size={12} stroke="#fff" width={3.5} /> : null}</span>;
-}
 
 function AcmeCard({ sub }) {
   const a = sub.account || {};
@@ -77,7 +75,6 @@ export default async function SubscriptionDetail({ params, searchParams }) {
       where e.subscription_id = $1 order by e.created_at desc limit 30`,
     [sub.id]
   );
-  const st = subDisplay(sub);
   const isCaas = sub.kind === 'caas';
   const method = isCaas ? 'acme' : sub.install_method || 'autoinstall';
   const closed = ['cancelled', 'expired'].includes(sub.status);
@@ -86,13 +83,44 @@ export default async function SubscriptionDetail({ params, searchParams }) {
   const left = daysTo(until);
   const ai = sub.autoinstall || {};
   const hidden = <input type="hidden" name="sub_id" value={sub.id} />;
+  const item = itemFromSub(sub);
+  const hero = {
+    action: { icon: 'alert', bg: '#FEF2F2', fg: 'var(--red-strong)', border: '#FECACA' },
+    progress: { icon: 'clock', bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
+    ok: { icon: 'tick', bg: '#F0FDF4', fg: '#15803D', border: '#BBF7D0' },
+    ended: { icon: 'info', bg: '#F4F4F5', fg: 'var(--ink-2)', border: 'var(--line)' }
+  }[item.group];
+  const needsAgent = !isCaas && method === 'autoinstall' && !ai.status && active;
+  const needsAcmeSetup = (isCaas || method === 'acme') && sub.account?.kid && active;
+  const heroTitle = item.group === 'ended'
+    ? 'This subscription is closed'
+    : item.group === 'progress'
+      ? sub.cancel_requested_at ? 'Cancellation in progress' : 'Setting up your subscription'
+      : sub.auto_renew === false && left !== null && left <= 30
+        ? `Auto-renewal is off · ends in ${Math.max(0, left)} days`
+        : needsAgent
+          ? 'One step left: install the AutoInstall agent'
+          : 'Your sites are covered automatically';
+  const heroText = item.group === 'progress'
+    ? item.next.text
+    : sub.auto_renew === false && left !== null && left <= 30
+      ? 'Turn auto-renewal back on to keep certificates coming after the term ends.'
+      : needsAgent
+        ? 'Open AutoInstall SSL, add your server, and the agent installs and renews every certificate.'
+        : needsAcmeSetup
+          ? 'Point your ACME client at the credentials below. It requests and renews certificates on its own.'
+          : item.next?.text;
+  const heroCta = needsAgent && ai.login
+    ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a>
+    : sub.auto_renew === false && active
+      ? <form action={setAutoRenewal}>{hidden}<input type="hidden" name="on" value="true" /><SubmitButton className="btn primary" pendingText="Saving…">Turn auto-renewal on</SubmitButton></form>
+      : null;
+  const help = helpHref(await supportEmail(), {
+    subject: `Help with ${sub.primary_domain || 'my subscription'} (${KIND_LABEL[sub.kind]})`,
+    body: `Domain: ${sub.primary_domain || ''}\nProduct: ${sub.product_name || ''}\nReference: ${sub.item_id || ''}\n\nMy question:\n`
+  });
 
-  const steps = [
-    { label: 'Ordered', sub: fmtDate(sub.created_at), kind: 'done' },
-    { label: 'Active', sub: sub.begin_at ? fmtDate(sub.begin_at) : active ? 'Yes' : 'Setting up', kind: active || sub.begin_at ? 'done' : 'now' },
-    { label: isCaas ? 'Certificates via ACME' : method === 'acme' ? 'Certificates via ACME' : 'AutoInstall SSL', sub: isCaas || method === 'acme' ? (sub.account?.kid ? 'EAB ready' : 'Waiting') : ai.status || 'Waiting', kind: (isCaas || method === 'acme') ? (sub.account?.kid ? 'done' : 'todo') : ai.status ? 'done' : 'todo' },
-    { label: sub.auto_renew === false ? 'Term ends' : 'Next renewal', sub: fmtDate(until), kind: sub.auto_renew === false && left !== null && left <= 30 ? 'warn' : 'todo' }
-  ];
+
 
   return (
     <>
@@ -106,8 +134,8 @@ export default async function SubscriptionDetail({ params, searchParams }) {
           <div>
             <h1 className="mono" style={{ margin: 0, fontSize: 24, fontWeight: 500 }}>{sub.primary_domain || 'Pending'}</h1>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6, alignItems: 'center', fontSize: 13 }} className="muted">
-              <span className={`badge tone-${st.tone}`}>{st.label}</span>
-              <span className="badge tone-violet">{KIND_LABEL[sub.kind]}</span>
+              <span className={`badge tone-${item.status.tone}`}>{item.status.label}</span>
+              <span className="type-chip auto"><Icon name="loop" size={12} />Automated · {KIND_LABEL[sub.kind]}</span>
               <span>{sub.product_name}</span>
               {sub.gg_status && ctx.isAdmin ? <span className="mono small">GoGetSSL: {sub.gg_status}</span> : null}
               {(sub.tags || []).map((t) => <span key={t} className="tag">{t}</span>)}
@@ -116,25 +144,25 @@ export default async function SubscriptionDetail({ params, searchParams }) {
         </div>
 
         <FlashFromSearch searchParams={sp} />
-        {syncError ? <div className="alert amber"><Icon name="info" />Could not refresh from GoGetSSL just now: {syncError}</div> : null}
-        {sub.status === 'pending' ? <div className="alert violet"><Icon name="clock" />GoGetSSL is setting this subscription up. {isCaas ? 'The ACME credentials appear here when it is ready.' : 'The AutoInstall SSL links appear here when it is ready.'}</div> : null}
-        {sub.status === 'payment_needed' ? <div className="alert amber"><Icon name="info" />GoGetSSL is waiting for payment on this order.</div> : null}
-        {sub.cancel_requested_at && !closed ? <div className="alert amber"><Icon name="info" />Cancellation sent {fmtDateTime(sub.cancel_requested_at)}. GoGetSSL confirms it shortly.</div> : null}
-        {active && sub.auto_renew === false && left !== null ? (
-          <div className="alert red"><Icon name="alert" stroke="var(--red-strong)" /><span><strong>Auto-renewal is off.</strong> This subscription ends {left < 0 ? `${-left} days ago` : `in ${left} days`} ({fmtDate(until)}) and its certificates stop renewing.</span></div>
-        ) : null}
+        {syncError ? <div className="alert amber"><Icon name="info" />Could not refresh just now. Showing the last known state.</div> : null}
 
-        <section aria-label="Subscription lifecycle" className="card pad">
-          <ol className="stepper" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-            {steps.map((s, i) => (
-              <li key={s.label}>
-                <div className="ln"><Node kind={s.kind} />{i < steps.length - 1 ? <span className={`line ${s.kind === 'done' ? 'done' : ''}`} /> : null}</div>
-                <div style={{ fontWeight: 600, fontSize: 13, color: s.kind === 'warn' ? 'var(--red-strong)' : s.kind === 'todo' ? 'var(--muted)' : undefined }}>{s.label}</div>
-                <div className="small muted">{s.sub}</div>
-              </li>
-            ))}
-          </ol>
+        <section className="next-card" style={{ background: hero.bg, borderColor: hero.border }} aria-label="Next step">
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <span className="next-icon" style={{ borderColor: hero.border }}><Icon name={hero.icon} size={20} stroke={hero.fg} width={2.4} /></span>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+              <h2 style={{ fontSize: 18, margin: 0 }}>{heroTitle}</h2>
+              <p style={{ margin: '4px 0 0', color: 'var(--ink-2)' }}>{heroText}</p>
+            </div>
+            {heroCta}
+          </div>
         </section>
+
+        <div className="facts">
+          <div><span className="small muted">{sub.next_renewal_at ? 'Renews automatically' : 'Term ends'}</span><strong style={{ color: sub.auto_renew === false && left !== null && left <= 30 ? 'var(--red-strong)' : undefined }}>{fmtDate(until)}</strong>{left !== null ? <span className="small muted">{left < 0 ? `${-left} days ago` : `in ${left} days`}</span> : null}</div>
+          <div><span className="small muted">Auto-renewal</span><strong>{sub.auto_renew === null ? '—' : sub.auto_renew ? 'On' : 'Off'}</strong></div>
+          <div><span className="small muted">Domains</span><strong>{(sub.domains || []).length}</strong><span className="small muted mono" style={{ overflowWrap: 'anywhere' }}>{(sub.domains || []).slice(0, 2).map((d) => d.name).join(', ')}</span></div>
+          <div><span className="small muted">Certificates issued by</span><strong>{method === 'acme' ? 'Your ACME client' : 'AutoInstall SSL'}</strong></div>
+        </div>
 
         <div className="row top">
           <div style={{ flex: '2 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -299,6 +327,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                 </form>
               </details>
             ) : null}
+            {help ? <a className="help-link" href={help}><Icon name="info" />Stuck? Ask us about this subscription</a> : null}
             <Link className="small" href="/certificates">Back to My SSL</Link>
           </div>
         </div>
