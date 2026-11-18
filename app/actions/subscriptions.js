@@ -124,6 +124,7 @@ export async function removeCaasDomain(formData) {
 export async function switchInstallMethod(formData) {
   await withSub(formData, async (sub, ctx) => {
     if (sub.kind !== 'ais') throw new Error('Install method applies to Plan + Automate');
+    if (process.env.GOGETSSL_AIS_METHOD_SWITCH !== 'true') throw new Error('Switching the install method is not available from GoGetSSL yet');
     const method = formData.get('method') === 'acme' ? 'acme' : 'autoinstall';
     await v2.setAisInstallMethod(sub.item_id, method);
     const label = method === 'acme' ? 'your own ACME client' : 'AutoInstall SSL';

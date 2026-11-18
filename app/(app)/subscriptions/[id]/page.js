@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
-import { getSubForWorkspace, syncSubscription, daysTo, KIND_LABEL } from '@/lib/subscriptions';
+import { getSubForWorkspace, syncSubscription, daysTo, KIND_LABEL, autoInstallDone } from '@/lib/subscriptions';
 import {
   refreshSubscription, addCaasDomains, removeCaasDomain, switchInstallMethod, setAutoRenewal, cancelSub, saveSubTags
 } from '@/app/actions/subscriptions';
@@ -17,6 +17,9 @@ import { itemFromSub } from '@/lib/portfolio';
 import { supportEmail, helpHref } from '@/lib/support';
 
 export const metadata = { title: 'Subscription · CertDesk' };
+
+// GoGetSSL has not opened PATCH /certificates/ais/{id} yet (answers Not Found). Set GOGETSSL_AIS_METHOD_SWITCH=true once it does.
+const AIS_METHOD_SWITCH = process.env.GOGETSSL_AIS_METHOD_SWITCH === 'true';
 
 function AcmeCard({ sub }) {
   const a = sub.account || {};
@@ -90,7 +93,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
     ok: { icon: 'tick', bg: '#F0FDF4', fg: '#15803D', border: '#BBF7D0' },
     ended: { icon: 'info', bg: '#F4F4F5', fg: 'var(--ink-2)', border: 'var(--line)' }
   }[item.group];
-  const needsAgent = !isCaas && method === 'autoinstall' && !ai.status && active;
+  const needsAgent = !isCaas && method === 'autoinstall' && !autoInstallDone(ai) && active;
   const needsAcmeSetup = (isCaas || method === 'acme') && sub.account?.kid && active;
   const heroTitle = item.group === 'ended'
     ? 'This subscription is closed'
@@ -170,27 +173,34 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="between">
                   <h2>Installation</h2>
-                  {ctx.isAdmin ? <span className="small muted mono">PATCH /certificates/ais/{sub.item_id}</span> : null}
+                  {ctx.isAdmin && AIS_METHOD_SWITCH ? <span className="small muted mono">PATCH /certificates/ais/{sub.item_id}</span> : null}
                 </div>
-                <div className="choices">
-                  <form action={switchInstallMethod} style={{ display: 'contents' }}>
-                    {hidden}<input type="hidden" name="method" value="autoinstall" />
-                    <button className={`choice ${method === 'autoinstall' ? 'on' : ''}`} type="submit" disabled={method === 'autoinstall' || closed} aria-pressed={method === 'autoinstall'}>
-                      <span className="t">AutoInstall SSL</span>
-                      <span className="d">An agent on your server issues, installs and renews each certificate.</span>
-                    </button>
-                  </form>
-                  <form action={switchInstallMethod} style={{ display: 'contents' }}>
-                    {hidden}<input type="hidden" name="method" value="acme" />
-                    <button className={`choice ${method === 'acme' ? 'on' : ''}`} type="submit" disabled={method === 'acme' || closed} aria-pressed={method === 'acme'}>
-                      <span className="t">Your ACME client</span>
-                      <span className="d">Use Certbot, acme.sh or similar with EAB credentials.</span>
-                    </button>
-                  </form>
-                </div>
+                {AIS_METHOD_SWITCH ? (
+                  <div className="choices">
+                    <form action={switchInstallMethod} style={{ display: 'contents' }}>
+                      {hidden}<input type="hidden" name="method" value="autoinstall" />
+                      <button className={`choice ${method === 'autoinstall' ? 'on' : ''}`} type="submit" disabled={method === 'autoinstall' || closed} aria-pressed={method === 'autoinstall'}>
+                        <span className="t">AutoInstall SSL</span>
+                        <span className="d">An agent on your server issues, installs and renews each certificate.</span>
+                      </button>
+                    </form>
+                    <form action={switchInstallMethod} style={{ display: 'contents' }}>
+                      {hidden}<input type="hidden" name="method" value="acme" />
+                      <button className={`choice ${method === 'acme' ? 'on' : ''}`} type="submit" disabled={method === 'acme' || closed} aria-pressed={method === 'acme'}>
+                        <span className="t">Your ACME client</span>
+                        <span className="d">Use Certbot, acme.sh or similar with EAB credentials.</span>
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <div className="between" style={{ padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 10, fontSize: 13 }}>
+                    <span><span className="muted">Installed by</span> <strong style={{ marginLeft: 6 }}>{method === 'acme' ? 'Your ACME client' : 'AutoInstall SSL agent'}</strong></span>
+                    <span className="small muted">Fixed for this plan</span>
+                  </div>
+                )}
                 {method === 'autoinstall' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                    <div className="between"><span className="muted">AutoInstall status</span><span className="badge tone-gray">{ai.status || 'Not reported yet'}</span></div>
+                    <div className="between"><span className="muted">AutoInstall status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>Sign-in link not ready</button>}
                       {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage installation<Icon name="ext" /></a> : null}
