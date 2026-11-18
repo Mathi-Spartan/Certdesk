@@ -58,24 +58,25 @@ export async function orderSubscription(prev, formData) {
   const primaryEmail = String(formData.get('primary_email') || '').trim();
   const technicalEmail = String(formData.get('technical_email') || '').trim() || primaryEmail;
   if (kind === 'ais' && (!EMAIL_RE.test(primaryEmail) || !EMAIL_RE.test(technicalEmail))) return { error: 'Enter valid contact emails' };
+  const installMethod = kind === 'ais' && formData.get('install_method') === 'acme' ? 'acme' : 'autoinstall';
 
   let created;
   try {
     created = kind === 'caas'
       ? await v2.createCaas({ productId, domains })
-      : await v2.createAis({ productId, domain: domains[0], primaryEmail, technicalEmail });
+      : await v2.createAis({ productId, domain: domains[0], primaryEmail, technicalEmail, installMethod });
   } catch (e) {
     return { error: 'GoGetSSL: ' + e.message };
   }
   const ids = v2.createdIds(created);
   const row = await one(
-    `insert into console.subscriptions (workspace_id, kind, product_id, product_name, gg_order_id, item_id, status, primary_domain, domains, contacts, raw, created_by)
-     values ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9, $10, $11) returning *`,
+    `insert into console.subscriptions (workspace_id, kind, product_id, product_name, gg_order_id, item_id, status, primary_domain, domains, contacts, raw, created_by, install_method)
+     values ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9, $10, $11, $12) returning *`,
     [
       ctx.workspaceId, kind, productId, product.name, ids.orderId, ids.itemId, domains[0],
       JSON.stringify(domains.map((name) => ({ id: null, name }))),
       kind === 'ais' ? JSON.stringify({ primary: primaryEmail, technical: technicalEmail }) : null,
-      JSON.stringify(created), ctx.user.id
+      JSON.stringify(created), ctx.user.id, kind === 'ais' ? installMethod : 'acme'
     ]
   );
   await addSubEvent(row.id, 'ordered', `Ordered ${product.name} for ${domains.join(', ')}${ids.orderId ? ` · GoGetSSL order ${ids.orderId}` : ''}`, ctx.user.id, `POST /certificates/${kind}`);
