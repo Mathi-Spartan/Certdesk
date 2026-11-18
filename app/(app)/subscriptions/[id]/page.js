@@ -79,7 +79,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
     [sub.id]
   );
   const isCaas = sub.kind === 'caas';
-  const method = isCaas ? 'acme' : sub.install_method || 'autoinstall';
+  const method = isCaas ? 'acme' : String(sub.install_method || '').includes('acme') ? 'acme' : 'autoinstall';
   const closed = ['cancelled', 'expired'].includes(sub.status);
   const active = sub.status === 'active';
   const until = sub.next_renewal_at || sub.end_at;
@@ -102,14 +102,14 @@ export default async function SubscriptionDetail({ params, searchParams }) {
       : sub.auto_renew === false && left !== null && left <= 30
         ? `Auto-renewal is off · ends in ${Math.max(0, left)} days`
         : needsAgent
-          ? 'One step left: install the AutoInstall agent'
+          ? 'One step left: set up installation'
           : 'Your sites are covered automatically';
   const heroText = item.group === 'progress'
     ? item.next.text
     : sub.auto_renew === false && left !== null && left <= 30
       ? 'Turn auto-renewal back on to keep certificates coming after the term ends.'
       : needsAgent
-        ? 'Open AutoInstall SSL, add your server, and the agent installs and renews every certificate.'
+        ? 'Open AutoInstall SSL and choose the agent (one command on your server) or ACME (EAB keys for Certbot or acme.sh). Steps are below.'
         : needsAcmeSetup
           ? 'Point your ACME client at the credentials below. It requests and renews certificates on its own.'
           : item.next?.text;
@@ -199,19 +199,29 @@ export default async function SubscriptionDetail({ params, searchParams }) {
                   </div>
                 )}
                 {method === 'autoinstall' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                    <div className="between"><span className="muted">AutoInstall status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 13 }}>
+                    <div className="between"><span className="muted">Setup status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
+                    <ol className="setup-steps">
+                      <li><strong>Open AutoInstall SSL.</strong> You&apos;re signed in automatically with the button below.</li>
+                      <li>
+                        <strong>Pick how certificates reach your server:</strong>
+                        <ul>
+                          <li><strong>Agent</strong>: copy the one-line install command and run it on your server. The agent installs and renews every certificate.</li>
+                          <li><strong>ACME</strong>: get your EAB key ID and HMAC key there, then use them with Certbot, acme.sh or your control panel.</li>
+                        </ul>
+                      </li>
+                      <li><strong>Come back here.</strong> The status above changes to Installed once the first certificate is in place.</li>
+                    </ol>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>Sign-in link not ready</button>}
-                      {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage installation<Icon name="ext" /></a> : null}
+                      {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>Sign-in link not ready yet</button>}
+                      {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
                     </div>
-                    <span className="small muted">These are single sign-on links from GoGetSSL. They expire, so CertDesk fetches fresh ones each time this page refreshes.</span>
-                  </div>
-                ) : null}
+                    <span className="small muted">These sign-in links come fresh from GoGetSSL each time this page loads. If one has expired, reload the page.</span>
+                  </div>                ) : null}
               </section>
             ) : null}
 
-            {isCaas || method === 'acme' ? <AcmeCard sub={sub} /> : null}
+            {isCaas || method === 'acme' || sub.account?.kid ? <AcmeCard sub={sub} /> : null}
 
             <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="between"><h2>Domains</h2><span className="small muted">{(sub.domains || []).length} covered</span></div>
