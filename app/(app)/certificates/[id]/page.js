@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
-import { q } from '@/lib/db';
 import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle } from '@/lib/orders';
 import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
@@ -10,7 +9,7 @@ import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
 import DcvPanel from '@/components/DcvPanel';
 import SubmitButton from '@/components/SubmitButton';
-import { fmtDate, fmtDateTime, FlashFromSearch, timeAgo } from '@/components/ui';
+import { fmtDate, FlashFromSearch, timeAgo } from '@/components/ui';
 import { itemFromOrder } from '@/lib/portfolio';
 import { supportEmail, helpHref } from '@/lib/support';
 
@@ -36,11 +35,6 @@ export default async function CertificateDetail({ params, searchParams }) {
       syncError = e.message;
     }
   }
-  const events = await q(
-    `select e.*, u.name as actor from console.order_events e left join console.users u on u.id = e.actor_user_id
-      where e.order_id = $1 order by e.created_at desc limit 20`,
-    [order.id]
-  );
   const locks = order.gg_order_id
     ? { revalidate: await lockRemaining(revalidatePath(order.gg_order_id)), resend: await lockRemaining(resendPath(order.gg_order_id)) }
     : {};
@@ -75,7 +69,7 @@ export default async function CertificateDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/certificates' }, { label: order.common_name || 'Pending order' }]}>
+      <TopBar crumbs={[{ label: 'My SSL', href: '/' }, { label: order.common_name || 'Pending order' }]}>
         <span className="small muted">Order <span className="mono">{order.gg_order_id || '—'}</span></span>
       </TopBar>
       <main className="page" style={{ maxWidth: 1100 }}>
@@ -158,19 +152,6 @@ export default async function CertificateDetail({ params, searchParams }) {
               <div><dt className="muted">All domains</dt><dd style={{ margin: 0, overflowWrap: 'anywhere' }} className="mono">{(facts?.san?.length ? facts.san : [order.common_name, ...(order.sans || [])]).filter(Boolean).join(', ')}</dd></div>
               <div><dt className="muted">Last updated</dt><dd style={{ margin: 0 }}>{timeAgo(order.last_synced_at)}</dd></div>
             </dl>
-          </div>
-        </details>
-
-        <details className="card fold">
-          <summary><Icon name="clock" />History</summary>
-          <div className="fold-body">
-            {events.length === 0 ? <span className="muted">No events yet.</span> : (
-              <ol className="feed">
-                {events.map((e) => (
-                  <li key={e.id}><span className="when">{fmtDateTime(e.created_at)}</span><span>{e.message}{e.actor ? <span className="muted"> · {e.actor}</span> : null}</span></li>
-                ))}
-              </ol>
-            )}
           </div>
         </details>
 

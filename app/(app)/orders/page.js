@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import TopBar from '@/components/TopBar';
-import { TypeChip } from '@/components/ItemRow';
+import TypeChip from '@/components/TypeChip';
 import { itemFromOrder, itemFromSub } from '@/lib/portfolio';
 import { Empty, fmtDate } from '@/components/ui';
 

@@ -1,7 +1,5 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
-import { q } from '@/lib/db';
 import { getSubForWorkspace, syncSubscription, daysTo, KIND_LABEL, autoInstallDone } from '@/lib/subscriptions';
 import {
   refreshSubscription, addCaasDomains, removeCaasDomain, switchInstallMethod, setAutoRenewal, cancelSub, saveSubTags
@@ -11,8 +9,7 @@ import Icon from '@/components/Icon';
 import CopyButton from '@/components/CopyButton';
 import SecretValue from '@/components/SecretValue';
 import SubmitButton from '@/components/SubmitButton';
-import EndpointPanel from '@/components/EndpointPanel';
-import { fmtDate, fmtDateTime, FlashFromSearch, timeAgo } from '@/components/ui';
+import { fmtDate, FlashFromSearch } from '@/components/ui';
 import { itemFromSub } from '@/lib/portfolio';
 import { supportEmail, helpHref } from '@/lib/support';
 
@@ -73,11 +70,6 @@ export default async function SubscriptionDetail({ params, searchParams }) {
       syncError = e.message;
     }
   }
-  const events = await q(
-    `select e.*, u.name as actor from console.subscription_events e left join console.users u on u.id = e.actor_user_id
-      where e.subscription_id = $1 order by e.created_at desc limit 30`,
-    [sub.id]
-  );
   const isCaas = sub.kind === 'caas';
   const method = isCaas ? 'acme' : String(sub.install_method || '').includes('acme') ? 'acme' : 'autoinstall';
   const closed = ['cancelled', 'expired'].includes(sub.status);
@@ -127,11 +119,10 @@ export default async function SubscriptionDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/certificates' }, { label: sub.primary_domain || 'Pending' }]}>
-        {ctx.isAdmin ? <span className="small muted">Item <span className="mono">{sub.item_id || '—'}</span> · Order <span className="mono">{sub.gg_order_id || '—'}</span></span> : null}
+      <TopBar crumbs={[{ label: 'My SSL', href: '/' }, { label: sub.primary_domain || 'Pending' }]}>
         <form action={refreshSubscription}>{hidden}<SubmitButton className="btn sm" pendingText="Refreshing…">Refresh</SubmitButton></form>
       </TopBar>
-      <main className="page">
+      <main className="page" style={{ maxWidth: 1100 }}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           <span className="ws-badge violet" style={{ width: 48, height: 48, borderRadius: 12 }}><Icon name={isCaas ? 'loop' : 'bolt'} size={22} stroke="#fff" /></span>
           <div>
@@ -140,7 +131,6 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               <span className={`badge tone-${item.status.tone}`}>{item.status.label}</span>
               <span className="type-chip auto"><Icon name="loop" size={12} />Automated · {KIND_LABEL[sub.kind]}</span>
               <span>{sub.product_name}</span>
-              {sub.gg_status && ctx.isAdmin ? <span className="mono small">GoGetSSL: {sub.gg_status}</span> : null}
               {(sub.tags || []).map((t) => <span key={t} className="tag">{t}</span>)}
             </div>
           </div>
@@ -167,190 +157,126 @@ export default async function SubscriptionDetail({ params, searchParams }) {
           <div><span className="small muted">Certificates issued by</span><strong>{method === 'acme' ? 'Your ACME client' : 'AutoInstall SSL'}</strong></div>
         </div>
 
-        <div className="row top">
-          <div style={{ flex: '2 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {!isCaas ? (
-              <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="between">
-                  <h2>Installation</h2>
-                  {ctx.isAdmin && AIS_METHOD_SWITCH ? <span className="small muted mono">PATCH /certificates/ais/{sub.item_id}</span> : null}
-                </div>
-                {AIS_METHOD_SWITCH ? (
-                  <div className="choices">
-                    <form action={switchInstallMethod} style={{ display: 'contents' }}>
-                      {hidden}<input type="hidden" name="method" value="autoinstall" />
-                      <button className={`choice ${method === 'autoinstall' ? 'on' : ''}`} type="submit" disabled={method === 'autoinstall' || closed} aria-pressed={method === 'autoinstall'}>
-                        <span className="t">AutoInstall SSL</span>
-                        <span className="d">An agent on your server issues, installs and renews each certificate.</span>
-                      </button>
-                    </form>
-                    <form action={switchInstallMethod} style={{ display: 'contents' }}>
-                      {hidden}<input type="hidden" name="method" value="acme" />
-                      <button className={`choice ${method === 'acme' ? 'on' : ''}`} type="submit" disabled={method === 'acme' || closed} aria-pressed={method === 'acme'}>
-                        <span className="t">Your ACME client</span>
-                        <span className="d">Use Certbot, acme.sh or similar with EAB credentials.</span>
-                      </button>
-                    </form>
-                  </div>
-                ) : (
-                  <div className="between" style={{ padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 10, fontSize: 13 }}>
-                    <span><span className="muted">Installed by</span> <strong style={{ marginLeft: 6 }}>{method === 'acme' ? 'Your ACME client' : 'AutoInstall SSL agent'}</strong></span>
-                    <span className="small muted">Fixed for this plan</span>
-                  </div>
-                )}
-                {method === 'autoinstall' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 13 }}>
-                    <div className="between"><span className="muted">Setup status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
-                    <ol className="setup-steps">
-                      <li><strong>Open AutoInstall SSL.</strong> You&apos;re signed in automatically with the button below.</li>
-                      <li>
-                        <strong>Pick how certificates reach your server:</strong>
-                        <ul>
-                          <li><strong>Agent</strong>: copy the one-line install command and run it on your server. The agent installs and renews every certificate.</li>
-                          <li><strong>ACME</strong>: get your EAB key ID and HMAC key there, then use them with Certbot, acme.sh or your control panel.</li>
-                        </ul>
-                      </li>
-                      <li><strong>Come back here.</strong> The status above changes to Installed once the first certificate is in place.</li>
-                    </ol>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>Sign-in link not ready yet</button>}
-                      {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
-                    </div>
-                    <span className="small muted">These sign-in links come fresh from GoGetSSL each time this page loads. If one has expired, reload the page.</span>
-                  </div>                ) : null}
-              </section>
-            ) : null}
-
-            {isCaas || method === 'acme' || sub.account?.kid ? <AcmeCard sub={sub} /> : null}
-
-            <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="between"><h2>Domains</h2><span className="small muted">{(sub.domains || []).length} covered</span></div>
-              <div className="table-wrap" style={{ border: '1px solid var(--line)', borderRadius: 10 }}>
-                <table className="t">
-                  <thead><tr><th>Domain</th><th>GoGetSSL domain ID</th><th>Status</th>{isCaas && !closed ? <th /> : null}</tr></thead>
-                  <tbody>
-                    {(sub.domains || []).map((d) => (
-                      <tr key={d.name}>
-                        <td className="mono">{d.name}</td>
-                        <td className="mono small muted">{d.id ?? '—'}</td>
-                        <td>{d.status ? <span className="badge tone-gray">{d.status}</span> : <span className="muted">—</span>}</td>
-                        {isCaas && !closed ? (
-                          <td style={{ textAlign: 'right' }}>
-                            {(sub.domains || []).length > 1 ? (
-                              <form action={removeCaasDomain}>{hidden}<input type="hidden" name="domain" value={d.name} /><SubmitButton className="btn sm ghost" pendingText="Removing…">Remove</SubmitButton></form>
-                            ) : null}
-                          </td>
-                        ) : null}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {isCaas && !closed ? (
-                <form action={addCaasDomains} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  {hidden}
-                  <label className="sr" htmlFor="add-domains">Domains to add</label>
-                  <textarea id="add-domains" name="domains" className="input mono" rows={2} placeholder="api.example.com, *.dev.example.com" style={{ flex: '1 1 300px' }} required />
-                  <SubmitButton className="btn" pendingText="Adding…">Add domains</SubmitButton>
+        {!isCaas ? (
+          <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="between">
+              <h2>Installation</h2>
+            </div>
+            {AIS_METHOD_SWITCH ? (
+              <div className="choices">
+                <form action={switchInstallMethod} style={{ display: 'contents' }}>
+                  {hidden}<input type="hidden" name="method" value="autoinstall" />
+                  <button className={`choice ${method === 'autoinstall' ? 'on' : ''}`} type="submit" disabled={method === 'autoinstall' || closed} aria-pressed={method === 'autoinstall'}>
+                    <span className="t">AutoInstall SSL</span>
+                    <span className="d">An agent on your server issues, installs and renews each certificate.</span>
+                  </button>
                 </form>
-              ) : null}
-              {!isCaas ? <span className="small muted">A Plan + Automate subscription covers one domain. Order another subscription for more domains.</span> : null}
-            </section>
-
-            <section className="card pad">
-              <h2 style={{ marginBottom: 16 }}>Subscription</h2>
-              <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px 24px', fontSize: 13 }}>
-                <div><dt className="muted">Product</dt><dd style={{ margin: 0 }}>{sub.product_name} <span className="mono small muted">#{sub.product_id}</span></dd></div>
-                <div><dt className="muted">Type</dt><dd style={{ margin: 0 }}>{KIND_LABEL[sub.kind]}</dd></div>
-                <div><dt className="muted">Started</dt><dd style={{ margin: 0 }}>{fmtDate(sub.begin_at)}</dd></div>
-                <div><dt className="muted">Next renewal</dt><dd style={{ margin: 0, fontWeight: 600 }}>{fmtDate(sub.next_renewal_at)}</dd></div>
-                <div><dt className="muted">Term ends</dt><dd style={{ margin: 0 }}>{fmtDate(sub.end_at)}</dd></div>
-                <div><dt className="muted">Install method</dt><dd style={{ margin: 0 }}>{method === 'acme' ? 'ACME client' : 'AutoInstall SSL'}</dd></div>
-                <div><dt className="muted">GoGetSSL order</dt><dd style={{ margin: 0 }} className="mono">{sub.gg_order_id || '—'}</dd></div>
-                <div><dt className="muted">GoGetSSL item</dt><dd style={{ margin: 0 }} className="mono">{sub.item_id || '—'}</dd></div>
-                {sub.contacts ? <div><dt className="muted">Contacts</dt><dd style={{ margin: 0 }}>{sub.contacts.primary}{sub.contacts.technical && sub.contacts.technical !== sub.contacts.primary ? `, ${sub.contacts.technical}` : ''}</dd></div> : null}
-                <div><dt className="muted">Last synced</dt><dd style={{ margin: 0 }}>{timeAgo(sub.last_synced_at)}</dd></div>
-              </dl>
-            </section>
-
-            <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <h2>History</h2>
-              {events.length === 0 ? <span className="muted">No events yet.</span> : (
-                <ol className="feed">
-                  {events.map((e) => (
-                    <li key={e.id}>
-                      <span className="when">{fmtDateTime(e.created_at)}</span>
-                      <span>
-                        {e.message}{e.actor ? <span className="muted"> · {e.actor}</span> : null}
-                        {e.endpoint && ctx.isAdmin ? <span className="mono small muted" style={{ display: 'block' }}>{e.endpoint}</span> : null}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </section>
-
-            {ctx.isAdmin && sub.raw ? (
-              <details className="card pad">
-                <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Last GoGetSSL response (partner only)</summary>
-                <pre className="code" style={{ marginTop: 12, maxHeight: 420, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
-                  {JSON.stringify(sub.raw, (k, v) => (k === 'eab_mac_key' ? '••• hidden •••' : v), 2)}
-                </pre>
-              </details>
-            ) : null}
-          </div>
-
-          <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="between">
-                <h2>Auto-renewal</h2>
-                {sub.auto_renew === null ? <span className="badge tone-gray">Unknown</span> : sub.auto_renew ? <span className="badge tone-green">On</span> : <span className="badge tone-red">Off</span>}
+                <form action={switchInstallMethod} style={{ display: 'contents' }}>
+                  {hidden}<input type="hidden" name="method" value="acme" />
+                  <button className={`choice ${method === 'acme' ? 'on' : ''}`} type="submit" disabled={method === 'acme' || closed} aria-pressed={method === 'acme'}>
+                    <span className="t">Your ACME client</span>
+                    <span className="d">Use Certbot, acme.sh or similar with EAB credentials.</span>
+                  </button>
+                </form>
               </div>
-              <p className="small muted" style={{ margin: 0 }}>
-                {sub.auto_renew === false
-                  ? `The subscription ends ${fmtDate(until)}. Certificates are not issued after that.`
-                  : `GoGetSSL renews the subscription ${sub.next_renewal_at ? `on ${fmtDate(sub.next_renewal_at)}` : 'at the end of each term'} and keeps issuing certificates.`}
-              </p>
+            ) : null}
+            {method === 'autoinstall' && autoInstallDone(ai) ? (
+              <div className="between" style={{ gap: 12, flexWrap: 'wrap', fontSize: 13 }}>
+                <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}><span className="ok-circle" style={{ width: 24, height: 24 }}><Icon name="tick" size={12} stroke="#fff" width={3} /></span>Installed and renewing automatically.</span>
+                {ai.manage || ai.login ? <a className="btn sm" href={ai.manage || ai.login} target="_blank" rel="noreferrer">Manage in AutoInstall SSL<Icon name="ext" /></a> : null}
+              </div>
+            ) : method === 'autoinstall' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 13 }}>
+                <div className="between"><span className="muted">Setup status</span><span className={`badge tone-${autoInstallDone(ai) ? 'green' : 'amber'}`}>{autoInstallDone(ai) ? 'Installed' : ai.status ? `Not finished (${ai.status})` : 'Not started'}</span></div>
+                <ol className="setup-steps">
+                  <li><strong>Open AutoInstall SSL.</strong> You&apos;re signed in automatically with the button below.</li>
+                  <li>
+                    <strong>Pick how certificates reach your server:</strong>
+                    <ul>
+                      <li><strong>Agent</strong>: copy the one-line install command and run it on your server. The agent installs and renews every certificate.</li>
+                      <li><strong>ACME</strong>: get your EAB key ID and HMAC key there, then use them with Certbot, acme.sh or your control panel.</li>
+                    </ul>
+                  </li>
+                  <li><strong>Come back here.</strong> The status above changes to Installed once the first certificate is in place.</li>
+                </ol>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {ai.login ? <a className="btn primary" href={ai.login} target="_blank" rel="noreferrer">Open AutoInstall SSL<Icon name="ext" stroke="#fff" /></a> : <button className="btn" disabled>Sign-in link not ready yet</button>}
+                  {ai.manage ? <a className="btn" href={ai.manage} target="_blank" rel="noreferrer">Manage enrollment<Icon name="ext" /></a> : null}
+                </div>
+                <span className="small muted">These sign-in links come fresh from GoGetSSL each time this page loads. If one has expired, reload the page.</span>
+              </div>                ) : null}
+          </section>
+        ) : null}
+
+        {isCaas || method === 'acme' || sub.account?.kid ? <AcmeCard sub={sub} /> : null}
+
+        <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="between"><h2>Domains</h2><span className="small muted">{(sub.domains || []).length} covered</span></div>
+          <ul className="domain-list">
+            {(sub.domains || []).map((d) => (
+              <li key={d.name}>
+                <span className="mono">{d.name}</span>
+                {isCaas && !closed && (sub.domains || []).length > 1 ? (
+                  <form action={removeCaasDomain}>{hidden}<input type="hidden" name="domain" value={d.name} /><SubmitButton className="btn sm ghost" pendingText="Removing…">Remove</SubmitButton></form>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {isCaas && !closed ? (
+            <form action={addCaasDomains} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              {hidden}
+              <label className="sr" htmlFor="add-domains">Domains to add</label>
+              <input id="add-domains" name="domains" className="input mono" placeholder="Add domains, e.g. api.example.com, *.dev.example.com" style={{ flex: '1 1 300px' }} required />
+              <SubmitButton className="btn" pendingText="Adding…">Add</SubmitButton>
+            </form>
+          ) : (
+            <span className="small muted">This plan covers one domain. Order another subscription for more.</span>
+          )}
+        </section>
+
+        <details className="card fold">
+          <summary><Icon name="key" />Settings</summary>
+          <div className="fold-body" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div className="between" style={{ gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 300px' }}>
+                <div style={{ fontWeight: 600 }}>Auto-renewal <span className={`badge tone-${sub.auto_renew === false ? 'red' : 'green'}`} style={{ marginLeft: 6 }}>{sub.auto_renew === false ? 'Off' : 'On'}</span></div>
+                <div className="small muted">
+                  {sub.auto_renew === false
+                    ? `Ends ${fmtDate(until)}. Certificates stop after that.`
+                    : `Renews ${sub.next_renewal_at ? `on ${fmtDate(sub.next_renewal_at)}` : 'at the end of each term'} so certificates keep coming.`}
+                </div>
+              </div>
               {!closed ? (
                 <form action={setAutoRenewal}>
                   {hidden}<input type="hidden" name="on" value={sub.auto_renew === false ? 'true' : 'false'} />
-                  <SubmitButton className={`btn sm ${sub.auto_renew === false ? 'primary' : ''}`} pendingText="Saving…">
-                    {sub.auto_renew === false ? 'Turn auto-renewal on' : 'Turn auto-renewal off'}
-                  </SubmitButton>
+                  <SubmitButton className={`btn sm ${sub.auto_renew === false ? 'primary' : ''}`} pendingText="Saving…">{sub.auto_renew === false ? 'Turn on' : 'Turn off'}</SubmitButton>
                 </form>
               ) : null}
-              {ctx.isAdmin ? <span className="small muted mono">{sub.auto_renew === false || !isCaas ? `PATCH /certificates/${sub.kind}/${sub.item_id}/subscription` : `DELETE /certificates/caas/${sub.item_id}/subscription`}</span> : null}
-            </section>
-
-            {ctx.isAdmin ? <EndpointPanel kind={sub.kind} itemId={sub.item_id} /> : null}
-
-            <section className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2>Tags</h2>
-              <form action={saveSubTags} style={{ display: 'flex', gap: 8 }}>
-                {hidden}
-                <label className="sr" htmlFor="tags">Tags</label>
-                <input id="tags" name="tags" className="input" defaultValue={(sub.tags || []).join(', ')} placeholder="production, eu" style={{ flex: 1 }} />
-                <SubmitButton className="btn sm" pendingText="Saving…">Save</SubmitButton>
-              </form>
-            </section>
-
+            </div>
+            <form action={saveSubTags} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', borderTop: '1px solid var(--line-soft)', paddingTop: 18 }}>
+              {hidden}
+              <div className="field" style={{ flex: '1 1 260px' }}>
+                <label htmlFor="tags">Tags</label>
+                <input id="tags" name="tags" className="input" defaultValue={(sub.tags || []).join(', ')} placeholder="production, eu" />
+              </div>
+              <SubmitButton className="btn" pendingText="Saving…">Save</SubmitButton>
+            </form>
             {!closed && !sub.cancel_requested_at ? (
-              <details className="card pad">
-                <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--red-strong)' }}>Cancel subscription</summary>
-                <form action={cancelSub} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-                  {hidden}
-                  <div className="field"><label htmlFor="reason">Reason</label><input id="reason" name="reason" className="input" placeholder="Test order" /></div>
-                  <label className="check"><input type="checkbox" name="refund" defaultChecked /> Ask for a refund (inside the refund window)</label>
+              <form action={cancelSub} style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 18 }}>
+                {hidden}
+                <div style={{ fontWeight: 600, color: 'var(--red-strong)' }}>Cancel subscription</div>
+                <div className="grid-form">
+                  <div className="field"><label htmlFor="reason">Reason</label><input id="reason" name="reason" className="input" placeholder="No longer needed" /></div>
                   <div className="field"><label htmlFor="confirm">Type CANCEL to confirm</label><input id="confirm" name="confirm" className="input" autoComplete="off" required /></div>
-                  <SubmitButton className="btn sm danger" pendingText="Cancelling…">Cancel subscription</SubmitButton>
-                  {ctx.isAdmin ? <span className="small muted mono">POST /certificates/{sub.kind}/{sub.item_id}/cancel</span> : null}
-                </form>
-              </details>
+                </div>
+                <label className="check"><input type="checkbox" name="refund" defaultChecked /> Ask for a refund if it&apos;s inside the refund window</label>
+                <div><SubmitButton className="btn sm danger" pendingText="Cancelling…">Cancel subscription</SubmitButton></div>
+              </form>
             ) : null}
-            {help ? <a className="help-link" href={help}><Icon name="info" />Stuck? Ask us about this subscription</a> : null}
-            <Link className="small" href="/certificates">Back to My SSL</Link>
           </div>
-        </div>
+        </details>
+
+        {help ? <a className="help-link" href={help} style={{ alignSelf: 'flex-start' }}><Icon name="info" />Stuck? Ask us about this subscription</a> : null}
       </main>
     </>
   );

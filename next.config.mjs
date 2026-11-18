@@ -3,10 +3,11 @@ const nextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
-      { source: '/subscriptions', destination: '/certificates?view=auto', permanent: false },
+      { source: '/certificates', destination: '/', permanent: false },
+      { source: '/subscriptions', destination: '/', permanent: false },
       { source: '/subscriptions/endpoints', destination: '/partner/endpoints', permanent: false },
-      { source: '/validation', destination: '/certificates?view=action', permanent: false },
-      { source: '/renewals', destination: '/certificates?view=action', permanent: false }
+      { source: '/validation', destination: '/?show=action', permanent: false },
+      { source: '/renewals', destination: '/?show=action', permanent: false }
     ];
   },
   experimental: {

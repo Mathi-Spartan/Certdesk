@@ -21,7 +21,7 @@ function domainList(text) {
 async function withSub(formData, fn) {
   const ctx = await requireWorkspace();
   const sub = await getSubForWorkspace(String(formData.get('sub_id')), ctx.workspaceId);
-  if (!sub) redirect('/certificates?err=' + enc('Subscription not found'));
+  if (!sub) redirect('/?err=' + enc('Subscription not found'));
   const back = `/subscriptions/${sub.id}`;
   if (!sub.item_id) redirect(back + '?err=' + enc('This subscription has no GoGetSSL item ID yet'));
   let msg;
@@ -168,7 +168,7 @@ export async function cancelSub(formData) {
 export async function saveSubTags(formData) {
   const ctx = await requireWorkspace();
   const sub = await getSubForWorkspace(String(formData.get('sub_id')), ctx.workspaceId);
-  if (!sub) redirect('/certificates');
+  if (!sub) redirect('/');
   const tags = [...new Set(String(formData.get('tags') || '').split(',').map((t) => t.trim()).filter(Boolean))].slice(0, 8);
   await q('update console.subscriptions set tags = $2, updated_at = now() where id = $1', [sub.id, tags]);
   redirect(`/subscriptions/${sub.id}?ok=` + enc('Tags saved'));

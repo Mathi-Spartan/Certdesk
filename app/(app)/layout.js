@@ -36,8 +36,7 @@ export default async function AppLayout({ children }) {
     needs = c.needs;
     groups.push({
       items: [
-        { href: '/', label: 'Home', icon: 'home' },
-        { href: '/certificates', label: 'My SSL', icon: 'lock', count: needs || null, tone: needs ? 'red' : null },
+        { href: '/', label: 'My SSL', icon: 'lock', count: needs || null, tone: needs ? 'red' : null },
         { href: '/orders', label: 'Order history', icon: 'receipt' },
         { href: '/account', label: 'Account', icon: 'key' }
       ]
