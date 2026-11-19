@@ -54,14 +54,48 @@ function features(p) {
   return f.filter(Boolean);
 }
 
+function Card({ p, b }) {
+  const k = kindOf(p);
+  const l = LEVEL_OF[k] || LEVELS[0];
+  return (
+    <article className={`cs-card k-${k} ${p.orderable ? 'ready' : ''}`}>
+      <div className="cs-card-top">
+        <span className="cs-card-logo"><BrandLogo slug={b.slug} name={b.name} height={14} /></span>
+        {p.orderable ? <span className="cs-avail">Available</span> : <span className="cs-soon">Coming soon</span>}
+      </div>
+      <h3>{p.name.replace(new RegExp(`^${b.name}\\s+`, 'i'), '')}<small>{b.name}</small></h3>
+      <div className="cs-chips">
+        <span className="lvl">{l.short}</span>
+        {p.wildcard && !p.automation ? <span>Wildcard</span> : null}
+        {p.multidomain && !p.automation ? <span>Multi-domain</span> : null}
+      </div>
+      <ul className="cs-feat">{features(p).map((f) => <li key={f}>{f}</li>)}</ul>
+      <div className="cs-card-foot">
+        {p.orderable ? (
+          <>
+            <span className="cs-price">{p.fromPrice ? <>from <b>{p.fromPrice}</b></> : 'Price at checkout'}</span>
+            <Link href={`/buy?product=${p.id}`} className="cx3-btn sm primary">Order now</Link>
+          </>
+        ) : (
+          <>
+            <span className="cs-price">Price on launch</span>
+            <span className="cs-lock" aria-hidden="true">Available soon</span>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
 /** Customer view of the order page while ordering is closed: every product, no prices, nothing to buy. */
-export default function ComingSoonCatalogue({ products, tab = 'all', brand = '' }) {
+export default function ComingSoonCatalogue({ products, tab = 'all', brand = '', notice = null }) {
+  const ready = products.filter((p) => p.orderable);
   const counts = Object.fromEntries(TABS.map((t) => [t.key, products.filter((p) => matches(p, t.key)).length]));
   const list = products.filter((p) => matches(p, tab) && (!brand || brandOf(p).slug === brand));
   const brandsWith = BRANDS.filter((b) => products.some((p) => brandOf(p).slug === b.slug));
   const groups = BRANDS.map((b) => {
     const items = list.filter((p) => brandOf(p).slug === b.slug)
-      .sort((x, y) => (LEVEL_OF[kindOf(x)]?.rank ?? 9) - (LEVEL_OF[kindOf(y)]?.rank ?? 9) || shapeRank(x) - shapeRank(y) || x.name.localeCompare(y.name));
+      .sort((x, y) => (LEVEL_OF[kindOf(x)]?.rank ?? 9) - (LEVEL_OF[kindOf(y)]?.rank ?? 9) || (y.orderable ? 1 : 0) - (x.orderable ? 1 : 0) || shapeRank(x) - shapeRank(y) || x.name.localeCompare(y.name));
     const levels = LEVELS.map((l) => ({ l, items: items.filter((p) => kindOf(p) === l.key) })).filter((x) => x.items.length);
     return { b, items, levels };
   }).filter((g) => g.items.length);
@@ -79,9 +113,11 @@ export default function ComingSoonCatalogue({ products, tab = 'all', brand = '' 
     <main className="cx3-page cx3-wide cs">
       <section className="cs-hero">
         <div className="cs-hero-copy">
-          <span className="cs-badge"><i />Coming soon</span>
+          <span className="cs-badge"><i />{ready.length ? `${ready.length} available to order` : 'Coming soon'}</span>
           <h1>Certificate catalogue</h1>
-          <p>Every SSL/TLS, code signing and automated certificate you will be able to order from this account. Prices and checkout open soon; your current certificates keep working and can be reissued as usual.</p>
+          <p>{ready.length
+            ? 'The certificates marked Available can be ordered now. Everything else in the catalogue is coming soon to your account.'
+            : 'Every SSL/TLS, code signing and automated certificate you will be able to order from this account. Checkout opens soon; your current certificates keep working and can be reissued as usual.'}</p>
         </div>
         <div className="cs-hero-logos" aria-label="Certificate authorities">
           {brandsWith.map((b) => (
@@ -103,6 +139,17 @@ export default function ComingSoonCatalogue({ products, tab = 'all', brand = '' 
         {brand ? <Link href={href({ brand: '' })} className="cs-clear">Showing {BRANDS.find((b) => b.slug === brand)?.name} · show all brands ×</Link> : null}
       </div>
 
+      {notice ? <div className="cx3-alert amber"><div>{notice}</div></div> : null}
+
+      {ready.length && tab === 'all' && !brand ? (
+        <section className="cs-ready">
+          <div className="cs-ready-head"><h2>Available to order</h2><span>{ready.length} certificate{ready.length === 1 ? '' : 's'} enabled for your account</span></div>
+          <div className="cs-grid">
+            {ready.map((p) => <Card key={'r' + p.id} p={p} b={brandOf(p)} />)}
+          </div>
+        </section>
+      ) : null}
+
       {groups.length === 0 ? <div className="cx3-card cx3-pad"><p className="cx3-muted">No products in this view.</p></div> : groups.map(({ b, items, levels }) => (
         <section key={b.slug} className="cs-brand">
           <header className="cs-brand-head">
@@ -121,22 +168,7 @@ export default function ComingSoonCatalogue({ products, tab = 'all', brand = '' 
                 <span>{l.checks} · {l.speed.toLowerCase()}</span>
               </div>
               <div className="cs-grid">
-                {li.map((p) => (
-                  <article key={p.id} className={`cs-card k-${l.key}`}>
-                    <div className="cs-card-top">
-                      <span className="cs-card-logo"><BrandLogo slug={b.slug} name={b.name} height={14} /></span>
-                      <span className="cs-soon">Coming soon</span>
-                    </div>
-                    <h3>{p.name.replace(new RegExp(`^${b.name}\\s+`, 'i'), '')}<small>{b.name}</small></h3>
-                    <div className="cs-chips">
-                      <span className="lvl">{l.short}</span>
-                      {p.wildcard && !p.automation ? <span>Wildcard</span> : null}
-                      {p.multidomain && !p.automation ? <span>Multi-domain</span> : null}
-                    </div>
-                    <ul className="cs-feat">{features(p).map((f) => <li key={f}>{f}</li>)}</ul>
-                    <div className="cs-card-foot"><span className="cs-price">Price on launch</span><span className="cs-lock" aria-hidden="true">Available soon</span></div>
-                  </article>
-                ))}
+                {li.map((p) => <Card key={p.id} p={p} b={b} />)}
               </div>
             </div>
           ))}

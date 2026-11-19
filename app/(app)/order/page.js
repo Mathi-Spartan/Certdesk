@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { canOrder } from '@/lib/ordering';
+
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
 
@@ -16,7 +16,7 @@ const ROWS = [
 
 export default async function OrderSsl() {
   const ctx = await requireWorkspace();
-  if (!canOrder(ctx)) redirect('/buy');
+  if (!ctx.isAdmin) redirect('/buy');
   return (
     <>
       <TopBar crumbs={[{ label: 'Order SSL' }]} />

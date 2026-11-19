@@ -7,7 +7,7 @@ import { requireWorkspace } from '@/lib/auth';
 import * as gg from '@/lib/gogetssl';
 import { syncOrder, addEvent, getOrderForWorkspace, extractDcv } from '@/lib/orders';
 import { checkDcvRecord, dnsMessage } from '@/lib/dnscheck';
-import { canOrder, CLOSED_MSG } from '@/lib/ordering';
+import { canOrderProduct, CLOSED_MSG } from '@/lib/ordering';
 
 const enc = encodeURIComponent;
 const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
@@ -92,8 +92,9 @@ export async function decodeCsr(csr) {
 /** Place a new order (or a renewal) from the wizard. */
 export async function placeOrder(input) {
   const ctx = await requireWorkspace();
-  if (!canOrder(ctx)) return { error: CLOSED_MSG };
-  const product = await one('select * from console.products where id = $1 and enabled and not automation', [Number(input.productId)]);
+  if (!(await canOrderProduct(ctx, input.productId))) return { error: CLOSED_MSG };
+  // Customers may order what the master account assigned to them; the master account orders enabled products.
+  const product = await one(`select * from console.products where id = $1 and not automation ${ctx.isAdmin ? 'and enabled' : ''}`, [Number(input.productId)]);
   if (!product) return { error: 'That certificate is not available. Pick another one.' };
   const cn = cleanDomain(input.commonName);
   if (!DOMAIN_RE.test(cn)) return { error: 'The domain name is not valid.' };

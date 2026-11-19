@@ -13,7 +13,8 @@ export default async function Partner({ searchParams }) {
   const sp = await searchParams;
   await requireAdmin();
   const workspaces = await q(
-    `select w.*, (select count(*)::int from console.users u where u.workspace_id = w.id) as members
+    `select w.*, (select count(*)::int from console.users u where u.workspace_id = w.id) as members,
+            (select count(*)::int from console.workspace_products wp where wp.workspace_id = w.id) as products_for_sale
        from console.workspaces w order by w.created_at desc`
   );
   const orders = await q(`select * from console.orders where status <> 'draft'`);
@@ -50,7 +51,7 @@ export default async function Partner({ searchParams }) {
             {workspaces.length === 0 ? <Empty title="No customer workspaces yet">Create the first one on the right.</Empty> : (
               <div className="table-wrap">
                 <table className="t" style={{ minWidth: 760 }}>
-                  <thead><tr><th>Workspace</th><th>Certificates</th><th>Health</th><th>Expiring ≤30d</th><th>Logins</th><th /></tr></thead>
+                  <thead><tr><th>Workspace</th><th>Certificates</th><th>Health</th><th>Expiring ≤30d</th><th>Logins</th><th>For sale</th><th /></tr></thead>
                   <tbody>
                     {workspaces.map((w) => {
                       const s = computeInsights(byWs[w.id] || []);
@@ -68,8 +69,9 @@ export default async function Partner({ searchParams }) {
                           </td>
                           <td style={{ color: s.expiring.length ? 'var(--red-strong)' : undefined, fontWeight: s.expiring.length ? 600 : 400 }}>{s.expiring.length}</td>
                           <td>{w.members}</td>
+                          <td><Link href={`/partner/workspaces/${w.id}/products`} className="small" style={{ fontWeight: 600 }}>{w.products_for_sale ? `${w.products_for_sale} product${w.products_for_sale === 1 ? '' : 's'}` : 'None · choose'}</Link></td>
                           <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <Link className="btn sm" href={`/partner/workspaces/${w.id}`}>Manage</Link>{' '}
+                            <Link className="btn sm" href={`/partner/workspaces/${w.id}/products`}>Products</Link>{' '}<Link className="btn sm" href={`/partner/workspaces/${w.id}`}>Manage</Link>{' '}
                             <form action={openWorkspace} style={{ display: 'inline' }}>
                               <input type="hidden" name="workspace_id" value={w.id} />
                               <button className="btn sm primary" type="submit">Open</button>

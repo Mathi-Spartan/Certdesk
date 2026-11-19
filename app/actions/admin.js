@@ -146,3 +146,21 @@ export async function testApi() {
   }
   redirect('/partner/api?ok=' + enc(msg));
 }
+
+/** Master account: choose which products a customer workspace can order. Everything else shows as coming soon. */
+export async function saveWorkspaceProducts(formData) {
+  await requireAdmin();
+  const ws = String(formData.get('workspace_id') || '');
+  if (!/^[0-9a-f-]{36}$/i.test(ws)) redirect('/partner');
+  const ids = [...new Set(formData.getAll('product_id').map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  const known = ids.length ? (await q('select id from console.products where id = any($1::int[])', [ids])).map((r) => Number(r.id)) : [];
+  await q('delete from console.workspace_products where workspace_id = $1 and not (product_id = any($2::int[]))', [ws, known]);
+  if (known.length) {
+    await q(
+      `insert into console.workspace_products (workspace_id, product_id) select $1, unnest($2::int[]) on conflict do nothing`,
+      [ws, known]
+    );
+  }
+  revalidatePath(`/partner/workspaces/${ws}/products`);
+  redirect(`/partner/workspaces/${ws}/products?ok=${encodeURIComponent(`${known.length} product${known.length === 1 ? '' : 's'} available to order for this customer`)}`);
+}

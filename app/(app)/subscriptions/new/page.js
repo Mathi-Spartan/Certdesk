@@ -1,6 +1,6 @@
 import { requireWorkspace } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { canOrder } from '@/lib/ordering';
+import { allowedProductIds, customerOrderingOpen } from '@/lib/ordering';
 import { one } from '@/lib/db';
 import { SUBSCRIPTION_PRODUCTS } from '@/lib/subscriptions';
 import TopBar from '@/components/TopBar';
@@ -10,11 +10,12 @@ export const metadata = { title: 'New subscription · CertDesk' };
 
 export default async function NewSubscription() {
   const ctx = await requireWorkspace();
-  if (!canOrder(ctx)) redirect('/buy?type=auto');
+  const allowed = ctx.isAdmin || customerOrderingOpen() ? null : await allowedProductIds(ctx.workspaceId);
+  if (allowed && !SUBSCRIPTION_PRODUCTS.some((p) => allowed.has(p.id))) redirect('/buy?type=auto');
   // product names follow the GoGetSSL v2 catalogue once the partner has read it
   const cached = await one(`select value from console.kv where key = 'v2_products'`);
   const live = Array.isArray(cached?.value) ? cached.value : [];
-  const products = SUBSCRIPTION_PRODUCTS.map((p) => {
+  const products = SUBSCRIPTION_PRODUCTS.filter((p) => !allowed || allowed.has(p.id)).map((p) => {
     const hit = live.find((x) => Number(x.id) === p.id);
     return { ...p, name: hit?.name || p.name };
   });

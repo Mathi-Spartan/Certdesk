@@ -5,8 +5,10 @@ import BuyWizard from './BuyWizard';
 import TopBar from '@/components/TopBar';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
-import { customerPrices } from '@/lib/pricing';
-import { canOrder } from '@/lib/ordering';
+import { customerPrices, fmtMoney } from '@/lib/pricing';
+import { allowedProductIds, customerOrderingOpen } from '@/lib/ordering';
+import { redirect } from 'next/navigation';
+import { SUBSCRIPTION_PRODUCTS } from '@/lib/subscriptions';
 import ComingSoonCatalogue from '@/components/console/ComingSoonCatalogue';
 
 export const metadata = { title: 'Buy certificate · CertDesk' };
@@ -14,15 +16,32 @@ export const metadata = { title: 'Buy certificate · CertDesk' };
 export default async function BuyPage({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
-  if (!canOrder(ctx)) {
-    const all = await q('select id, name, brand, validation, wildcard, multidomain, san_max, automation from console.products order by automation, validation, wildcard, multidomain, name');
-    return <ComingSoonCatalogue products={all} tab={String(sp.type || 'all')} brand={String(sp.brand || '')} />;
+  let rows;
+  if (ctx.isAdmin || customerOrderingOpen()) {
+    rows = await q(
+      `select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices
+         from console.products where enabled and not automation order by validation, wildcard, multidomain, name`
+    );
+  } else {
+    // Customers: the master account decides which products they can order.
+    const allowed = await allowedProductIds(ctx.workspaceId);
+    let pick = Number(sp.product) || null;
+    if (sp.renew && !pick) {
+      const o = await getOrderForWorkspace(sp.renew, ctx.workspaceId);
+      if (o && allowed.has(Number(o.product_id))) pick = Number(o.product_id);
+    }
+    if (pick && allowed.has(pick) && SUBSCRIPTION_PRODUCTS.some((p) => p.id === pick)) redirect(`/subscriptions/new?product=${pick}`);
+    if (!pick || !allowed.has(pick)) {
+      const all = await q('select id, name, brand, validation, wildcard, multidomain, san_max, automation, prices from console.products order by automation, validation, wildcard, multidomain, name');
+      const mine = await customerPrices(ctx.workspaceId);
+      const products = all.map(({ prices, ...p }) => {
+        const vals = Object.values(mine[p.id] || {}).filter((v) => v && v.price > 0).sort((a, b) => a.price - b.price);
+        return { ...p, orderable: allowed.has(Number(p.id)), fromPrice: vals[0] ? fmtMoney(vals[0].price, vals[0].currency) : null };
+      });
+      return <ComingSoonCatalogue products={products} tab={String(sp.type || 'all')} brand={String(sp.brand || '')} notice={sp.renew ? 'Renewing this certificate is not available on your account yet. Ask your provider.' : null} />;
+    }
+    rows = await q('select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices from console.products where id = $1 and not automation', [pick]);
   }
-  const rows = await q(
-    `select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices
-       from console.products where enabled and not automation order by validation, wildcard, multidomain, name`
-  );
-  // Only the order terms and the customer's own price leave the server; the GoGetSSL cost never does.
   const mine = await customerPrices(ctx.workspaceId);
   const products = rows.map(({ prices, ...p }) => ({
     ...p,

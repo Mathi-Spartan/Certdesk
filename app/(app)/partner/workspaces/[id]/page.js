@@ -21,6 +21,7 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
   const users = await q(`select * from console.users where workspace_id = $1 order by created_at`, [id]);
   const orders = await q(`select * from console.orders where workspace_id = $1 order by created_at desc`, [id]);
   const subs = await q(`select * from console.subscriptions where workspace_id = $1 order by created_at desc`, [id]);
+  const forSale = (await one('select count(*)::int as n from console.workspace_products where workspace_id = $1', [id]))?.n || 0;
 
   return (
     <>
@@ -36,6 +37,13 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
           <p className="sub">{ws.contact_email || 'No contact email'} · created {fmtDate(ws.created_at)}</p>
         </div>
         <FlashFromSearch searchParams={sp} />
+        <Link href={`/partner/workspaces/${ws.id}/products`} className="card pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, textDecoration: 'none', color: 'inherit' }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Products this customer can order</h2>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>{forSale ? `${forSale} product${forSale === 1 ? '' : 's'} selected. Everything else shows as coming soon.` : 'None selected. The customer sees the catalogue as coming soon and cannot order.'}</p>
+          </div>
+          <span className="btn primary">Choose products</span>
+        </Link>
 
         <div className="row top">
           <section className="card" style={{ flex: '2 1 560px', minWidth: 0 }}>
