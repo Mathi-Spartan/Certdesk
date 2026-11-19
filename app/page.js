@@ -3,6 +3,8 @@ import { getContext } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { supportEmail } from '@/lib/support';
 import SignInDialog from '@/components/SignInDialog';
+import { SiteHeader, SiteFooter, UtilityBar, BRANDS, brandOf } from '@/components/site/SiteChrome';
+import BrandLogo from '@/components/site/BrandLogo';
 import './landing.css';
 
 export const metadata = {
@@ -67,15 +69,6 @@ const FAQ = [
   ['Plan + Automate or ACME CaaS?', 'Plan + Automate covers one domain and can install certificates for you with the AutoInstall agent. ACME CaaS covers many domains for your own ACME client.']
 ];
 
-const CAS = [
-  { name: 'Sectigo', note: 'DV · OV · EV · ACME' },
-  { name: 'DigiCert', note: 'Premium OV · EV' },
-  { name: 'RapidSSL', note: 'Fast DV · Wildcard' },
-  { name: 'GeoTrust', note: 'DV · OV · EV' },
-  { name: 'Thawte', note: 'DV · OV · EV' },
-  { name: 'Comodo', note: 'Positive & Essential SSL' },
-  { name: 'GoGetSSL', note: 'Value DV · Wildcard' }
-];
 const VLABEL = { dv: 'DV', ov: 'OV', ev: 'EV' };
 
 export default async function Landing({ searchParams }) {
@@ -85,9 +78,10 @@ export default async function Landing({ searchParams }) {
     q(`select name, brand, validation, wildcard, multidomain from console.products where enabled order by validation, wildcard, name limit 5`).catch(() => []),
     supportEmail().catch(() => null)
   ]);
-  const brandRows = await q(`select brand, count(*)::int as n from console.products where not automation group by brand`).catch(() => []);
-  const brandCount = Object.fromEntries(brandRows.map((b) => [String(b.brand || '').toLowerCase(), b.n]));
-  const totalProducts = brandRows.reduce((a, b) => a + b.n, 0);
+  const allProducts = await q(`select name, brand from console.products where not automation`).catch(() => []);
+  const byBrand = {};
+  for (const p of allProducts) { const b = brandOf(p).slug; byBrand[b] = (byBrand[b] || 0) + 1; }
+  const totalProducts = allProducts.length;
   const signedIn = !!ctx;
   const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin';
   // signed out: these open the sign-in dialog instead of navigating
@@ -102,47 +96,14 @@ export default async function Landing({ searchParams }) {
   return (
     <div className="lp">
       <a className="lp-skip" href="#main">Skip to content</a>
-      <div className="lp-util">
-        <div className="lp-wrap lp-util-in">
-          <span>SSL certificates and automation, managed in one console</span>
-          <nav aria-label="Utility">
-            <a href="#how">How it works</a>
-            <a href="#automation">Automation</a>
-            <a href="#faq">FAQ</a>
-            {email ? <a href={`mailto:${email}`}>Support</a> : null}
-          </nav>
-        </div>
-      </div>
-
-      <header className="lp-head">
-        <div className="lp-wrap lp-head-in">
-          <Link href="/" className="lp-brand" aria-label="CertDesk home">
-            <span className="lp-logo" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z" /><path d="m9 12 2 2 4-4" /></svg>
-            </span>
-            <span>
-              <span className="lp-brand-name">CertDesk</span>
-              <span className="lp-brand-tag">Certificate lifecycle console</span>
-            </span>
-          </Link>
-          <nav className="lp-nav" aria-label="Main">
-            <a href="#certificates">Certificates</a>
-            <a href="#automation">Automation</a>
-            <a href="#how">How it works</a>
-            <a href="#why">Why CertDesk</a>
-          </nav>
-          <div className="lp-head-actions">
-            {signedIn ? null : <a href="#signin" data-signin="" className="lp-link">Sign in</a>}
-            <a {...consoleProps} className="lp-btn lp-btn-primary">{signedIn ? 'Open console' : 'Get started'}</a>
-          </div>
-        </div>
-      </header>
+      <UtilityBar email={email} />
+      <SiteHeader signedIn={signedIn} consoleHref={consoleHref} />
 
       <main id="main">
         <section className="lp-hero">
           <div className="lp-wrap lp-hero-in">
             <div className="lp-hero-text">
-              <p className="lp-eyebrow">Trusted TLS from {CAS.slice(0, 5).map((c) => c.name).join(' · ')}</p>
+              <p className="lp-eyebrow">Trusted TLS from {BRANDS.slice(0, 6).map((c) => c.name).join(' · ')}</p>
               <h1>SSL certificates, issued and managed from one clean console.</h1>
               <p className="lp-lead">
                 Order DV, OV, EV, wildcard and multi-domain certificates, follow guided validation, and keep every
@@ -150,7 +111,7 @@ export default async function Landing({ searchParams }) {
               </p>
               <div className="lp-cta">
                 <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}</a>
-                {!signedIn ? <a href={contact} className="lp-btn lp-btn-ghost lp-btn-lg">Request an account</a> : <a href="#certificates" className="lp-btn lp-btn-ghost lp-btn-lg">Browse certificates</a>}
+                <Link href="/ssl" className="lp-btn lp-btn-ghost lp-btn-lg">Browse all certificates</Link>
               </div>
               <ul className="lp-badges">
                 <li><span className="lp-dot" />256-bit encryption</li>
@@ -182,24 +143,20 @@ export default async function Landing({ searchParams }) {
           </div>
 
           <div className="lp-wrap">
-            <div className="lp-marquee" aria-label="Certificate authorities in the catalogue">
+            <div className="lp-marquee" aria-label="Certificate authorities">
               <ul className="lp-marquee-track">
-                {[...CAS, ...CAS].map((c, i) => {
-                  const n = brandCount[c.name.toLowerCase()];
-                  return (
-                    <li key={c.name + i} aria-hidden={i >= CAS.length ? 'true' : undefined}>
-                      <span className="lp-ca-mark" aria-hidden="true">{c.name[0]}</span>
-                      <span className="lp-ca-text">
-                        <span className="lp-ca-name">{c.name}</span>
-                        <span className="lp-ca-note">{n ? `${n} certificates` : c.note}</span>
-                      </span>
-                    </li>
-                  );
-                })}
+                {[...BRANDS, ...BRANDS].map((b, i) => (
+                  <li key={b.slug + i} aria-hidden={i >= BRANDS.length ? 'true' : undefined}>
+                    <Link href={`/ssl?brand=${b.slug}`} className="lp-ca-link" tabIndex={i >= BRANDS.length ? -1 : undefined}>
+                      <span className="lp-ca-logo"><BrandLogo slug={b.slug} name={b.name} height={26} /></span>
+                      <span className="lp-ca-note">{byBrand[b.slug] ? `${byBrand[b.slug]} certificates →` : 'View certificates →'}</span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="lp-figures">
-              <div><strong>{totalProducts > 20 ? `${totalProducts}+` : `${CAS.length} brands`}</strong><span>{totalProducts > 20 ? 'Certificate products' : 'Certificate authorities'}</span></div>
+              <div><strong>{totalProducts > 20 ? `${totalProducts}+` : `${BRANDS.length} brands`}</strong><span>{totalProducts > 20 ? 'Certificate products' : 'Certificate authorities'}</span></div>
               <div><strong>DV · OV · EV</strong><span>Every validation level</span></div>
               <div><strong>Wildcard + SAN</strong><span>Multi-domain coverage</span></div>
               <div><strong>Agent + ACME</strong><span>Automation built in</span></div>
@@ -325,33 +282,7 @@ export default async function Landing({ searchParams }) {
         </section>
       </main>
 
-      <footer className="lp-foot">
-        <div className="lp-wrap lp-foot-in">
-          <div>
-            <div className="lp-brand-name" style={{ color: '#fff' }}>CertDesk</div>
-            <p>Certificate lifecycle console for SSL/TLS certificates and automated subscriptions.</p>
-          </div>
-          <div>
-            <h4>Certificates</h4>
-            <a href="#certificates">Domain Validation</a>
-            <a href="#certificates">Organisation Validation</a>
-            <a href="#certificates">Extended Validation</a>
-          </div>
-          <div>
-            <h4>Automation</h4>
-            <a href="#automation">Plan + Automate</a>
-            <a href="#automation">ACME CaaS</a>
-            <a href="#how">How it works</a>
-          </div>
-          <div>
-            <h4>Account</h4>
-            <a href="#signin" data-signin="">Sign in</a>
-            <a href={contact}>Request an account</a>
-            {email ? <a href={`mailto:${email}`}>Support</a> : null}
-          </div>
-        </div>
-        <div className="lp-wrap lp-copy">© {new Date().getFullYear()} CertDesk. Certificates are issued by globally trusted certificate authorities.</div>
-      </footer>
+      <SiteFooter email={email} contact={contact} />
       {!signedIn ? <SignInDialog openOnLoad={sp.signin === '1'} contact={contact} /> : null}
     </div>
   );
