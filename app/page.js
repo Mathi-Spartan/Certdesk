@@ -307,76 +307,56 @@ export default async function Landing({ searchParams }) {
           </div>
         </section>
 
-        <section className="lp-section bx" id="why">
-          <div className="lp-wrap">
-            <p className="lp-kicker">Why CertDesk</p>
-            <h2 className="bx-title">Everything a certificate needs, <span>in one place</span></h2>
-            <p className="lp-sub">Built for the way certificates actually live: ordered once, validated, reissued, renewed and audited.</p>
+        <section className="lp-section wx" id="why">
+          <div className="lp-wrap wx-in">
+            <div className="wx-copy">
+              <p className="lp-kicker hx-left">Why CertDesk</p>
+              <h2 className="wx-title">Everything a certificate needs, <span>in one place.</span></h2>
+              <p className="wx-sub">Built for how certificates actually live: ordered once, validated, reissued, renewed and audited, without spreadsheets or missed emails.</p>
+              <ul className="wx-list">
+                {FEATURES.map(([icon, t, d], n) => (
+                  <li key={t} style={{ '--i': n }}>
+                    <span className="wx-ico"><Icon name={icon} /></span>
+                    <div><strong>{t}</strong><span>{d}</span></div>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-            <div className="bx-grid">
-              <article className="bx-tile bx-a">
-                <div className="bx-txt">
-                  <span className="bx-ico"><Icon name="dashboard" /></span>
-                  <h3>One dashboard</h3>
-                  <p>Every certificate and subscription in one list, with what needs you at the top: renew, reissue or validate.</p>
-                </div>
-                <div className="bx-mock" aria-hidden="true">
-                  <div className="bx-mock-tabs"><span className="on">Renew <i>2</i></span><span>Reissue <i>1</i></span><span>Validate <i>1</i></span></div>
-                  {[
-                    ['shop.example.com', 'Subscription ends in 12 days', 'Renew', 'r'],
-                    ['*.example.org', 'Certificate expires in 21 days', 'Reissue', 'a'],
-                    ['api.example.net', 'DNS record found', 'Validate', 'v'],
-                    ['mail.example.io', 'Active · 164 days left', 'Active', 'g']
-                  ].map(([d, s, b, t]) => (
-                    <div key={d} className={`bx-row ${t}`}>
-                      <span className="bx-row-bar" />
-                      <div><b>{d}</b><small>{s}</small></div>
-                      <em>{b}</em>
+            <div className="wx-stage" aria-hidden="true">
+              <div className="wx-glow" />
+              <div className="wx-win">
+                <div className="wx-win-bar"><i /><i /><i /><span className="wx-url"><b>🔒</b> certdesk · Overview</span></div>
+                <div className="wx-win-body">
+                  <aside className="wx-side">
+                    <span className="wx-side-ws"><em>P</em>Paransh</span>
+                    <span className="on">Overview</span><span>Certificates <small>26</small></span><span>Order new</span><span>Tools</span>
+                  </aside>
+                  <div className="wx-main">
+                    <div className="wx-hero">
+                      <div className="wx-ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" /><circle cx="20" cy="20" r="16" className="v" /></svg><b>5/6</b></div>
+                      <div><small>Certificate posture</small><strong>3 items need you</strong></div>
                     </div>
-                  ))}
+                    <div className="wx-stats">
+                      <span><b>9</b>Active</span><span className="r"><b>2</b>Renew</span><span className="a"><b>1</b>Reissue</span><span className="v"><b>1</b>Validate</span>
+                    </div>
+                    <div className="wx-tabs"><span className="on">Renew <i>2</i></span><span>Reissue <i>1</i></span><span>Validate <i>1</i></span></div>
+                    {[
+                      ['shop.example.com', 'Subscription ends 2 Dec', 'Renew', 'r'],
+                      ['*.example.org', 'Certificate 9 Dec · subscription to Jun 2027', 'Reissue', 'a'],
+                      ['api.example.net', 'TXT record found in DNS', 'Validate', 'v']
+                    ].map(([d, t, b, k]) => (
+                      <div key={d} className={`wx-row ${k}`}><span className="wx-bar" /><div><b>{d}</b><small>{t}</small></div><em>{b}</em></div>
+                    ))}
+                  </div>
                 </div>
-              </article>
+              </div>
 
-              <article className="bx-tile bx-b">
-                <span className="bx-ico"><Icon name="key" /></span>
-                <h3>Key stays with you</h3>
-                <p>The private key is created on your machine and never sent to us.</p>
-                <div className="bx-code" aria-hidden="true">
-                  <span className="k">-----BEGIN CERTIFICATE REQUEST-----</span>
-                  <span>MIIC0jCCAboCAQAwgYwxCzAJBgNV…</span>
-                  <span className="lock">private.key · stays in your browser</span>
-                </div>
-              </article>
-
-              <article className="bx-tile bx-c">
-                <span className="bx-ico"><Icon name="check" /></span>
-                <h3>Guided validation</h3>
-                <p>Exact DNS records and files to add, checked in public DNS before the CA looks.</p>
-                <div className="bx-dns" aria-hidden="true">
-                  <span className="t">TXT</span><span className="n">example.com</span><span className="ok">✓ found</span>
-                </div>
-              </article>
-
-              <article className="bx-tile">
-                <span className="bx-ico"><Icon name="bell" /></span>
-                <h3>Reissue reminders</h3>
-                <p>Certificate expiry and subscription end tracked separately, long before anything lapses.</p>
-                <div className="bx-chips" aria-hidden="true"><span>30 days</span><span>14 days</span><span className="hot">7 days</span></div>
-              </article>
-
-              <article className="bx-tile">
-                <span className="bx-ico"><Icon name="bolt" /></span>
-                <h3>Automation ready</h3>
-                <p>Plan + Automate and ACME subscriptions install and renew on their own.</p>
-                <div className="bx-toggle" aria-hidden="true"><span>Auto-renew</span><i /></div>
-              </article>
-
-              <article className="bx-tile">
-                <span className="bx-ico"><Icon name="users" /></span>
-                <h3>Managed accounts</h3>
-                <p>Your provider sets you up and assigns existing orders to you.</p>
-                <div className="bx-avatars" aria-hidden="true"><i>PS</i><i>AK</i><i>RM</i><span>+ your team</span></div>
-              </article>
+              <div className="wx-float wx-f1"><span className="wx-f-ico b"><Icon name="key" /></span><div><b>private.key</b><small>generated in your browser</small></div></div>
+              <div className="wx-float wx-f2"><span className="wx-f-ico g">✓</span><div><b>DNS validated</b><small>_dnsauth TXT · example.com</small></div></div>
+              <div className="wx-float wx-f3"><span className="wx-f-ico a"><Icon name="bell" /></span><div><b>Reissue in 7 days</b><small>*.example.org · free</small></div></div>
+              <div className="wx-float wx-f4"><div><b>Auto-renew</b><small>Plan + Automate</small></div><span className="wx-switch" /></div>
+              <div className="wx-float wx-f5"><span className="wx-avs"><i>PS</i><i>AK</i><i>RM</i></span><small>Orders assigned by your provider</small></div>
             </div>
           </div>
         </section>
