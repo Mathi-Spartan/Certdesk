@@ -5,7 +5,7 @@ import { useState } from 'react';
 // Official logo files in /public/brands. Two-line logos (with "powered by digicert") get a little more height.
 const FILES = {
   digicert: { file: 'digicert.png', scale: 1 },
-  sectigo: { file: 'sectigo.svg', scale: 1.5 },
+  sectigo: { file: 'sectigo.svg', scale: 1 },
   comodo: { file: 'comodo.png', scale: 1.35 },
   geotrust: { file: 'geotrust.png', scale: 1.4 },
   thawte: { file: 'thawte.png', scale: 1.4 },
