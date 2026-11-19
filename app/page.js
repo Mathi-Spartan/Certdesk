@@ -4,94 +4,78 @@ import { q } from '@/lib/db';
 import { supportEmail } from '@/lib/support';
 import SignInDialog from '@/components/SignInDialog';
 import { SiteHeader, SiteFooter, UtilityBar, BRANDS, brandOf } from '@/components/site/SiteChrome';
+import { NeedsGrid, LevelCards } from '@/components/site/Sections';
 import BrandLogo from '@/components/site/BrandLogo';
 import './landing.css';
 
 export const metadata = {
   title: 'CertDesk · SSL certificates and automation in one console',
-  description: 'Order, validate, install and renew SSL/TLS certificates from one console. DV, OV, EV, wildcard and multi-domain, plus Plan + Automate and ACME subscriptions.'
+  description: 'Order, validate, install and renew SSL/TLS and code signing certificates from one console, or let Plan + Automate and ACME subscriptions do it for you.'
 };
 
-const LEVELS = [
-  {
-    tag: 'DV',
-    title: 'Domain Validation',
-    text: 'For blogs, portfolios, internal tools and most websites.',
-    points: ['Issued in minutes', 'DNS, HTTP or email validation', 'Single, wildcard or multi-domain'],
-    time: 'Minutes'
-  },
-  {
-    tag: 'OV',
-    title: 'Organisation Validation',
-    text: 'For business sites that need the company named in the certificate.',
-    points: ['Company verified by the CA', 'Organisation details in the certificate', 'Good for portals and APIs'],
-    time: '1–3 days'
-  },
-  {
-    tag: 'EV',
-    title: 'Extended Validation',
-    text: 'For banking, payments and high-trust brands.',
-    points: ['Strictest company checks', 'Highest assurance level', 'Ideal for checkout and login pages'],
-    time: '3–7 days'
-  }
-];
-
 const STEPS = [
-  ['Order', 'Pick a certificate or an automated subscription.'],
-  ['Create the key', 'Generate it in your browser, or paste a CSR from your server.'],
-  ['Validate', 'Add one DNS record or upload a file. We guide every step.'],
-  ['Issued', 'The CA issues the certificate, often within minutes.'],
-  ['Install & reissue', 'Download for your server. Reissue free while the order runs.']
+  ['Order', 'Pick a certificate or an automated subscription. Start with your domain and we suggest what fits.'],
+  ['Create the key', 'Generate the key and CSR in your browser, or paste a CSR from your server.'],
+  ['Validate', 'Add one DNS record or upload one file. We check it before you submit.'],
+  ['Issued', 'The CA issues the certificate, often within minutes for DV.'],
+  ['Install & reissue', 'Download for any server. Reissue free while the order runs.']
 ];
 
 const FEATURES = [
-  ['▦', 'One dashboard', 'Every certificate and subscription in one list, with what needs you at the top.'],
-  ['🔑', 'Key in your browser', 'Create the private key and CSR on your own machine. The key never leaves it.'],
-  ['✓', 'Guided validation', 'Exact DNS records and files to add, with checks before you order.'],
-  ['⟳', 'Reissue reminders', 'Know when a certificate needs reissuing or an order needs renewing, well before it expires.'],
-  ['⚡', 'Automation ready', 'Plan + Automate and ACME subscriptions renew and install certificates on their own.'],
-  ['👥', 'Managed accounts', 'Your provider sets you up and can assign existing orders to your account.']
+  ['dashboard', 'One dashboard', 'Every certificate and subscription in one list, with what needs you at the top.'],
+  ['key', 'Key stays with you', 'The private key is created on your machine and never sent to us.'],
+  ['check', 'Guided validation', 'Exact DNS records and files to add, with DNS checks before you order.'],
+  ['bell', 'Reissue reminders', 'See reissue and renewal dates long before anything expires.'],
+  ['bolt', 'Automation ready', 'Plan + Automate and ACME subscriptions install and renew on their own.'],
+  ['users', 'Managed accounts', 'Your provider sets you up and can assign existing orders to you.']
 ];
 
-const COMPARE = [
-  ['Who renews it', 'You reissue and renew from the console', 'Renews and reissues automatically'],
-  ['Who installs it', 'You download and install it', 'AutoInstall agent or your ACME client'],
-  ['Domains', 'Single, wildcard or multi-domain', 'One per plan, or many with ACME CaaS'],
-  ['Best for', 'A few sites with manual control', 'Many sites and 100-day certificates']
+const ICONS = {
+  dashboard: <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
+  key: <><circle cx="8" cy="15" r="4" /><path d="m10.8 12.2 9.2-9.2M17 6l3 3M14 9l2 2" /></>,
+  check: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>,
+  bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></>,
+  bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6" /></>
+};
+
+const TIMELINE = [
+  { when: 'Until Mar 2026', days: 398, note: 'About one renewal a year' },
+  { when: '15 Mar 2026', days: 200, note: 'In force now', now: true },
+  { when: '15 Mar 2027', days: 100, note: 'About four a year' },
+  { when: '15 Mar 2029', days: 47, note: 'About eight a year' }
 ];
 
 const FAQ = [
   ['Who can use CertDesk?', 'CertDesk accounts are created by your SSL provider. Once you have one, sign in with your email and password to manage and order certificates.'],
   ['How fast is a DV certificate issued?', 'Usually within minutes of passing validation. Add the DNS record or file we show you and the certificate is issued as soon as the CA sees it.'],
   ['Do you see my private key?', 'No. When you create the key in the browser it is generated on your computer and downloaded straight to you. Only the CSR is sent to the CA.'],
-  ['What is the difference between reissue and renew?', 'A certificate inside an active order can be reissued free of charge as often as you need. When the order itself ends, you renew by placing a new order.'],
+  ['What is the difference between reissue and renew?', 'A certificate inside an active order can be reissued free as often as you need. When the order itself ends, you renew by placing a new order.'],
   ['What changes with 100-day certificates?', 'From 15 March 2027 public certificates last at most 100 days, so they need replacing about every three months. Automated subscriptions handle that for you.'],
-  ['Plan + Automate or ACME CaaS?', 'Plan + Automate covers one domain and can install certificates for you with the AutoInstall agent. ACME CaaS covers many domains for your own ACME client.']
+  ['Plan + Automate or ACME CaaS?', 'Plan + Automate covers one domain and installs certificates for you with the AutoInstall agent. ACME CaaS covers many domains for your own ACME client.']
 ];
 
-const VLABEL = { dv: 'DV', ov: 'OV', ev: 'EV' };
+function Icon({ name }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>
+  );
+}
 
 export default async function Landing({ searchParams }) {
   const sp = (await searchParams) || {};
-  const [ctx, products, email] = await Promise.all([
+  const [ctx, email, allProducts] = await Promise.all([
     getContext().catch(() => null),
-    q(`select name, brand, validation, wildcard, multidomain from console.products where enabled order by validation, wildcard, name limit 5`).catch(() => []),
-    supportEmail().catch(() => null)
+    supportEmail().catch(() => null),
+    q(`select name, brand from console.products where not automation`).catch(() => [])
   ]);
-  const allProducts = await q(`select name, brand from console.products where not automation`).catch(() => []);
   const byBrand = {};
   for (const p of allProducts) { const b = brandOf(p).slug; byBrand[b] = (byBrand[b] || 0) + 1; }
-  const totalProducts = allProducts.length;
+  const total = allProducts.length;
   const signedIn = !!ctx;
   const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin';
-  // signed out: these open the sign-in dialog instead of navigating
   const consoleProps = signedIn ? { href: consoleHref } : { href: '#signin', 'data-signin': '' };
   const contact = email ? `mailto:${email}?subject=${encodeURIComponent('CertDesk account request')}` : '#faq';
-  const picks = [
-    ...products.map((p) => ({ name: p.name, kind: `${VLABEL[p.validation] || 'SSL'}${p.wildcard ? ' · Wildcard' : p.multidomain ? ' · Multi-domain' : ''}`, note: p.validation === 'dv' ? 'Minutes' : 'Days' })),
-    { name: 'Plan + Automate', kind: 'Automated · 1 domain', note: 'Auto-renews' },
-    { name: 'ACME Certificate-as-a-Service', kind: 'Automated · many domains', note: 'Unlimited' }
-  ].slice(0, 6);
+  const daysTo100 = Math.max(0, Math.ceil((new Date('2027-03-15T00:00:00Z') - Date.now()) / 86400000));
 
   return (
     <div className="lp">
@@ -100,50 +84,62 @@ export default async function Landing({ searchParams }) {
       <SiteHeader signedIn={signedIn} consoleHref={consoleHref} />
 
       <main id="main">
-        <section className="lp-hero">
-          <div className="lp-wrap lp-hero-in">
-            <div className="lp-hero-text">
-              <p className="lp-eyebrow">Trusted TLS from {BRANDS.slice(0, 6).map((c) => c.name).join(' · ')}</p>
-              <h1>SSL certificates, issued and managed from one clean console.</h1>
-              <p className="lp-lead">
-                Order DV, OV, EV, wildcard and multi-domain certificates, follow guided validation, and keep every
-                certificate&apos;s reissue and renewal dates in view. Or let an automated subscription do it all for you.
+        <section className="hx">
+          <div className="hx-bg" aria-hidden="true" />
+          <div className="lp-wrap hx-in">
+            <div className="hx-text">
+              <span className="hx-pill"><span className="lp-new">New</span> Plan + Automate and ACME subscriptions are here</span>
+              <h1>SSL certificates, issued and managed <span className="hx-grad">from one clean console.</span></h1>
+              <p className="hx-lead">
+                Order DV, OV, EV, wildcard, multi-domain and code signing certificates, follow guided validation, and see every reissue
+                and renewal coming. Or let an automated subscription handle it all.
               </p>
               <div className="lp-cta">
-                <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}</a>
-                <Link href="/ssl" className="lp-btn lp-btn-ghost lp-btn-lg">Browse all certificates</Link>
+                <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}<span aria-hidden="true">→</span></a>
+                <Link href="/ssl" className="lp-btn lp-btn-glass lp-btn-lg">Browse {total > 20 ? `${total}+` : 'all'} certificates</Link>
               </div>
-              <ul className="lp-badges">
-                <li><span className="lp-dot" />256-bit encryption</li>
-                <li><span className="lp-dot" />99.9% browser trust</li>
-                <li><span className="lp-dot" />Minutes for DV issuance</li>
-                <li><span className="lp-dot" />Key stays on your machine</li>
+              <ul className="hx-trust">
+                <li><Icon name="check" />256-bit encryption</li>
+                <li><Icon name="bolt" />DV in minutes</li>
+                <li><Icon name="key" />Key stays on your machine</li>
               </ul>
             </div>
 
-            <aside className="lp-panel" aria-label="Popular certificates">
-              <div className="lp-panel-head">
-                <span>Popular in the console</span>
-                <span className="lp-panel-note">Issuance time</span>
+            <div className="hx-visual" aria-hidden="true">
+              <div className="hx-window">
+                <div className="hx-bar"><span /><span /><span /><em>certdesk / my-ssl</em></div>
+                <div className="hx-app">
+                  <div className="hx-side"><i className="on" /><i /><i /></div>
+                  <div className="hx-main">
+                    <div className="hx-row-title">My SSL</div>
+                    <div className="hx-tiles">
+                      <div><b>12</b><small>Protected</small></div>
+                      <div className="warn"><b>1</b><small>Needs you</small></div>
+                      <div><b>2</b><small>In progress</small></div>
+                    </div>
+                    {[
+                      ['shop.example.com', 'Certificate · Sectigo OV', 'Protected', 'ok', 'Expires in 182 days'],
+                      ['*.example.com', 'Automated · RapidSSL Plan', 'Protected', 'ok', 'Renews automatically'],
+                      ['api.example.com', 'Certificate · DigiCert', 'Needs you', 'bad', 'Reissue in 21 days'],
+                      ['new.example.com', 'Certificate · GoGetSSL DV', 'In progress', 'mid', 'Validating DNS']
+                    ].map(([d, p, s, t, n]) => (
+                      <div key={d} className="hx-item">
+                        <span className={`hx-ico ${p.startsWith('Auto') ? 'auto' : ''}`} />
+                        <span className="hx-dom"><b>{d}</b><small>{p}</small></span>
+                        <span className={`hx-badge ${t}`}>{s}</span>
+                        <span className="hx-note">{n}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <ul className="lp-panel-list">
-                {picks.map((p) => (
-                  <li key={p.name}>
-                    <span>
-                      <span className="lp-panel-name">{p.name}</span>
-                      <span className="lp-panel-kind">{p.kind}</span>
-                    </span>
-                    <span className="lp-panel-time">{p.note}</span>
-                  </li>
-                ))}
-              </ul>
-              <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-block">{signedIn ? 'Order in the console →' : 'Sign in to see pricing & order →'}</a>
-              <p className="lp-panel-foot">Pricing is set by your provider and shown after sign-in.</p>
-            </aside>
+              <div className="hx-float hx-f1"><span className="hx-dot ok" />Certificate issued <b>in 4 min</b></div>
+              <div className="hx-float hx-f2"><span className="hx-dot auto" />Auto-renewal <b>on</b></div>
+            </div>
           </div>
 
           <div className="lp-wrap">
-            <div className="lp-marquee" aria-label="Certificate authorities">
+            <div className="lp-marquee hx-marquee" aria-label="Certificate authorities">
               <ul className="lp-marquee-track">
                 {[...BRANDS, ...BRANDS].map((b, i) => (
                   <li key={b.slug + i} aria-hidden={i >= BRANDS.length ? 'true' : undefined}>
@@ -155,46 +151,46 @@ export default async function Landing({ searchParams }) {
                 ))}
               </ul>
             </div>
-            <div className="lp-figures">
-              <div><strong>{totalProducts > 20 ? `${totalProducts}+` : `${BRANDS.length} brands`}</strong><span>{totalProducts > 20 ? 'Certificate products' : 'Certificate authorities'}</span></div>
-              <div><strong>DV · OV · EV</strong><span>Every validation level</span></div>
-              <div><strong>Wildcard + SAN</strong><span>Multi-domain coverage</span></div>
-              <div><strong>Agent + ACME</strong><span>Automation built in</span></div>
-            </div>
           </div>
         </section>
 
-        <section className="lp-section" id="certificates">
+        <section className="lp-wrap hx-stats">
+          <div><strong>{total > 20 ? `${total}+` : '70+'}</strong><span>SSL & code signing products</span></div>
+          <div><strong>{BRANDS.length}</strong><span>Trusted brands</span></div>
+          <div><strong>DV · OV · EV</strong><span>Every validation level</span></div>
+          <div><strong>Agent + ACME</strong><span>Automation built in</span></div>
+        </section>
+
+        <section className="lp-section hx-sec" id="certificates">
+          <div className="lp-wrap">
+            <div className="hx-sec-head">
+              <div>
+                <p className="lp-kicker hx-left">Find your certificate</p>
+                <h2 className="hx-left">What do you need to secure?</h2>
+              </div>
+              <Link href="/ssl" className="lp-btn lp-btn-ghost">See all certificates →</Link>
+            </div>
+            <NeedsGrid />
+          </div>
+        </section>
+
+        <section className="lp-section lp-alt hx-sec">
           <div className="lp-wrap">
             <p className="lp-kicker">Choose by validation level</p>
             <h2>The right certificate for every trust requirement</h2>
-            <p className="lp-sub">Not sure which one? Start with the domain. The console suggests the certificates that fit.</p>
-            <div className="lp-grid3">
-              {LEVELS.map((l) => (
-                <article key={l.tag} className="lp-card">
-                  <span className="lp-tag">{l.tag}</span>
-                  <h3>{l.title}</h3>
-                  <p>{l.text}</p>
-                  <ul className="lp-ticks">{l.points.map((x) => <li key={x}>{x}</li>)}</ul>
-                  <div className="lp-card-foot">
-                    <span><span className="lp-muted">Issued in</span> <strong>{l.time}</strong></span>
-                    <a {...consoleProps} className="lp-btn lp-btn-ghost lp-btn-sm">Order {l.tag}</a>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <p className="lp-sub" style={{ marginBottom: 34 }}>Every level gives the same 256-bit encryption. The difference is how much the CA checks about you.</p>
+            <LevelCards />
           </div>
         </section>
 
-        <section className="lp-section lp-alt" id="how">
+        <section className="lp-section hx-sec" id="how">
           <div className="lp-wrap">
             <p className="lp-kicker">How it works</p>
-            <h2>From order to installed, in five guided steps</h2>
-            <p className="lp-sub">Each step tells you exactly what to do next, so nothing stalls in validation.</p>
-            <ol className="lp-steps">
+            <h2>From order to installed in five guided steps</h2>
+            <ol className="hx-steps">
               {STEPS.map(([t, d], i) => (
                 <li key={t}>
-                  <span className="lp-step-n">{i + 1}</span>
+                  <span className="hx-step-n">{String(i + 1).padStart(2, '0')}</span>
                   <strong>{t}</strong>
                   <span>{d}</span>
                 </li>
@@ -203,48 +199,48 @@ export default async function Landing({ searchParams }) {
           </div>
         </section>
 
-        <section className="lp-section" id="automation">
-          <div className="lp-wrap lp-split">
+        <section className="hx-dark" id="automation">
+          <div className="lp-wrap hx-dark-in">
             <div>
-              <p className="lp-kicker">Automated SSL</p>
-              <h2>Ready for 100-day certificates</h2>
-              <p className="lp-sub" style={{ marginLeft: 0 }}>
-                From 15 March 2027 public certificates last at most 100 days. Automated subscriptions replace them for you,
-                so you never chase an expiry again.
+              <p className="lp-kicker hx-left hx-kick-light">Automated SSL</p>
+              <h2 className="hx-left">Certificate lifetimes are shrinking. Let automation keep up.</h2>
+              <p className="hx-dark-text">
+                Public certificates are limited to 200 days now, 100 days from 15 March 2027 ({daysTo100} days away) and 47 days from
+                15 March 2029. Automated subscriptions replace them before they expire, so nothing lapses.
               </p>
-              <div className="lp-auto">
+              <div className="hx-auto">
                 <article>
-                  <h3>Plan + Automate</h3>
-                  <p>One domain, installed and renewed by the AutoInstall agent on Apache, NGINX or IIS, or by your own ACME client.</p>
+                  <span className="lp-glyph hx-g-orange">A</span>
+                  <div><h3>Plan + Automate</h3><p>One domain, installed and renewed by the AutoInstall agent on Apache, NGINX or IIS, or by your ACME client.</p></div>
                 </article>
                 <article>
-                  <h3>ACME Certificate-as-a-Service</h3>
-                  <p>Many domains, unlimited certificates. Plug the EAB keys into Certbot, acme.sh, Caddy or cert-manager.</p>
+                  <span className="lp-glyph">C</span>
+                  <div><h3>ACME Certificate-as-a-Service</h3><p>Many domains, unlimited certificates. Plug the keys into Certbot, acme.sh, Caddy or cert-manager.</p></div>
                 </article>
               </div>
+              <Link href="/ssl?type=auto" className="lp-btn lp-btn-light lp-btn-lg" style={{ marginTop: 26 }}>Explore automated SSL →</Link>
             </div>
-            <div className="lp-table-card">
-              <table className="lp-table">
-                <caption className="lp-sr">Manual certificate compared with automated SSL</caption>
-                <thead><tr><th /><th>Certificate</th><th>Automated SSL</th></tr></thead>
-                <tbody>
-                  {COMPARE.map(([k, a, b]) => (
-                    <tr key={k}><th scope="row">{k}</th><td>{a}</td><td>{b}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="hx-timeline" role="list" aria-label="Maximum certificate lifetime">
+              {TIMELINE.map((t) => (
+                <div key={t.when} role="listitem" className={`hx-tl ${t.now ? 'now' : ''}`}>
+                  <div className="hx-tl-meta"><span>{t.when}</span>{t.now ? <em>Now</em> : null}</div>
+                  <div className="hx-tl-bar"><span style={{ width: `${(t.days / 398) * 100}%` }} /></div>
+                  <div className="hx-tl-days"><b>{t.days}</b> days <small>{t.note}</small></div>
+                </div>
+              ))}
+              <p className="hx-tl-src">Maximum lifetime of a public TLS certificate, CA/Browser Forum ballot SC-081v3.</p>
             </div>
           </div>
         </section>
 
-        <section className="lp-section lp-alt" id="why">
+        <section className="lp-section hx-sec" id="why">
           <div className="lp-wrap">
             <p className="lp-kicker">Why CertDesk</p>
             <h2>Everything a certificate needs, in one place</h2>
-            <div className="lp-grid3">
+            <div className="hx-features">
               {FEATURES.map(([icon, t, d]) => (
-                <article key={t} className="lp-feature">
-                  <span className="lp-feature-icon" aria-hidden="true">{icon}</span>
+                <article key={t}>
+                  <span className="hx-f-icon"><Icon name={icon} /></span>
                   <h3>{t}</h3>
                   <p>{d}</p>
                 </article>
@@ -253,11 +249,14 @@ export default async function Landing({ searchParams }) {
           </div>
         </section>
 
-        <section className="lp-section" id="faq">
-          <div className="lp-wrap lp-faq">
-            <p className="lp-kicker">FAQ</p>
-            <h2>Questions, answered</h2>
-            <div className="lp-faq-list">
+        <section className="lp-section lp-alt hx-sec" id="faq">
+          <div className="lp-wrap hx-faq">
+            <div>
+              <p className="lp-kicker hx-left">FAQ</p>
+              <h2 className="hx-left">Questions, answered</h2>
+              <p className="hx-faq-side">Something else? {email ? <a href={`mailto:${email}`}>Email us</a> : 'Ask your provider'} and we&apos;ll help.</p>
+            </div>
+            <div className="lp-faq-list hx-faq-list">
               {FAQ.map(([qq, a]) => (
                 <details key={qq}>
                   <summary>{qq}</summary>
@@ -268,15 +267,15 @@ export default async function Landing({ searchParams }) {
           </div>
         </section>
 
-        <section className="lp-final">
-          <div className="lp-wrap lp-final-in">
+        <section className="lp-wrap hx-final-wrap">
+          <div className="hx-final">
             <div>
               <h2>Take control of your certificates today</h2>
               <p>Sign in to order, validate and track every certificate, or ask for an account.</p>
             </div>
             <div className="lp-cta">
               <a {...consoleProps} className="lp-btn lp-btn-light lp-btn-lg">{signedIn ? 'Open console' : 'Sign in'}</a>
-              {!signedIn ? <a href={contact} className="lp-btn lp-btn-outline-light lp-btn-lg">Request an account</a> : null}
+              {!signedIn ? <a href={contact} className="lp-btn lp-btn-outline-light lp-btn-lg">Request an account</a> : <Link href="/ssl" className="lp-btn lp-btn-outline-light lp-btn-lg">Browse certificates</Link>}
             </div>
           </div>
         </section>
