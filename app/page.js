@@ -226,52 +226,157 @@ export default async function Landing({ searchParams }) {
           </div>
         </section>
 
-        <section className="hx-dark" id="automation">
-          <div className="lp-wrap hx-dark-in">
-            <div>
-              <p className="lp-kicker hx-left hx-kick-light">Automated SSL</p>
-              <h2 className="hx-left">Certificate lifetimes are shrinking. Let automation keep up.</h2>
-              <p className="hx-dark-text">
-                Public certificates are limited to 200 days now, 100 days from 15 March 2027 ({daysTo100} days away) and 47 days from
-                15 March 2029. Automated subscriptions replace them before they expire, so nothing lapses.
+        <section className="ax" id="automation">
+          <div className="ax-bg" aria-hidden="true" />
+          <div className="lp-wrap ax-in">
+            <div className="ax-copy">
+              <p className="ax-kicker"><span className="ax-pulse" />Automated SSL</p>
+              <h2>Certificate lifetimes are shrinking. <span className="ax-grad">Let automation keep up.</span></h2>
+              <p className="ax-text">
+                Public certificates are limited to 200 days now, 100 days from 15 March 2027 and 47 days from 15 March 2029.
+                Automated subscriptions replace them before they expire, so nothing lapses.
               </p>
-              <div className="hx-auto">
+
+              <div className="ax-count">
+                <b>{daysTo100}</b>
+                <div><strong>days until 100-day certificates</strong><span>CA/Browser Forum ballot SC-081v3 · 15 March 2027</span></div>
+              </div>
+
+              <div className="ax-plans">
                 <article>
-                  <span className="lp-glyph hx-g-orange">A</span>
-                  <div><h3>Plan + Automate</h3><p>One domain, installed and renewed by the AutoInstall agent on Apache, NGINX or IIS, or by your ACME client.</p></div>
+                  <span className="ax-ico">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /><path d="M7 7.5h.01M7 16.5h.01" /></svg>
+                  </span>
+                  <h3>Plan + Automate</h3>
+                  <p>One domain. The AutoInstall agent installs and renews it for you, or use your own ACME client.</p>
+                  <ul><li>Apache</li><li>NGINX</li><li>IIS</li><li>ACME</li></ul>
                 </article>
                 <article>
-                  <span className="lp-glyph">C</span>
-                  <div><h3>ACME Certificate-as-a-Service</h3><p>Many domains, unlimited certificates. Plug the keys into Certbot, acme.sh, Caddy or cert-manager.</p></div>
+                  <span className="ax-ico alt">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 9 3 3-3 3M13 15h4" /></svg>
+                  </span>
+                  <h3>ACME Certificate-as-a-Service</h3>
+                  <p>Many domains and unlimited certificates. Plug the keys into the ACME client you already run.</p>
+                  <ul><li>Certbot</li><li>acme.sh</li><li>Caddy</li><li>cert-manager</li></ul>
                 </article>
               </div>
-              <Link href="/ssl?type=auto" className="lp-btn lp-btn-light lp-btn-lg" style={{ marginTop: 26 }}>Explore automated SSL →</Link>
+              <div className="lp-cta" style={{ marginTop: 26 }}>
+                <Link href="/ssl?type=auto" className="lp-btn lp-btn-light lp-btn-lg">Explore automated SSL <span aria-hidden="true">→</span></Link>
+              </div>
             </div>
-            <div className="hx-timeline" role="list" aria-label="Maximum certificate lifetime">
-              {TIMELINE.map((t) => (
-                <div key={t.when} role="listitem" className={`hx-tl ${t.now ? 'now' : ''}`}>
-                  <div className="hx-tl-meta"><span>{t.when}</span>{t.now ? <em>Now</em> : null}</div>
-                  <div className="hx-tl-bar"><span style={{ width: `${(t.days / 398) * 100}%` }} /></div>
-                  <div className="hx-tl-days"><b>{t.days}</b> days <small>{t.note}</small></div>
+
+            <div className="ax-viz">
+              <div className="ax-card">
+                <div className="ax-card-head">
+                  <span>Maximum certificate lifetime</span>
+                  <em>SC-081v3</em>
                 </div>
-              ))}
-              <p className="hx-tl-src">Maximum lifetime of a public TLS certificate, CA/Browser Forum ballot SC-081v3.</p>
+                <div className="ax-chart" role="list" aria-label="Maximum certificate lifetime by date">
+                  {TIMELINE.map((t, i) => (
+                    <div key={t.when} role="listitem" className={`ax-col ${t.now ? 'now' : ''} ${i === 0 ? 'past' : ''}`}>
+                      <span className="ax-val"><b>{t.days}</b> days</span>
+                      <span className="ax-bar" style={{ height: `${Math.max(10, (t.days / 398) * 100)}%` }}>{t.now ? <i>Now</i> : null}</span>
+                      <span className="ax-when">{t.when.replace('Until ', 'Until ')}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="ax-reps">
+                  <span className="ax-reps-k">Replacements per year</span>
+                  <div className="ax-reps-row">
+                    {[1, 2, 4, 8].map((n, i) => (
+                      <div key={n} className={TIMELINE[i].now ? 'now' : ''}>
+                        <span className="ax-dots" aria-hidden="true">{Array.from({ length: n }, (_, k) => <i key={k} style={{ animationDelay: `${k * 0.12}s` }} />)}</span>
+                        <small>{n}×</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="ax-term" aria-hidden="true">
+                <div className="ax-term-bar"><i /><i /><i /><span>certdesk-agent · renew</span></div>
+                <ul>
+                  <li><span className="ax-t-time">02:00</span>checking 14 domains</li>
+                  <li><span className="ax-t-time">02:00</span>shop.example.com <b>expires in 29 days</b></li>
+                  <li><span className="ax-t-time">02:01</span>DNS validated · certificate issued</li>
+                  <li><span className="ax-t-time">02:01</span>installed on nginx · reloaded <span className="ax-ok">✓</span></li>
+                  <li className="ax-cursor"><span className="ax-t-time">02:01</span>next run in 24h</li>
+                </ul>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="lp-section hx-sec" id="why">
+        <section className="lp-section bx" id="why">
           <div className="lp-wrap">
             <p className="lp-kicker">Why CertDesk</p>
-            <h2>Everything a certificate needs, in one place</h2>
-            <div className="hx-features">
-              {FEATURES.map(([icon, t, d]) => (
-                <article key={t}>
-                  <span className="hx-f-icon"><Icon name={icon} /></span>
-                  <h3>{t}</h3>
-                  <p>{d}</p>
-                </article>
-              ))}
+            <h2 className="bx-title">Everything a certificate needs, <span>in one place</span></h2>
+            <p className="lp-sub">Built for the way certificates actually live: ordered once, validated, reissued, renewed and audited.</p>
+
+            <div className="bx-grid">
+              <article className="bx-tile bx-a">
+                <div className="bx-txt">
+                  <span className="bx-ico"><Icon name="dashboard" /></span>
+                  <h3>One dashboard</h3>
+                  <p>Every certificate and subscription in one list, with what needs you at the top: renew, reissue or validate.</p>
+                </div>
+                <div className="bx-mock" aria-hidden="true">
+                  <div className="bx-mock-tabs"><span className="on">Renew <i>2</i></span><span>Reissue <i>1</i></span><span>Validate <i>1</i></span></div>
+                  {[
+                    ['shop.example.com', 'Subscription ends in 12 days', 'Renew', 'r'],
+                    ['*.example.org', 'Certificate expires in 21 days', 'Reissue', 'a'],
+                    ['api.example.net', 'DNS record found', 'Validate', 'v'],
+                    ['mail.example.io', 'Active · 164 days left', 'Active', 'g']
+                  ].map(([d, s, b, t]) => (
+                    <div key={d} className={`bx-row ${t}`}>
+                      <span className="bx-row-bar" />
+                      <div><b>{d}</b><small>{s}</small></div>
+                      <em>{b}</em>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="bx-tile bx-b">
+                <span className="bx-ico"><Icon name="key" /></span>
+                <h3>Key stays with you</h3>
+                <p>The private key is created on your machine and never sent to us.</p>
+                <div className="bx-code" aria-hidden="true">
+                  <span className="k">-----BEGIN CERTIFICATE REQUEST-----</span>
+                  <span>MIIC0jCCAboCAQAwgYwxCzAJBgNV…</span>
+                  <span className="lock">private.key · stays in your browser</span>
+                </div>
+              </article>
+
+              <article className="bx-tile bx-c">
+                <span className="bx-ico"><Icon name="check" /></span>
+                <h3>Guided validation</h3>
+                <p>Exact DNS records and files to add, checked in public DNS before the CA looks.</p>
+                <div className="bx-dns" aria-hidden="true">
+                  <span className="t">TXT</span><span className="n">example.com</span><span className="ok">✓ found</span>
+                </div>
+              </article>
+
+              <article className="bx-tile">
+                <span className="bx-ico"><Icon name="bell" /></span>
+                <h3>Reissue reminders</h3>
+                <p>Certificate expiry and subscription end tracked separately, long before anything lapses.</p>
+                <div className="bx-chips" aria-hidden="true"><span>30 days</span><span>14 days</span><span className="hot">7 days</span></div>
+              </article>
+
+              <article className="bx-tile">
+                <span className="bx-ico"><Icon name="bolt" /></span>
+                <h3>Automation ready</h3>
+                <p>Plan + Automate and ACME subscriptions install and renew on their own.</p>
+                <div className="bx-toggle" aria-hidden="true"><span>Auto-renew</span><i /></div>
+              </article>
+
+              <article className="bx-tile">
+                <span className="bx-ico"><Icon name="users" /></span>
+                <h3>Managed accounts</h3>
+                <p>Your provider sets you up and assigns existing orders to you.</p>
+                <div className="bx-avatars" aria-hidden="true"><i>PS</i><i>AK</i><i>RM</i><span>+ your team</span></div>
+              </article>
             </div>
           </div>
         </section>
