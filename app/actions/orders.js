@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import { q, one } from '@/lib/db';
 import { requireWorkspace } from '@/lib/auth';
 import * as gg from '@/lib/gogetssl';
-import { syncOrder, addEvent, getOrderForWorkspace } from '@/lib/orders';
+import { syncOrder, addEvent, getOrderForWorkspace, extractDcv } from '@/lib/orders';
+import { checkDcvRecord, dnsMessage } from '@/lib/dnscheck';
 
 const enc = encodeURIComponent;
 const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
@@ -231,16 +232,31 @@ function withMsg(back, key, msg) {
   return back + (back.includes('?') ? '&' : '?') + key + '=' + enc(msg);
 }
 
+/** Compare the DNS records the CA expects with what public DNS serves. */
+async function dnsReport(o) {
+  if (!String(o.dcv_method || '').toLowerCase().includes('dns') || !o.raw) return null;
+  const items = extractDcv(typeof o.raw === 'string' ? JSON.parse(o.raw) : o.raw).filter((i) => i.dns?.name && i.status !== 'validated');
+  const out = [];
+  for (const i of items.slice(0, 5)) out.push(dnsMessage(i.dns, await checkDcvRecord(i.dns)));
+  return out.filter(Boolean).join(' ') || null;
+}
+
 export async function checkNow(formData) {
   const { order, back } = await loadOrder(formData);
   let msg;
+  let bad = false;
   try {
     const o = await syncOrder(order);
-    msg = `Checked with GoGetSSL: ${o.gg_status_description || o.gg_status || 'no change'}`;
+    if (o.status === 'issued') msg = 'The certificate is issued.';
+    else {
+      const report = await dnsReport(o);
+      bad = !!report && (report.includes('not in public DNS') || report.includes('extra spaces'));
+      msg = report || `Still waiting for the CA (${o.gg_status || o.status}).`;
+    }
   } catch (e) {
     redirect(withMsg(back, 'err', 'GoGetSSL: ' + e.message));
   }
-  redirect(withMsg(back, 'ok', msg));
+  redirect(withMsg(back, bad ? 'err' : 'ok', msg));
 }
 
 export async function saveReminderSettings(formData) {
@@ -300,10 +316,13 @@ export async function revalidateDomain(formData) {
   const { ctx, order, back } = await loadOrder(formData);
   const domain = String(formData.get('domain') || order.common_name);
   try {
+    const pre = await dnsReport(order);
+    if (pre && (pre.includes('not in public DNS') || pre.includes('extra spaces'))) redirect(withMsg(back, 'err', pre));
     await gg.revalidate(order.gg_order_id, domain);
     await addEvent(order.id, 'validation', `Asked the CA to check ${domain} again`, ctx.user.id);
     await syncOrder(order);
   } catch (e) {
+    if (String(e?.digest || '').startsWith('NEXT_REDIRECT')) throw e;
     redirect(withMsg(back, 'err', 'GoGetSSL: ' + e.message));
   }
   redirect(withMsg(back, 'ok', `The CA will check ${domain} again`));

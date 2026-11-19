@@ -1186,3 +1186,6 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .cx3-autorenew{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--cx-line,#E4E4E7)}
 .cx3-autorenew strong{font-size:13.5px}
 .cx3-autorenew small{display:block;font-size:12px;color:var(--cx-muted,#52525B);margin-top:3px;line-height:1.4}
+/* the certificate page side column is not the old navy sidebar */
+.cx3 .cx3-col.side, .cx3-page .cx3-col.side { background: transparent; color: inherit; border-right: 0; padding: 0; max-width: none; flex: initial; }
+.cx3-page .cx3-col.side h2, .cx3-page .cx3-col.side .cx3-field span { color: var(--cx-ink, #18181B); }
