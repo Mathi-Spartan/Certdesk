@@ -2,21 +2,30 @@
 
 import { useState } from 'react';
 
-/**
- * Official CA logo from /public/brands/<slug>.svg (or .png). Falls back to the brand name
- * until the logo file is added.
- */
+// Official logo files in /public/brands. Two-line logos (with "powered by digicert") get a little more height.
+const FILES = {
+  digicert: { file: 'digicert.png', scale: 1 },
+  sectigo: { file: 'sectigo.svg', scale: 1.5 },
+  comodo: { file: 'comodo.png', scale: 1.35 },
+  geotrust: { file: 'geotrust.png', scale: 1.4 },
+  thawte: { file: 'thawte.png', scale: 1.4 },
+  rapidssl: { file: 'rapidssl.png', scale: 0.9 }
+};
+
+/** A CA's logo; falls back to its name when there is no logo file. */
 export default function BrandLogo({ slug, name, height = 26, className = '' }) {
-  const [step, setStep] = useState(0); // 0 svg, 1 png, 2 text
-  if (step >= 2) return <span className={`lp-logo-text ${className}`}>{name}</span>;
+  const [failed, setFailed] = useState(false);
+  const f = FILES[slug];
+  if (!f || failed) return <span className={`lp-logo-text ${className}`}>{name}</span>;
+  const h = Math.round(height * f.scale);
   return (
     <img
-      src={`/brands/${slug}.${step === 0 ? 'svg' : 'png'}`}
+      src={`/brands/${f.file}`}
       alt={name}
-      height={height}
-      style={{ height, width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+      height={h}
+      style={{ height: h, width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
       className={className}
-      onError={() => setStep((s) => s + 1)}
+      onError={() => setFailed(true)}
     />
   );
 }
