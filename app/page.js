@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getContext } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { supportEmail } from '@/lib/support';
+import SignInDialog from '@/components/SignInDialog';
 import './landing.css';
 
 export const metadata = {
@@ -66,18 +67,32 @@ const FAQ = [
   ['Plan + Automate or ACME CaaS?', 'Plan + Automate covers one domain and can install certificates for you with the AutoInstall agent. ACME CaaS covers many domains for your own ACME client.']
 ];
 
-const CAS = ['Sectigo', 'DigiCert', 'RapidSSL', 'GeoTrust', 'Thawte', 'Comodo'];
+const CAS = [
+  { name: 'Sectigo', note: 'DV · OV · EV · ACME' },
+  { name: 'DigiCert', note: 'Premium OV · EV' },
+  { name: 'RapidSSL', note: 'Fast DV · Wildcard' },
+  { name: 'GeoTrust', note: 'DV · OV · EV' },
+  { name: 'Thawte', note: 'DV · OV · EV' },
+  { name: 'Comodo', note: 'Positive & Essential SSL' },
+  { name: 'GoGetSSL', note: 'Value DV · Wildcard' }
+];
 const VLABEL = { dv: 'DV', ov: 'OV', ev: 'EV' };
 
-export default async function Landing() {
+export default async function Landing({ searchParams }) {
+  const sp = (await searchParams) || {};
   const [ctx, products, email] = await Promise.all([
     getContext().catch(() => null),
     q(`select name, brand, validation, wildcard, multidomain from console.products where enabled order by validation, wildcard, name limit 5`).catch(() => []),
     supportEmail().catch(() => null)
   ]);
+  const brandRows = await q(`select brand, count(*)::int as n from console.products where not automation group by brand`).catch(() => []);
+  const brandCount = Object.fromEntries(brandRows.map((b) => [String(b.brand || '').toLowerCase(), b.n]));
+  const totalProducts = brandRows.reduce((a, b) => a + b.n, 0);
   const signedIn = !!ctx;
-  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '/login';
-  const contact = email ? `mailto:${email}?subject=${encodeURIComponent('CertDesk account request')}` : '/login';
+  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin';
+  // signed out: these open the sign-in dialog instead of navigating
+  const consoleProps = signedIn ? { href: consoleHref } : { href: '#signin', 'data-signin': '' };
+  const contact = email ? `mailto:${email}?subject=${encodeURIComponent('CertDesk account request')}` : '#faq';
   const picks = [
     ...products.map((p) => ({ name: p.name, kind: `${VLABEL[p.validation] || 'SSL'}${p.wildcard ? ' · Wildcard' : p.multidomain ? ' · Multi-domain' : ''}`, note: p.validation === 'dv' ? 'Minutes' : 'Days' })),
     { name: 'Plan + Automate', kind: 'Automated · 1 domain', note: 'Auto-renews' },
@@ -117,8 +132,8 @@ export default async function Landing() {
             <a href="#why">Why CertDesk</a>
           </nav>
           <div className="lp-head-actions">
-            {signedIn ? null : <Link href="/login" className="lp-link">Sign in</Link>}
-            <Link href={consoleHref} className="lp-btn lp-btn-primary">{signedIn ? 'Open console' : 'Get started'}</Link>
+            {signedIn ? null : <a href="#signin" data-signin="" className="lp-link">Sign in</a>}
+            <a {...consoleProps} className="lp-btn lp-btn-primary">{signedIn ? 'Open console' : 'Get started'}</a>
           </div>
         </div>
       </header>
@@ -127,14 +142,14 @@ export default async function Landing() {
         <section className="lp-hero">
           <div className="lp-wrap lp-hero-in">
             <div className="lp-hero-text">
-              <p className="lp-eyebrow">Trusted TLS from {CAS.slice(0, 5).join(' · ')}</p>
+              <p className="lp-eyebrow">Trusted TLS from {CAS.slice(0, 5).map((c) => c.name).join(' · ')}</p>
               <h1>SSL certificates, issued and managed from one clean console.</h1>
               <p className="lp-lead">
                 Order DV, OV, EV, wildcard and multi-domain certificates, follow guided validation, and keep every
                 certificate&apos;s reissue and renewal dates in view. Or let an automated subscription do it all for you.
               </p>
               <div className="lp-cta">
-                <Link href={consoleHref} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}</Link>
+                <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}</a>
                 {!signedIn ? <a href={contact} className="lp-btn lp-btn-ghost lp-btn-lg">Request an account</a> : <a href="#certificates" className="lp-btn lp-btn-ghost lp-btn-lg">Browse certificates</a>}
               </div>
               <ul className="lp-badges">
@@ -161,17 +176,30 @@ export default async function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href={consoleHref} className="lp-btn lp-btn-primary lp-btn-block">{signedIn ? 'Order in the console →' : 'Sign in to see pricing & order →'}</Link>
+              <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-block">{signedIn ? 'Order in the console →' : 'Sign in to see pricing & order →'}</a>
               <p className="lp-panel-foot">Pricing is set by your provider and shown after sign-in.</p>
             </aside>
           </div>
 
           <div className="lp-wrap">
-            <ul className="lp-cas" aria-label="Certificate authorities">
-              {CAS.map((c) => <li key={c}>{c}</li>)}
-            </ul>
+            <div className="lp-marquee" aria-label="Certificate authorities in the catalogue">
+              <ul className="lp-marquee-track">
+                {[...CAS, ...CAS].map((c, i) => {
+                  const n = brandCount[c.name.toLowerCase()];
+                  return (
+                    <li key={c.name + i} aria-hidden={i >= CAS.length ? 'true' : undefined}>
+                      <span className="lp-ca-mark" aria-hidden="true">{c.name[0]}</span>
+                      <span className="lp-ca-text">
+                        <span className="lp-ca-name">{c.name}</span>
+                        <span className="lp-ca-note">{n ? `${n} certificates` : c.note}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <div className="lp-figures">
-              <div><strong>6 CAs</strong><span>Certificate authorities</span></div>
+              <div><strong>{totalProducts > 20 ? `${totalProducts}+` : `${CAS.length} brands`}</strong><span>{totalProducts > 20 ? 'Certificate products' : 'Certificate authorities'}</span></div>
               <div><strong>DV · OV · EV</strong><span>Every validation level</span></div>
               <div><strong>Wildcard + SAN</strong><span>Multi-domain coverage</span></div>
               <div><strong>Agent + ACME</strong><span>Automation built in</span></div>
@@ -193,7 +221,7 @@ export default async function Landing() {
                   <ul className="lp-ticks">{l.points.map((x) => <li key={x}>{x}</li>)}</ul>
                   <div className="lp-card-foot">
                     <span><span className="lp-muted">Issued in</span> <strong>{l.time}</strong></span>
-                    <Link href={consoleHref} className="lp-btn lp-btn-ghost lp-btn-sm">Order {l.tag}</Link>
+                    <a {...consoleProps} className="lp-btn lp-btn-ghost lp-btn-sm">Order {l.tag}</a>
                   </div>
                 </article>
               ))}
@@ -290,7 +318,7 @@ export default async function Landing() {
               <p>Sign in to order, validate and track every certificate, or ask for an account.</p>
             </div>
             <div className="lp-cta">
-              <Link href={consoleHref} className="lp-btn lp-btn-light lp-btn-lg">{signedIn ? 'Open console' : 'Sign in'}</Link>
+              <a {...consoleProps} className="lp-btn lp-btn-light lp-btn-lg">{signedIn ? 'Open console' : 'Sign in'}</a>
               {!signedIn ? <a href={contact} className="lp-btn lp-btn-outline-light lp-btn-lg">Request an account</a> : null}
             </div>
           </div>
@@ -317,13 +345,14 @@ export default async function Landing() {
           </div>
           <div>
             <h4>Account</h4>
-            <Link href="/login">Sign in</Link>
+            <a href="#signin" data-signin="">Sign in</a>
             <a href={contact}>Request an account</a>
             {email ? <a href={`mailto:${email}`}>Support</a> : null}
           </div>
         </div>
         <div className="lp-wrap lp-copy">© {new Date().getFullYear()} CertDesk. Certificates are issued by globally trusted certificate authorities.</div>
       </footer>
+      {!signedIn ? <SignInDialog openOnLoad={sp.signin === '1'} contact={contact} /> : null}
     </div>
   );
 }

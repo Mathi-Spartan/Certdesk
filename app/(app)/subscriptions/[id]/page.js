@@ -39,7 +39,7 @@ function AcmeCard({ sub }) {
       {a.id ? <div style={row}><span style={{ color: '#A1A1AA' }}>Account ID</span><span className="mono">{a.id}</span></div> : null}
       {a.kid ? (
         <details>
-          <summary style={{ cursor: 'pointer', color: '#C4B8FF', fontSize: 13 }}>Set up Certbot or acme.sh</summary>
+          <summary style={{ cursor: 'pointer', color: '#86EFAC', fontSize: 13 }}>Set up Certbot or acme.sh</summary>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
             <div className="between"><span className="small" style={{ color: '#A1A1AA' }}>Certbot</span><CopyButton text={certbot.replace(/\\\n\s*/g, '')} dark /></div>
             <pre className="code" style={{ margin: 0, background: '#18181B', whiteSpace: 'pre-wrap' }}>{certbot}</pre>

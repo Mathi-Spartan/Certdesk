@@ -19,7 +19,7 @@ export async function login(prev, formData) {
 
 export async function logout() {
   await destroySession();
-  redirect('/login');
+  redirect('/');
 }
 
 export async function changePassword(prev, formData) {
