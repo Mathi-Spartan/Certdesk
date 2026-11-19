@@ -6,7 +6,6 @@ import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
 import { saveReminderSettings, requestCancel } from '@/app/actions/orders';
 import TopBar from '@/components/TopBar';
-import Icon from '@/components/Icon';
 import DcvPanel from '@/components/DcvPanel';
 import SubmitButton from '@/components/SubmitButton';
 import { fmtDate, FlashFromSearch, timeAgo } from '@/components/ui';
@@ -15,9 +14,19 @@ import { supportEmail, helpHref } from '@/lib/support';
 
 export const metadata = { title: 'Certificate · CertDesk' };
 
+const DAY = 86400000;
+const svg = (d, s = 15) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
+
 function basicEmails(domain) {
   const base = String(domain || '').replace(/^\*\./, '');
   return ['admin', 'administrator', 'hostmaster', 'postmaster', 'webmaster'].map((p) => `${p}@${base}`);
+}
+
+/** The maximum public certificate lifetime that applies to a certificate issued today (CA/B Forum SC-081v3). */
+function nextCap(now = Date.now()) {
+  if (now >= Date.parse('2029-03-15')) return 47;
+  if (now >= Date.parse('2027-03-15')) return 100;
+  return 200;
 }
 
 export default async function CertificateDetail({ params, searchParams }) {
@@ -43,147 +52,175 @@ export default async function CertificateDetail({ params, searchParams }) {
   const issued = order.status === 'issued';
   const back = `/certificates/${order.id}`;
   const validating = ['validating', 'incomplete', 'reissuing'].includes(order.status);
-
+  const ended = ['cancelled', 'cancel_requested'].includes(order.status);
   const item = itemFromOrder(order);
   const help = helpHref(await supportEmail(), {
     subject: `Help with ${order.common_name || 'my certificate'} (order ${order.gg_order_id || order.id})`,
     body: `Domain: ${order.common_name || ''}\nProduct: ${order.product_name || ''}\nOrder: ${order.gg_order_id || ''}\nStatus: ${item.detail?.label || ''}\n\nMy question:\n`
   });
-  const hero = {
-    action: { icon: 'alert', bg: '#FEF2F2', fg: 'var(--red-strong)', border: '#FECACA' },
-    progress: { icon: 'clock', bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
-    ok: { icon: 'tick', bg: '#F0FDF4', fg: '#15803D', border: '#BBF7D0' },
-    ended: { icon: 'info', bg: '#F4F4F5', fg: 'var(--ink-2)', border: 'var(--line)' }
-  }[item.group];
-  const heroTitle = validating
-    ? `Prove you own ${order.common_name}`
-    : item.group === 'ok'
-      ? 'Your certificate is active'
-      : item.group === 'ended'
-        ? 'This order is closed'
-        : life.action === 'reissue' || life.action === 'reissue_overdue'
-          ? life.certDays < 0 ? `Certificate expired ${-life.certDays} days ago` : `Certificate expires in ${life.certDays} days`
-          : life.action === 'renew' || life.action === 'order_ended'
-            ? 'Time to renew this order'
-            : item.detail?.label || 'Waiting';
+
+  const names = (facts?.san?.length ? facts.san : [order.common_name, ...(order.sans || [])]).filter(Boolean);
+  const days = issued ? life.certDays : null;
+  const lifetime = issued && order.valid_from && order.valid_till ? Math.round((new Date(order.valid_till) - new Date(order.valid_from)) / DAY) : null;
+  const ringPct = lifetime && days !== null ? Math.max(0, Math.min(1, days / lifetime)) : 0;
+  const ringTone = days === null ? '#A1A1AA' : days <= 14 ? '#DC2626' : days <= 30 ? '#F59E0B' : 'var(--cx-accent)';
+  const pillTone = item.group === 'action' ? (days !== null && days <= 14 ? 'red' : 'action') : item.group;
+  const pillText = issued && days !== null ? (days < 0 ? `Expired ${-days} days ago` : `Expires in ${days} days`) : item.detail?.label || item.status.label;
+
+  // lifecycle stepper from real dates
+  const steps = [
+    { label: 'Ordered', sub: fmtDate(order.created_at), state: 'done' },
+    { label: 'Validated', sub: issued ? primaryMethod(order) : validating ? 'Waiting for you' : '—', state: issued ? 'done' : validating ? 'now' : 'todo' },
+    { label: 'Issued', sub: issued ? fmtDate(order.valid_from) : 'After validation', state: issued ? 'done' : 'todo' },
+    life.reissueDueOn ? { label: 'Reissue due', sub: fmtDate(life.reissueDueOn), state: life.action === 'reissue' || life.action === 'reissue_overdue' ? 'now' : 'todo' } : null,
+    { label: order.order_expires_at && order.order_expires_at !== order.valid_till ? 'Order ends' : 'Expires', sub: fmtDate(order.order_expires_at || order.valid_till) || '—', state: life.action === 'renew' || life.action === 'order_ended' ? 'now' : 'todo' }
+  ].filter(Boolean);
+  if (ended) steps.push({ label: 'Closed', sub: order.status === 'cancel_requested' ? 'Cancellation requested' : 'Cancelled', state: 'done' });
+
+  const alert = item.group === 'action' && !validating ? item.next : null;
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/dashboard' }, { label: order.common_name || 'Pending order' }]}>
-        <span className="small muted">Order <span className="mono">{order.gg_order_id || '—'}</span></span>
-      </TopBar>
-      <main className="page" style={{ maxWidth: 1100 }}>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <span className="ws-badge" style={{ width: 48, height: 48, borderRadius: 12 }}><Icon name="lock" size={22} stroke="#fff" /></span>
-          <div style={{ minWidth: 0 }}>
-            <h1 className="mono" style={{ margin: 0, fontSize: 24, fontWeight: 500, overflowWrap: 'anywhere' }}>{order.common_name || 'Pending order'}</h1>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6, alignItems: 'center', fontSize: 13 }} className="muted">
-              <span className={`badge tone-${item.status.tone}`}>{item.status.label}</span>
-              <span>{order.product_name}</span>
-              {order.sans?.length ? <span>· +{order.sans.length} more domain{order.sans.length > 1 ? 's' : ''}</span> : null}
-              {(order.tags || []).map((t) => <span key={t} className="tag">{t}</span>)}
+      {ctx.isAdmin ? <TopBar crumbs={[{ label: 'Certificates', href: '/orders' }, { label: order.common_name || 'Pending order' }]} /> : null}
+      <main className="cx3-page">
+        <div className="cx3-head">
+          <div className="cx3-title">
+            <span className="cx3-title-ico">{svg(<><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>, 22)}</span>
+            <div>
+              <h1 className="mono cx3-cn-title">{order.common_name || 'Pending order'}</h1>
+              <div className="cx3-meta">
+                <span className={`cx3-pill ${pillTone}`}>{pillText}</span>
+                <span>{order.product_name}</span>
+                {order.sans?.length ? <><i aria-hidden="true">·</i><span>+{order.sans.length} more name{order.sans.length > 1 ? 's' : ''}</span></> : null}
+                <i aria-hidden="true">·</i><span>Order <span className="mono">{order.gg_order_id || '—'}</span></span>
+                {(order.tags || []).map((t) => <span key={t} className="cx3-tag">{t}</span>)}
+              </div>
             </div>
+          </div>
+          <div className="cx3-row">
+            {issued ? <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download</a> : null}
+            {issued && life.canReissue ? <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link> : null}
+            {item.next?.cta && !validating ? <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link> : null}
+            {!ended && !(item.next?.cta && !validating) ? <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link> : null}
           </div>
         </div>
 
         <FlashFromSearch searchParams={sp} />
-        {syncError ? <div className="alert amber"><Icon name="info" />Could not refresh just now. Showing the last known state.</div> : null}
-
-        <section className="next-card" style={{ background: hero.bg, borderColor: hero.border }} aria-label="Next step">
-          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <span className="next-icon" style={{ color: hero.fg, borderColor: hero.border }}><Icon name={hero.icon} size={20} stroke={hero.fg} width={2.4} /></span>
-            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-              <h2 style={{ fontSize: 18, margin: 0 }}>{heroTitle}</h2>
-              <p style={{ margin: '4px 0 0', color: 'var(--ink-2)' }}>
-                {validating
-                  ? 'Follow the steps below. The certificate is issued as soon as the check passes, usually within minutes.'
-                  : item.group === 'ok'
-                    ? <>Download it and install it on your server. {life.reissueDueOn ? `We'll remind you to reissue from ${fmtDate(life.reissueDueOn)}.` : ''}</>
-                    : item.next?.text}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {item.group === 'ok' ? <a className="btn primary" href={`/api/orders/${order.id}/download?format=fullchain`}><Icon name="download" stroke="#fff" />Download certificate</a> : null}
-              {!validating && item.next?.cta ? <Link className="btn primary" href={item.next.href}>{item.next.cta}</Link> : null}
-            </div>
+        {syncError ? <div className="cx3-alert amber">{svg(<><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></>, 18)}<div>Could not refresh from the certificate authority just now. Showing the last known state.</div></div> : null}
+        {alert ? (
+          <div role="alert" className="cx3-alert red">
+            {svg(<><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>, 18)}
+            <div><strong>{alert.text}</strong>{!order.auto_renew ? ' Auto-renew is off for this certificate.' : ''}</div>
+            {alert.cta ? <Link className="cx3-btn sm danger" href={alert.href}>{alert.cta}</Link> : null}
           </div>
-          {validating ? (
-            <div className="next-body">
-              <DcvPanel order={{ id: order.id, common_name: order.common_name, dcv: order.dcv, dcv_method: order.dcv_method, approver_email: order.approver_email, last_synced_at: order.last_synced_at }} back={back} approverEmails={basicEmails(order.common_name)} locks={locks} />
-            </div>
-          ) : null}
-        </section>
-
-        <div className="facts">
-          <div><span className="small muted">Certificate expires</span><strong style={{ color: life.certDays !== null && life.certDays <= 30 ? 'var(--red-strong)' : undefined }}>{issued ? fmtDate(order.valid_till) : 'Not issued yet'}</strong>{issued && life.certDays !== null ? <span className="small muted">{life.certDays < 0 ? `${-life.certDays} days ago` : `in ${life.certDays} days`}</span> : null}</div>
-          <div><span className="small muted">Order active until</span><strong>{fmtDate(order.order_expires_at) || '—'}</strong><span className="small muted">Free reissues until then</span></div>
-          <div><span className="small muted">Covers</span><strong className="mono" style={{ fontSize: 13, overflowWrap: 'anywhere' }}>{(facts?.san?.length ? facts.san : [order.common_name, ...(order.sans || [])]).filter(Boolean).slice(0, 3).join(', ')}</strong>{(order.sans?.length || 0) > 2 ? <span className="small muted">and more</span> : null}</div>
-          <div><span className="small muted">Validation</span><strong>{primaryMethod(order)}</strong></div>
-        </div>
-
-        {issued ? (
-          <details className="card fold" open={item.group === 'ok'}>
-            <summary><Icon name="download" />Install on your server</summary>
-            <div className="fold-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
-                <a className="btn sm" href={`/api/orders/${order.id}/download?format=fullchain`}>Nginx / full chain (.pem)</a>
-                <a className="btn sm" href={`/api/orders/${order.id}/download?format=crt`}>Certificate only (.crt)</a>
-                <a className="btn sm" href={`/api/orders/${order.id}/download?format=ca`}>CA bundle</a>
-                <a className="btn sm" href={`/api/orders/${order.id}/download?format=csr`}>CSR</a>
-              </div>
-              <div className="small muted">Use the private key you saved when the key was created. It was never sent to us.</div>
-              {life.canReissue && item.group === 'ok' ? <Link className="small" href={`/certificates/${order.id}/reissue`}>Lost the key or changing servers? Reissue for free</Link> : null}
-            </div>
-          </details>
         ) : null}
 
-        <details className="card fold">
-          <summary><Icon name="info" />Certificate details</summary>
-          <div className="fold-body">
-            <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px 24px', fontSize: 13 }}>
-              <div><dt className="muted">Product</dt><dd style={{ margin: 0 }}>{order.product_name || '—'}</dd></div>
-              <div><dt className="muted">Issuer</dt><dd style={{ margin: 0 }}>{facts?.issuer || '—'}</dd></div>
-              <div><dt className="muted">Valid from</dt><dd style={{ margin: 0 }}>{issued ? fmtDate(order.valid_from) : '—'}</dd></div>
-              <div><dt className="muted">Valid until</dt><dd style={{ margin: 0 }}>{issued ? fmtDate(order.valid_till) : '—'}</dd></div>
-              <div><dt className="muted">Order term</dt><dd style={{ margin: 0 }}>{order.period_months ? `${order.period_months} months` : '—'}</dd></div>
-              <div><dt className="muted">Key</dt><dd style={{ margin: 0 }} className="mono">{facts?.key || '—'}</dd></div>
-              <div><dt className="muted">Serial number</dt><dd style={{ margin: 0, overflowWrap: 'anywhere' }} className="mono">{facts?.serial || '—'}</dd></div>
-              <div><dt className="muted">SHA-256 fingerprint</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', fontSize: 11 }} className="mono">{facts?.fingerprint256 || '—'}</dd></div>
-              <div><dt className="muted">All domains</dt><dd style={{ margin: 0, overflowWrap: 'anywhere' }} className="mono">{(facts?.san?.length ? facts.san : [order.common_name, ...(order.sans || [])]).filter(Boolean).join(', ')}</dd></div>
-              <div><dt className="muted">Last updated</dt><dd style={{ margin: 0 }}>{timeAgo(order.last_synced_at)}</dd></div>
-            </dl>
-          </div>
-        </details>
+        <section className="cx3-card cx3-steps" aria-label="Lifecycle">
+          <ol>
+            {steps.map((s, i) => (
+              <li key={s.label} className={s.state}>
+                <div className="cx3-step-line"><span className="cx3-step-dot">{s.state === 'done' ? svg(<path d="m5 12 5 5 9-10" />, 12) : null}</span>{i < steps.length - 1 ? <i /> : null}</div>
+                <strong>{s.label}</strong>
+                <small>{s.sub}</small>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-        <details className="card fold">
-          <summary><Icon name="key" />Settings</summary>
-          <div className="fold-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <form action={saveReminderSettings} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, alignItems: 'end' }}>
-              <input type="hidden" name="order_id" value={order.id} />
-              <div className="field">
-                <label htmlFor="rem">Remind me to reissue</label>
-                <select className="input" id="rem" name="reminder_days" defaultValue={String(order.reminder_days || 30)}>
-                  {[45, 30, 21, 14, 7].map((n) => <option key={n} value={n}>{n} days before it expires</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="tags">Tags</label>
-                <input className="input" id="tags" name="tags" defaultValue={(order.tags || []).join(', ')} placeholder="prod, payments" />
-              </div>
-              <div><SubmitButton className="btn" pendingText="Saving…">Save</SubmitButton></div>
-            </form>
-            {order.status !== 'cancelled' && order.status !== 'cancel_requested' ? (
-              <form action={requestCancel} style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 16 }}>
-                <input type="hidden" name="order_id" value={order.id} />
-                <div style={{ fontWeight: 600, color: 'var(--red-strong)' }}>Cancel this order</div>
-                <div className="field" style={{ maxWidth: 420 }}><label htmlFor="reason">Reason</label><input className="input" id="reason" name="reason" placeholder="No longer needed" /></div>
-                <div><SubmitButton className="btn sm danger" pendingText="Sending…">Request cancellation</SubmitButton></div>
-                <span className="small muted">Refunds depend on the certificate authority&apos;s refund window.</span>
-              </form>
+        <div className="cx3-split">
+          <div className="cx3-col">
+            {validating ? (
+              <section className="cx3-card cx3-pad" id="dcv">
+                <div className="cx3-card-head"><div><h2>Prove you control {order.common_name}</h2><p>The certificate is issued as soon as the check passes, usually within minutes.</p></div></div>
+                <DcvPanel order={{ id: order.id, common_name: order.common_name, dcv: order.dcv, dcv_method: order.dcv_method, approver_email: order.approver_email, last_synced_at: order.last_synced_at }} back={back} approverEmails={basicEmails(order.common_name)} locks={locks} />
+              </section>
+            ) : null}
+
+            <section className="cx3-card cx3-pad">
+              <h2>Certificate</h2>
+              <dl className="cx3-facts">
+                <div><dt>Covers</dt><dd className="mono">{names.join(', ') || '—'}</dd></div>
+                <div><dt>Issuer</dt><dd>{facts?.issuer || (issued ? '—' : 'Not issued yet')}</dd></div>
+                <div><dt>Serial number</dt><dd className="mono wrap">{facts?.serial || '—'}</dd></div>
+                <div><dt>Valid from</dt><dd>{issued ? fmtDate(order.valid_from) : '—'}</dd></div>
+                <div><dt>Valid until</dt><dd className={days !== null && days <= 30 ? 't-red strong' : ''}>{issued ? fmtDate(order.valid_till) : '—'}</dd></div>
+                <div><dt>Key</dt><dd className="mono">{facts?.key || '—'}</dd></div>
+                <div className="wide"><dt>SHA-256 fingerprint</dt><dd className="mono wrap small">{facts?.fingerprint256 || '—'}</dd></div>
+                <div><dt>Plan</dt><dd>{order.period_months ? `${order.period_months % 12 === 0 ? `${order.period_months / 12} year${order.period_months > 12 ? 's' : ''}` : `${order.period_months} months`}` : '—'}{order.order_expires_at ? ` · ends ${fmtDate(order.order_expires_at)}` : ''}</dd></div>
+                <div><dt>Reissues</dt><dd>{life.canReissue ? 'Free while the order is active' : '—'}</dd></div>
+                <div><dt>Validation</dt><dd>{primaryMethod(order)}</dd></div>
+                <div><dt>Last updated</dt><dd>{timeAgo(order.last_synced_at)}</dd></div>
+              </dl>
+            </section>
+
+            {issued ? (
+              <section className="cx3-card cx3-pad">
+                <div className="cx3-card-head"><div><h2>Check the live site</h2><p>See whether {order.common_name} is serving this certificate with a complete, trusted chain.</p></div>
+                  <Link className="cx3-btn" href={`/tools/ssl-checker?host=${encodeURIComponent(String(order.common_name || '').replace(/^\*\./, ''))}`}>Run SSL check</Link></div>
+              </section>
             ) : null}
           </div>
-        </details>
-        {help ? <a className="help-link" href={help} style={{ alignSelf: 'flex-start' }}><Icon name="info" />Stuck? Ask us about this certificate</a> : null}
+
+          <aside className="cx3-col side">
+            <section className="cx3-card cx3-pad cx3-life-card">
+              <div className="cx3-ring sm">
+                <svg width="88" height="88" viewBox="0 0 88 88" role="img" aria-label={days === null ? 'Not issued' : `${days} days left`}>
+                  <circle cx="44" cy="44" r="37" fill="none" stroke="#F4F4F5" strokeWidth="9" />
+                  <circle cx="44" cy="44" r="37" fill="none" stroke={ringTone} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${ringPct * 232.5} 232.5`} transform="rotate(-90 44 44)" />
+                </svg>
+                <div><b style={{ color: days !== null && days <= 14 ? '#B91C1C' : undefined }}>{days === null ? '—' : Math.max(0, days)}</b><small>{days === null ? 'not issued' : 'days left'}</small></div>
+              </div>
+              <p>{lifetime ? <>Lifetime <strong>{lifetime} days</strong>. </> : null}A certificate issued now is capped at <strong>{nextCap()} days</strong> under current CA/B Forum rules.</p>
+            </section>
+
+            {!ended ? (
+              <section className="cx3-card cx3-pad">
+                <h2>Reminders</h2>
+                <form action={saveReminderSettings} className="cx3-form">
+                  <input type="hidden" name="order_id" value={order.id} />
+                  <label className="cx3-field">
+                    <span>Remind me to reissue</span>
+                    <select name="reminder_days" defaultValue={String(order.reminder_days || 30)}>
+                      {[45, 30, 21, 14, 7].map((n) => <option key={n} value={n}>{n} days before it expires</option>)}
+                    </select>
+                  </label>
+                  <label className="cx3-field">
+                    <span>Tags</span>
+                    <input name="tags" defaultValue={(order.tags || []).join(', ')} placeholder="prod, payments" />
+                  </label>
+                  <SubmitButton className="cx3-btn" pendingText="Saving…">Save</SubmitButton>
+                </form>
+              </section>
+            ) : null}
+
+            {issued ? (
+              <section className="cx3-card cx3-pad">
+                <h2>Download for your server</h2>
+                <div className="cx3-dlgrid">
+                  <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>Nginx / full chain</a>
+                  <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=crt`}>Certificate (.crt)</a>
+                  <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=ca`}>CA bundle</a>
+                  <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=csr`}>CSR</a>
+                </div>
+                <p className="cx3-muted">Use the private key you saved when the key was created. Need PFX or JKS? Use the <Link href="/tools/converter">format converter</Link>.</p>
+              </section>
+            ) : null}
+
+            {help ? <a className="cx3-help" href={help}>{svg(<><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17h.01" /></>, 16)}Questions about this certificate? Ask us</a> : null}
+
+            {!ended ? (
+              <details className="cx3-card cx3-danger">
+                <summary>Cancel this order</summary>
+                <form action={requestCancel} className="cx3-form">
+                  <input type="hidden" name="order_id" value={order.id} />
+                  <label className="cx3-field"><span>Reason</span><input name="reason" placeholder="No longer needed" /></label>
+                  <SubmitButton className="cx3-btn sm danger" pendingText="Sending…">Request cancellation</SubmitButton>
+                  <span className="cx3-muted">Refunds depend on the certificate authority&apos;s refund window.</span>
+                </form>
+              </details>
+            ) : null}
+          </aside>
+        </div>
       </main>
     </>
   );

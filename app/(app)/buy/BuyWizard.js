@@ -139,7 +139,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
   ];
 
   return (
-    <div style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '28px 24px 48px', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
+    <div className="cx3-wizard" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '28px 24px 48px', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       <nav aria-label="Steps" style={{ flex: '1 1 200px', maxWidth: 230 }}>
         {renewal ? <div className="alert violet small" style={{ marginBottom: 12 }}>Renewing the order for <span className="mono">{renewal.commonName}</span>. This places a new order. Settings are copied from the current one.</div> : null}
         <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
