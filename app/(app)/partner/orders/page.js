@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
 import { q } from '@/lib/db';
-import { importFromAccount, assignOrders, unassignOrders } from '@/app/actions/partner-orders';
+import { importFromAccount, assignOrders, unassignOrders, bulkAutoRenew } from '@/app/actions/partner-orders';
 import SubmitButton from '@/components/SubmitButton';
 import { FlashFromSearch, fmtDate } from '@/components/ui';
 import { SelectAll } from './BulkBar';
@@ -110,6 +110,8 @@ export default async function PartnerOrders({ searchParams }) {
             {workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
           <button type="submit" className="cx3-btn sm light" data-needsel disabled>Assign selected</button>
+          <button type="submit" formAction={bulkAutoRenew} name="auto_on" value="true" className="cx3-btn sm ghostdark" data-needsel disabled>Auto-renew on</button>
+          <button type="submit" formAction={bulkAutoRenew} name="auto_on" value="false" className="cx3-btn sm ghostdark" data-needsel disabled>Auto-renew off</button>
           {view !== 'unassigned' ? <button type="submit" formAction={unassignOrders} className="cx3-btn sm ghostdark" data-needsel disabled>Move back to partner account</button> : null}
           <span className="cx3-bulk-info">{n} order{n === 1 ? '' : 's'} in this view</span>
         </div>
@@ -124,7 +126,7 @@ export default async function PartnerOrders({ searchParams }) {
               <thead>
                 <tr>
                   <th style={{ width: 36 }}><SelectAll formId="bulk" /></th>
-                  <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Subscription</th><th>Workspace</th><th>Ordered</th>
+                  <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Subscription</th><th>Auto-renew</th><th>Workspace</th><th>Ordered</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +143,7 @@ export default async function PartnerOrders({ searchParams }) {
                       <td><span className={`cx3-pill ${tone(o.status)}`}>{['issued', 'expired', 'validating', 'incomplete'].includes(o.status) ? displayStatus(o).label : label(o)}</span></td>
                       <td>{o.valid_till ? <CertExpiry at={o.valid_till} days={days} hot={days !== null && days <= 30 && !['cancelled', 'expired'].includes(o.status)} /> : <span className="cx3-sub">—</span>}</td>
                       <td>{o.status === 'cancelled' ? <span className="cx3-sub">—</span> : <SubPeriod sub={subscriptionOf(o)} />}</td>
+                      <td><span className={`cx3-flag ${o.auto_renew ? 'on' : ''}`}>{o.auto_renew ? 'On' : 'Off'}</span></td>
                       <td>{o.ws_name ? <Link href={`/partner/workspaces/${o.workspace_id}`} className="cx3-wslink">{o.ws_name}</Link> : <span className="cx3-flag">Unassigned</span>}</td>
                       <td className="cx3-sub">{fmtDate(o.created_at)}</td>
                     </tr>

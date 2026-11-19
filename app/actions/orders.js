@@ -256,6 +256,15 @@ export async function saveReminderSettings(formData) {
   redirect(withMsg(back, 'ok', 'Settings saved'));
 }
 
+/** Auto-renew is off by default; the customer or the master account switches it on per order. */
+export async function setOrderAutoRenew(formData) {
+  const { ctx, order, back } = await loadOrder(formData);
+  const on = String(formData.get('on')) === 'true';
+  await q('update console.orders set auto_renew = $2, updated_at = now() where id = $1', [order.id, on]);
+  await addEvent(order.id, 'settings', `Auto-renew turned ${on ? 'on' : 'off'}`, ctx.user.id);
+  redirect(withMsg(back, 'ok', `Auto-renew turned ${on ? 'on' : 'off'}`));
+}
+
 export async function changeDcvMethod(formData) {
   const { ctx, order, back } = await loadOrder(formData);
   const method = String(formData.get('method'));

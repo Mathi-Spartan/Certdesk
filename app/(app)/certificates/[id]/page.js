@@ -4,7 +4,7 @@ import { requireWorkspace } from '@/lib/auth';
 import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle, subscriptionOf, daysLeft } from '@/lib/orders';
 import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
-import { saveReminderSettings, requestCancel } from '@/app/actions/orders';
+import { saveReminderSettings, requestCancel, setOrderAutoRenew } from '@/app/actions/orders';
 import TopBar from '@/components/TopBar';
 import DcvPanel from '@/components/DcvPanel';
 import SubmitButton from '@/components/SubmitButton';
@@ -102,9 +102,15 @@ export default async function CertificateDetail({ params, searchParams }) {
           </div>
           <div className="cx3-row">
             {issued ? <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download</a> : null}
-            {issued && life.canReissue ? <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link> : null}
-            {item.next?.cta && !validating ? <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link> : null}
-            {!ended && !(item.next?.cta && !validating) && (!sub || sub.days <= 60) ? <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link> : null}
+            {(() => {
+              // Exactly one main action: the next step if there is one, else Reissue while the subscription runs, else Renew.
+              if (ended) return null;
+              if (item.next?.cta && !validating) return <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link>;
+              if (validating) return null;
+              if (life.canReissue) return <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link>;
+              if (!sub || sub.days <= 60) return <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link>;
+              return null;
+            })()}
           </div>
         </div>
 
@@ -113,8 +119,7 @@ export default async function CertificateDetail({ params, searchParams }) {
         {alert ? (
           <div role="alert" className="cx3-alert red">
             {svg(<><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>, 18)}
-            <div><strong>{alert.text}</strong>{!order.auto_renew ? ' Auto-renew is off for this certificate.' : ''}</div>
-            {alert.cta ? <Link className="cx3-btn sm danger" href={alert.href}>{alert.cta}</Link> : null}
+            <div><strong>{alert.text}</strong></div>
           </div>
         ) : null}
 
@@ -199,7 +204,7 @@ export default async function CertificateDetail({ params, searchParams }) {
 
             {!ended ? (
               <section className="cx3-card cx3-pad">
-                <h2>Reminders</h2>
+                <h2>Reminders &amp; auto-renew</h2>
                 <form action={saveReminderSettings} className="cx3-form">
                   <input type="hidden" name="order_id" value={order.id} />
                   <label className="cx3-field">
@@ -213,6 +218,15 @@ export default async function CertificateDetail({ params, searchParams }) {
                     <input name="tags" defaultValue={(order.tags || []).join(', ')} placeholder="prod, payments" />
                   </label>
                   <SubmitButton className="cx3-btn" pendingText="Saving…">Save</SubmitButton>
+                </form>
+                <form action={setOrderAutoRenew} className="cx3-autorenew">
+                  <input type="hidden" name="order_id" value={order.id} />
+                  <input type="hidden" name="on" value={order.auto_renew ? 'false' : 'true'} />
+                  <div>
+                    <strong>Auto-renew</strong> <span className={`cx3-flag ${order.auto_renew ? 'on' : ''}`}>{order.auto_renew ? 'On' : 'Off'}</span>
+                    <small>{order.auto_renew ? 'A new subscription is ordered when this one ends.' : 'Off by default. Turn on to renew automatically when the subscription ends.'}</small>
+                  </div>
+                  <SubmitButton className={`cx3-btn sm ${order.auto_renew ? '' : 'primary'}`} pendingText="Saving…">{order.auto_renew ? 'Turn off' : 'Turn on'}</SubmitButton>
                 </form>
               </section>
             ) : null}

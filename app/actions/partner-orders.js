@@ -58,3 +58,15 @@ export async function unassignOrders(formData) {
   for (const m of moved) await addEvent(m.id, 'unassigned', 'Returned to the partner account', ctx.user.id);
   redirect(back(keep + '&ok=' + enc(`${moved.length} order${moved.length === 1 ? '' : 's'} moved back to your partner account`)));
 }
+
+/** Master account: switch auto-renew on or off for the selected orders (off by default). */
+export async function bulkAutoRenew(formData) {
+  const ctx = await requireAdmin();
+  const ids = idsFrom(formData);
+  const keep = String(formData.get('keep') || '');
+  const on = String(formData.get('auto_on')) === 'true';
+  if (!ids.length) redirect(back(keep + '&err=' + enc('Select at least one order')));
+  const done = await q('update console.orders set auto_renew = $2, updated_at = now() where id = any($1::uuid[]) and auto_renew is distinct from $2 returning id', [ids, on]);
+  for (const m of done) await addEvent(m.id, 'settings', `Auto-renew turned ${on ? 'on' : 'off'} by the partner`, ctx.user.id);
+  redirect(back(keep + '&ok=' + enc(`Auto-renew turned ${on ? 'on' : 'off'} for ${done.length} order${done.length === 1 ? '' : 's'}`)));
+}
