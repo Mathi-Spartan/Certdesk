@@ -5,18 +5,9 @@ import { supportEmail, helpHref } from '@/lib/support';
 import TopBar from '@/components/TopBar';
 import Icon from '@/components/Icon';
 import { FlashFromSearch, fmtDate } from '@/components/ui';
+import { redirect } from 'next/navigation';
 
 export const metadata = { title: 'My SSL · CertDesk' };
-
-const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'action', label: 'Needs you' },
-  { key: 'ok', label: 'Protected' },
-  { key: 'progress', label: 'In progress' },
-  { key: 'closed', label: 'Closed' }
-];
-// old links (?view=… / ?tab=…) still land somewhere sensible
-const LEGACY = { cert: 'all', auto: 'all', ended: 'closed', due: 'action', validation: 'action', active: 'ok' };
 
 function when(i) {
   if (!i.date?.at) return { main: i.group === 'progress' ? 'Waiting' : '—', sub: null, tone: '' };
@@ -45,22 +36,37 @@ function Ring({ pct }) {
 export default async function Dashboard({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
-  const p = await loadPortfolio(ctx.workspaceId);
   const raw = sp.show || sp.view || sp.tab;
-  const show = TABS.some((f) => f.key === raw) ? raw : LEGACY[raw] || 'all';
-  const term = String(sp.q || '').trim().toLowerCase();
+  if ((raw && raw !== 'all') || sp.q) {
+    const f = { action: 'action', due: 'action', validation: 'action', closed: 'closed', ended: 'closed', progress: 'pending', auto: 'auto' }[raw] || '';
+    const qs = new URLSearchParams({ ...(f ? { f } : {}), ...(sp.q ? { q: String(sp.q) } : {}), ...(sp.err ? { err: String(sp.err) } : {}), ...(sp.ok ? { ok: String(sp.ok) } : {}) }).toString();
+    redirect('/orders' + (qs ? '?' + qs : ''));
+  }
+  const p = await loadPortfolio(ctx.workspaceId);
 
   const live = p.live;
   const closed = p.items.filter((i) => i.group === 'ended');
   const count = { all: live.length, ok: live.filter((i) => i.group === 'ok').length, action: p.action.length, progress: p.progress.length, closed: closed.length };
-  const base = show === 'closed' ? closed : show === 'all' ? live : live.filter((i) => i.group === show);
-  const rows = term ? base.filter((i) => [i.domain, i.product, ...i.tags].join(' ').toLowerCase().includes(term)) : base;
-  const link = (key) => {
-    const qs = new URLSearchParams({ ...(key !== 'all' ? { show: key } : {}), ...(term ? { q: term } : {}) }).toString();
-    return '/dashboard' + (qs ? '?' + qs : '');
-  };
   const coverage = live.length ? Math.round((count.ok / live.length) * 100) : 0;
-  const soon = live.filter((i) => i.date?.at && i.date.days >= 0 && i.date.days <= 30 && i.date.label !== 'Renews').length;
+  const certsLive = live.filter((i) => i.type === 'cert' && i.date?.at);
+  const inRange = (lo, hi) => certsLive.filter((i) => i.date.days >= lo && i.date.days <= hi).length;
+  const buckets = [
+    { label: 'Expired', n: certsLive.filter((i) => i.date.days < 0).length, tone: 'red' },
+    { label: '0–30 days', n: inRange(0, 30), tone: 'red' },
+    { label: '31–60 days', n: inRange(31, 60), tone: 'amber' },
+    { label: '61–90 days', n: inRange(61, 90), tone: 'amber' },
+    { label: '90+ days', n: certsLive.filter((i) => i.date.days > 90).length, tone: 'green' }
+  ];
+  const soon = buckets[0].n + buckets[1].n;
+  const maxB = Math.max(...buckets.map((b) => b.n));
+  const statusRows = [
+    { key: 'ok', label: 'Protected', n: count.ok, href: '/orders' },
+    { key: 'action', label: 'Needs action', n: count.action, href: '/orders?f=action' },
+    { key: 'progress', label: 'In progress', n: count.progress, href: '/orders?f=pending' },
+    { key: 'ended', label: 'Closed', n: count.closed, href: '/orders?f=closed' }
+  ];
+  const totalAll = p.items.length;
+  const recent = [...p.items].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 6);
   const first = String(ctx.user.name || '').split(' ')[0];
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const help = helpHref(await supportEmail(), { subject: `Help with CertDesk · ${ctx.workspace?.name || ''}` });
@@ -73,28 +79,19 @@ export default async function Dashboard({ searchParams }) {
         </TopBar>
       ) : null}
       <main className="page db">
-        <header className="db-head">
+        <header className="cc-page-head">
           <div>
-            <p className="db-date">{today}</p>
+            <p className="cc-eyebrow">{today}</p>
             <h1>{ctx.isAdmin ? ctx.workspace.name : `Welcome back${first ? `, ${first}` : ''}`}</h1>
-            <p className="db-sub">
+            <p>
               {live.length === 0
-                ? 'Nothing here yet. Order a certificate or ask us to assign your existing ones.'
+                ? 'Nothing here yet. Request a certificate or ask us to assign your existing ones.'
                 : p.action.length
-                  ? `${p.action.length} item${p.action.length === 1 ? ' needs' : 's need'} your attention.`
+                  ? `${p.action.length} order${p.action.length === 1 ? ' needs' : 's need'} your attention.`
                   : 'Everything is protected. Nothing needs you right now.'}
             </p>
           </div>
-          {live.length ? (
-            <form action="/dashboard" className="db-search">
-              {show !== 'all' ? <input type="hidden" name="show" value={show} /> : null}
-              <label className="search">
-                <Icon name="search" stroke="var(--muted)" />
-                <span className="sr">Search your certificates</span>
-                <input name="q" defaultValue={term} type="search" placeholder="Search domains, products, tags" />
-              </label>
-            </form>
-          ) : null}
+          <Link className="btn primary" href="/order">Request certificate</Link>
         </header>
 
         <FlashFromSearch searchParams={sp} />
@@ -118,109 +115,90 @@ export default async function Dashboard({ searchParams }) {
           </section>
         ) : (
           <>
-            <section className="db-kpis">
-              <div className="db-kpi db-kpi-ring">
-                <Ring pct={coverage} />
-                <div><span className="db-kpi-label">Protected</span><b>{count.ok} of {live.length}</b><small>{live.length - count.ok ? `${live.length - count.ok} not yet` : 'All covered'}</small></div>
-              </div>
-              <Link href={link('action')} className={`db-kpi ${count.action ? 'alert' : ''}`}>
-                <span className="db-kpi-icon red"><Icon name="alert" stroke="currentColor" /></span>
-                <div><span className="db-kpi-label">Needs you</span><b>{count.action}</b><small>{count.action ? 'Action required' : 'All clear'}</small></div>
-              </Link>
-              <div className="db-kpi">
-                <span className="db-kpi-icon amber"><Icon name="clock" stroke="currentColor" /></span>
-                <div><span className="db-kpi-label">Expiring in 30 days</span><b>{soon}</b><small>Manual certificates</small></div>
-              </div>
-              <div className="db-kpi">
-                <span className="db-kpi-icon green"><Icon name="loop" stroke="currentColor" /></span>
-                <div><span className="db-kpi-label">Automated</span><b>{p.autos}</b><small>{p.certs} manual certificate{p.certs === 1 ? '' : 's'}</small></div>
-              </div>
+            <section className="cc-kpis">
+              <Link href="/orders" className="cc-kpi"><span>Active orders</span><b>{live.length}</b><small>{p.certs} certificate{p.certs === 1 ? '' : 's'} · {p.autos} automated</small></Link>
+              <Link href="/orders?f=action" className={`cc-kpi ${count.action ? 'red' : ''}`}><span>Needs action</span><b>{count.action}</b><small>{count.action ? 'Validate, renew or finish setup' : 'All clear'}</small></Link>
+              <Link href="/orders?f=expiring" className={`cc-kpi ${soon ? 'amber' : ''}`}><span>Expiring in 30 days</span><b>{soon}</b><small>Manual certificates</small></Link>
+              <div className="cc-kpi cc-kpi-ring"><Ring pct={coverage} /><div><span>Protected</span><b>{count.ok}<i>/{live.length}</i></b><small>{coverage === 100 ? 'Fully covered' : 'Of active orders'}</small></div></div>
             </section>
 
-            <div className="db-grid">
-              <section className="db-card db-list" aria-label="Your certificates">
-                <div className="db-card-head">
-                  <h2>Certificates</h2>
-                  <nav className="db-tabs" aria-label="Filter">
-                    {TABS.map((t) => (
-                      <Link key={t.key} href={link(t.key)} className={show === t.key ? 'on' : ''} aria-current={show === t.key ? 'page' : undefined}>
-                        {t.label}{count[t.key] ? <span className={t.key === 'action' ? 'red' : ''}>{count[t.key]}</span> : null}
-                      </Link>
-                    ))}
-                  </nav>
+            <div className="cc-widgets">
+              <section className="cc-card cc-widget">
+                <header><h2>Certificate expiration</h2><Link href="/orders?f=expiring">View</Link></header>
+                <div className="cc-buckets">
+                  {buckets.map((b) => (
+                    <div key={b.label} className={`cc-bucket ${b.tone}`}>
+                      <b>{b.n}</b><span>{b.label}</span>
+                      <i style={{ height: `${maxB ? Math.max(6, (b.n / maxB) * 100) : 6}%` }} />
+                    </div>
+                  ))}
                 </div>
-                {rows.length === 0 ? (
-                  <div className="db-none">{term ? <>No results for “{term}”. <Link href={link(show).replace(/[?&]q=[^&]*/, '')}>Clear search</Link></> : 'Nothing in this view.'}</div>
+                <p className="small muted">Manual certificates by days until expiry. Automated SSL renews on its own.</p>
+              </section>
+
+              <section className="cc-card cc-widget">
+                <header><h2>Orders by status</h2><Link href="/orders">All orders</Link></header>
+                <ul className="cc-bars">
+                  {statusRows.map((r) => (
+                    <li key={r.key}>
+                      <Link href={r.href}><span className={`cc-sw ${r.key}`} />{r.label}<b>{r.n}</b></Link>
+                      <div className="cc-bar"><span className={r.key} style={{ width: `${totalAll ? (r.n / totalAll) * 100 : 0}%` }} /></div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="cc-card cc-widget">
+                <header><h2>Action center</h2>{p.action.length ? <span className="cc-n red">{p.action.length}</span> : null}</header>
+                {p.action.length === 0 && p.progress.length === 0 ? (
+                  <div className="db-clear"><span className="ok-circle"><Icon name="tick" stroke="#fff" width={3} size={14} /></span><div><strong>All clear</strong><span>Nothing needs you right now.</span></div></div>
                 ) : (
-                  <ul className="db-rows">
-                    {rows.map((i) => {
-                      const w = when(i);
-                      return (
-                        <li key={i.type + i.id}>
-                          <Link href={i.href} className="db-row">
-                            <span className={`db-ico ${i.type}`}><Icon name={i.type === 'auto' ? 'loop' : 'lock'} size={18} /></span>
-                            <span className="db-main">
-                              <span className="db-dom mono">{i.domain}{i.extra ? <em> {i.extra}</em> : null}</span>
-                              <span className="db-prod">{i.type === 'auto' ? 'Automated' : 'Certificate'} · {i.product}</span>
-                            </span>
-                            <span className={`db-pill ${i.group}`}><i />{i.status.label}</span>
-                            <span className="db-when">
-                              <span className={w.tone}>{w.main}</span>
-                              {i.life != null ? <span className={`db-life ${w.tone}`}><span style={{ width: `${100 - i.life}%` }} /></span> : null}
-                              {w.sub ? <small>{w.sub}</small> : null}
-                            </span>
-                            <span className="db-go" aria-hidden="true"><Icon name="arrow" size={16} /></span>
-                          </Link>
-                        </li>
-                      );
-                    })}
+                  <ul className="db-actions">
+                    {[...p.action, ...p.progress].slice(0, 4).map((i) => (
+                      <li key={i.type + i.id}>
+                        <span className={`db-dot ${i.group === 'action' ? 'red' : 'amber'}`} />
+                        <div><Link href={i.href} className="mono">{i.domain}</Link><span>{i.next.text}</span></div>
+                        {i.next.cta ? <Link className="btn sm primary" href={i.next.href}>{i.next.cta}</Link> : null}
+                      </li>
+                    ))}
                   </ul>
                 )}
               </section>
-
-              <aside className="db-side">
-                <section className="db-card">
-                  <div className="db-card-head"><h2>Action center</h2>{p.action.length ? <span className="db-count red">{p.action.length}</span> : null}</div>
-                  {p.action.length === 0 && p.progress.length === 0 ? (
-                    <div className="db-clear"><span className="ok-circle"><Icon name="tick" stroke="#fff" width={3} size={14} /></span><div><strong>All clear</strong><span>Nothing needs you right now.</span></div></div>
-                  ) : (
-                    <ul className="db-actions">
-                      {[...p.action, ...p.progress].slice(0, 5).map((i) => (
-                        <li key={i.type + i.id}>
-                          <span className={`db-dot ${i.group === 'action' ? 'red' : 'amber'}`} />
-                          <div>
-                            <Link href={i.href} className="mono">{i.domain}</Link>
-                            <span>{i.next.text}</span>
-                          </div>
-                          {i.next.cta ? <Link className="btn sm primary" href={i.next.href}>{i.next.cta}</Link> : null}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-
-                <section className="db-card">
-                  <div className="db-card-head"><h2>Coming up</h2></div>
-                  {p.upcoming.length === 0 ? <div className="db-none" style={{ padding: '6px 20px 20px' }}>No dates coming up.</div> : (
-                    <ul className="db-up">
-                      {p.upcoming.map((i) => (
-                        <li key={i.type + i.id}>
-                          <span className="db-cal"><small>{new Date(i.date.at).toLocaleDateString('en-GB', { month: 'short' })}</small><b>{new Date(i.date.at).getDate()}</b></span>
-                          <div><Link href={i.href} className="mono">{i.domain}</Link><span>{i.date.label} · in {i.date.days} days</span></div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-
-                <section className="db-card db-quick">
-                  <div className="db-card-head"><h2>Quick actions</h2></div>
-                  <Link href="/buy"><span className="db-q-ico green"><Icon name="lock" stroke="currentColor" /></span><span><strong>Order a certificate</strong><small>DV, OV, EV, wildcard</small></span></Link>
-                  <Link href="/subscriptions/new"><span className="db-q-ico amber"><Icon name="loop" stroke="currentColor" /></span><span><strong>Start automated SSL</strong><small>Renews and installs itself</small></span></Link>
-                  {help ? <a href={help}><span className="db-q-ico blue"><Icon name="info" stroke="currentColor" /></span><span><strong>Get help</strong><small>Email your SSL team</small></span></a> : null}
-                </section>
-              </aside>
             </div>
+
+            <section className="cc-card">
+              <div className="cc-toolbar">
+                <h2 className="cc-h2">Recent orders</h2>
+                <Link href="/orders" className="btn sm">View all orders</Link>
+              </div>
+              <div className="table-wrap">
+                <table className="cc-table">
+                  <thead><tr><th>Order #</th><th>Common name</th><th>Product</th><th>Status</th><th>Expires / renews</th><th><span className="sr">Actions</span></th></tr></thead>
+                  <tbody>
+                    {recent.map((r) => {
+                      const w = when(r);
+                      return (
+                        <tr key={r.type + r.id}>
+                          <td className="mono small"><Link href={r.href}>{r.ref || '—'}</Link></td>
+                          <td><Link href={r.href} className="cc-cn">{r.domain}</Link>{r.extra ? <span className="small muted"> {r.extra}</span> : null}</td>
+                          <td><div className="cc-prod">{r.product}</div><div className="small muted">{r.type === 'auto' ? 'Automated SSL' : 'Certificate'}</div></td>
+                          <td><span className={`db-pill ${r.group}`}><i />{r.status.label}</span></td>
+                          <td><div className={w.tone === 'bad' ? 'cc-hot' : ''} style={{ fontWeight: 600 }}>{w.main}</div>{w.sub ? <div className="small muted">{w.sub}</div> : null}</td>
+                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{r.next?.cta ? <Link className="btn sm primary" href={r.next.href}>{r.next.cta}</Link> : <Link className="btn sm" href={r.href}>Manage</Link>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="cc-tiles">
+              <Link href="/tools/csr" className="cc-tile"><strong>CSR generator</strong><span>Create a CSR and key in your browser.</span><em>Open →</em></Link>
+              <Link href="/tools/ssl-checker" className="cc-tile"><strong>SSL checker</strong><span>Test a live site's certificate and chain.</span><em>Open →</em></Link>
+              <Link href="/tools/cert-decoder" className="cc-tile"><strong>Certificate decoder</strong><span>Read names, issuer and expiry.</span><em>Open →</em></Link>
+              {help ? <a href={help} className="cc-tile"><strong>Need help?</strong><span>Email your SSL team.</span><em>Contact →</em></a> : <Link href="/tools" className="cc-tile"><strong>All tools</strong><span>More utilities coming soon.</span><em>Open →</em></Link>}
+            </section>
           </>
         )}
       </main>

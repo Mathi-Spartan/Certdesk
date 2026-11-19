@@ -46,7 +46,15 @@ export default async function AppLayout({ children }) {
 
   if (!ctx.isAdmin) {
     const help = helpHref(await supportEmail(), { subject: `Help with CertDesk · ${ctx.workspace?.name || ''}` });
-    return <CustomerShell user={ctx.user} workspace={ctx.workspace} needs={needs} help={help}>{children}</CustomerShell>;
+    const c = await one(
+      `select
+         (select count(*) from console.orders where workspace_id = $1 and status not in ('cancelled','draft'))::int
+           + (select count(*) from console.subscriptions where workspace_id = $1 and status not in ('cancelled','expired'))::int as total,
+         (select count(*) from console.orders where workspace_id = $1 and status = 'issued' and valid_till <= now() + interval '30 days')::int as expiring,
+         (select count(*) from console.subscriptions where workspace_id = $1 and status not in ('cancelled','expired'))::int as auto`,
+      [ctx.workspaceId]
+    );
+    return <CustomerShell user={ctx.user} workspace={ctx.workspace} counts={{ all: c.total, expiring: c.expiring, auto: c.auto, action: needs }} help={help}>{children}</CustomerShell>;
   }
 
   if (ctx.isAdmin) {
