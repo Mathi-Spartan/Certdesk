@@ -33,7 +33,9 @@ export default async function BuyPage({ searchParams }) {
         sans: o.sans || [],
         period: o.period_months || 12,
         dcvMethod: String(o.dcv_method || 'dns').toLowerCase().includes('mail') ? 'dns' : String(o.dcv_method || 'dns').toLowerCase(),
-        tags: o.tags || []
+        tags: o.tags || [],
+        subscriptionEnds: o.order_expires_at || null,
+        subscriptionDays: o.order_expires_at ? Math.ceil((new Date(o.order_expires_at) - Date.now()) / 86400000) : null
       };
     }
   }
@@ -64,7 +66,18 @@ export default async function BuyPage({ searchParams }) {
           </div>
         </main>
       ) : (
-        <BuyWizard products={products} renewal={renewal} defaults={defaults} />
+        <>
+          {renewal?.subscriptionDays > 60 ? (
+            <div className="cx3-alert amber" style={{ margin: '16px 24px 0' }}>
+              <div>
+                <strong>No renewal needed yet.</strong> The subscription for {renewal.commonName} runs until{' '}
+                {new Date(renewal.subscriptionEnds).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} ({renewal.subscriptionDays} days left).
+                If the certificate is expiring, <Link href={`/certificates/${renewal.id}/reissue`}>reissue it free</Link> instead.
+              </div>
+            </div>
+          ) : null}
+          <BuyWizard products={products} renewal={renewal} defaults={defaults} />
+        </>
       )}
     </>
   );

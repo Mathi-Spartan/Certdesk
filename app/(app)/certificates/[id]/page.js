@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
-import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle } from '@/lib/orders';
+import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle, subscriptionOf, daysLeft } from '@/lib/orders';
 import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
 import { saveReminderSettings, requestCancel } from '@/app/actions/orders';
@@ -73,10 +73,13 @@ export default async function CertificateDetail({ params, searchParams }) {
     { label: 'Validated', sub: issued ? primaryMethod(order) : validating ? 'Waiting for you' : '—', state: issued ? 'done' : validating ? 'now' : 'todo' },
     { label: 'Issued', sub: issued ? fmtDate(order.valid_from) : 'After validation', state: issued ? 'done' : 'todo' },
     life.reissueDueOn ? { label: 'Reissue due', sub: fmtDate(life.reissueDueOn), state: life.action === 'reissue' || life.action === 'reissue_overdue' ? 'now' : 'todo' } : null,
-    { label: order.order_expires_at && order.order_expires_at !== order.valid_till ? 'Order ends' : 'Expires', sub: fmtDate(order.order_expires_at || order.valid_till) || '—', state: life.action === 'renew' || life.action === 'order_ended' ? 'now' : 'todo' }
+    { label: order.order_expires_at ? 'Subscription ends' : 'Expires', sub: fmtDate(order.order_expires_at || order.valid_till) || '—', state: life.action === 'renew' || life.action === 'order_ended' ? 'now' : 'todo' }
   ].filter(Boolean);
   if (ended) steps.push({ label: 'Closed', sub: order.status === 'cancel_requested' ? 'Cancellation requested' : 'Cancelled', state: 'done' });
 
+  const sub = subscriptionOf(order);
+  const subPct = sub?.start ? Math.max(0, Math.min(100, Math.round(((Date.now() - new Date(sub.start)) / (new Date(sub.end) - new Date(sub.start))) * 100))) : null;
+  const certDaysAny = order.valid_till ? daysLeft(order.valid_till) : null;
   const alert = item.group === 'action' && !validating ? item.next : null;
 
   return (
@@ -101,7 +104,7 @@ export default async function CertificateDetail({ params, searchParams }) {
             {issued ? <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download</a> : null}
             {issued && life.canReissue ? <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link> : null}
             {item.next?.cta && !validating ? <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link> : null}
-            {!ended && !(item.next?.cta && !validating) ? <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link> : null}
+            {!ended && !(item.next?.cta && !validating) && (!sub || sub.days <= 60) ? <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link> : null}
           </div>
         </div>
 
@@ -113,6 +116,27 @@ export default async function CertificateDetail({ params, searchParams }) {
             <div><strong>{alert.text}</strong>{!order.auto_renew ? ' Auto-renew is off for this certificate.' : ''}</div>
             {alert.cta ? <Link className="cx3-btn sm danger" href={alert.href}>{alert.cta}</Link> : null}
           </div>
+        ) : null}
+
+        {sub && !ended ? (
+          <section className="cx3-card cx3-clocks" aria-label="Certificate and subscription">
+            <div className="cx3-clock">
+              <span className="cx3-clock-k">Current certificate</span>
+              <b className={certDaysAny !== null && certDaysAny <= 30 ? 't-red' : ''}>{certDaysAny === null ? 'Not issued yet' : certDaysAny < 0 ? `Expired ${-certDaysAny} days ago` : `Expires in ${certDaysAny} days`}</b>
+              <small>{order.valid_till ? `${fmtDate(order.valid_from)} – ${fmtDate(order.valid_till)}` : 'Issued after validation'}</small>
+            </div>
+            <div className="cx3-clock">
+              <span className="cx3-clock-k">Subscription period</span>
+              <b className={sub.ended || sub.days <= 60 ? 't-red' : ''}>{sub.months ? `${sub.months} months` : 'Subscription'} · {sub.ended ? `ended ${-sub.days} days ago` : `${sub.days} days left`}</b>
+              <small>{fmtDate(sub.start)} – {fmtDate(sub.end)}</small>
+              {subPct !== null ? <div className="cx3-clock-bar"><i style={{ width: `${subPct}%` }} /></div> : null}
+            </div>
+            <div className="cx3-clock rule">
+              <span className="cx3-clock-k">What to do</span>
+              <b>{sub.ended ? 'Renew: the subscription has ended' : sub.coversBeyondCert || !order.valid_till ? 'Reissue when the certificate expires' : 'Renew before the subscription ends'}</b>
+              <small>{sub.ended ? 'Buy a new subscription to keep the site covered.' : sub.coversBeyondCert ? `Reissues are free until ${fmtDate(sub.end)}. Renew only when the whole subscription ends.` : 'The certificate already runs to the end of the subscription.'}</small>
+            </div>
+          </section>
         ) : null}
 
         <section className="cx3-card cx3-steps" aria-label="Lifecycle">
@@ -143,11 +167,11 @@ export default async function CertificateDetail({ params, searchParams }) {
                 <div><dt>Issuer</dt><dd>{facts?.issuer || (issued ? '—' : 'Not issued yet')}</dd></div>
                 <div><dt>Serial number</dt><dd className="mono wrap">{facts?.serial || '—'}</dd></div>
                 <div><dt>Valid from</dt><dd>{issued ? fmtDate(order.valid_from) : '—'}</dd></div>
-                <div><dt>Valid until</dt><dd className={days !== null && days <= 30 ? 't-red strong' : ''}>{issued ? fmtDate(order.valid_till) : '—'}</dd></div>
+                <div><dt>Certificate expires</dt><dd className={days !== null && days <= 30 ? 't-red strong' : ''}>{issued ? fmtDate(order.valid_till) : '—'}</dd></div>
                 <div><dt>Key</dt><dd className="mono">{facts?.key || '—'}</dd></div>
                 <div className="wide"><dt>SHA-256 fingerprint</dt><dd className="mono wrap small">{facts?.fingerprint256 || '—'}</dd></div>
-                <div><dt>Plan</dt><dd>{order.period_months ? `${order.period_months % 12 === 0 ? `${order.period_months / 12} year${order.period_months > 12 ? 's' : ''}` : `${order.period_months} months`}` : '—'}{order.order_expires_at ? ` · ends ${fmtDate(order.order_expires_at)}` : ''}</dd></div>
-                <div><dt>Reissues</dt><dd>{life.canReissue ? 'Free while the order is active' : '—'}</dd></div>
+                <div><dt>Subscription period</dt><dd>{sub ? `${sub.months ? `${sub.months} months · ` : ''}${fmtDate(sub.start)} – ${fmtDate(sub.end)}` : '—'}</dd></div>
+                <div><dt>Reissues</dt><dd>{life.canReissue ? `Free until ${fmtDate(order.order_expires_at)}` : '—'}</dd></div>
                 <div><dt>Validation</dt><dd>{primaryMethod(order)}</dd></div>
                 <div><dt>Last updated</dt><dd>{timeAgo(order.last_synced_at)}</dd></div>
               </dl>

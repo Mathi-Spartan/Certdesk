@@ -168,7 +168,7 @@ export default async function Overview({ searchParams }) {
                   <li key={i.type + i.id}>
                     <span className={`cx3-dot ${i.group === 'action' ? (i.date?.days != null && i.date.days <= 14 ? 'red' : 'amber') : 'accent'}`} />
                     <div>
-                      <div className="cx3-li-title"><span className="mono">{i.domain}</span> {i.date?.at && i.date.days <= 30 ? `${i.date.label === 'Renews' ? 'renews' : 'expires'} in ${i.date.days} day${i.date.days === 1 ? '' : 's'}` : i.detail?.label?.toLowerCase() || i.status.label.toLowerCase()}</div>
+                      <div className="cx3-li-title"><span className="mono">{i.domain}</span> {i.date?.at && i.date.days <= 30 ? (i.date.label === 'Renews' ? `renews in ${i.date.days} day${i.date.days === 1 ? '' : 's'}` : i.date.days < 0 ? `certificate expired ${-i.date.days} days ago` : `certificate expires in ${i.date.days} day${i.date.days === 1 ? '' : 's'}`) : i.detail?.label?.toLowerCase() || i.status.label.toLowerCase()}{i.sub && i.type === 'cert' ? <span className="cx3-muted"> · subscription {i.sub.ended ? `ended ${fmtDate(i.sub.end)}` : `until ${fmtDate(i.sub.end)}`}</span> : null}</div>
                       <div className="cx3-li-sub">{i.next.text}</div>
                     </div>
                     {i.next.cta ? <Link className={`cx3-btn sm ${i.group === 'action' ? 'dark' : ''}`} href={i.next.href}>{i.next.cta}</Link> : <Link className="cx3-btn sm" href={i.href}>Open</Link>}
@@ -212,14 +212,14 @@ export default async function Overview({ searchParams }) {
           </section>
 
           <section className="cx3-card cx3-pad span2">
-            <div className="cx3-card-head"><h2>Coming up</h2><Link href="/renewals" className="cx3-link-sm">All renewals</Link></div>
+            <div className="cx3-card-head"><h2>Coming up</h2><Link href="/renewals" className="cx3-link-sm">Reissues &amp; renewals</Link></div>
             {p.upcoming.length === 0 ? <p className="cx3-muted">No expiry or renewal dates in the future.</p> : (
               <ol className="cx3-timeline">
                 {p.upcoming.map((i) => (
-                  <li key={i.type + i.id}>
+                  <li key={i.type + i.id + i.date.label}>
                     <span className="mono cx3-when">{fmtDate(i.date.at)}</span>
                     <span><strong>{i.date.label}</strong> <Link href={i.href} className="mono">{i.domain}</Link> · {i.product}</span>
-                    <span className={`cx3-in ${i.date.days <= 14 && i.date.label !== 'Renews' ? 't-red' : ''}`}>in {i.date.days} days</span>
+                    <span className={`cx3-in ${i.date.days <= 14 && i.date.label !== 'Renews' && !i.date.label.includes('reissue') ? 't-red' : ''}`}>in {i.date.days} days</span>
                   </li>
                 ))}
               </ol>

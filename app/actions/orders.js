@@ -317,6 +317,7 @@ export async function reissue(input) {
   const ctx = await requireWorkspace();
   const order = await getOrderForWorkspace(input.orderId, ctx.workspaceId);
   if (!order) return { error: 'Certificate not found.' };
+  if (order.order_expires_at && new Date(order.order_expires_at).getTime() < Date.now()) return { error: 'The subscription period has ended. Renew the order instead of reissuing.' };
   if (!String(input.csr || '').includes('BEGIN CERTIFICATE REQUEST')) return { error: 'A new CSR is required.' };
   const method = ['dns', 'http', 'https', 'email'].includes(input.dcvMethod) ? input.dcvMethod : 'dns';
   const sans = order.sans || [];

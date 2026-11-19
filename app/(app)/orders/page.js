@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SubPeriod, CertExpiry } from '@/components/SubPeriod';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import TopBar from '@/components/TopBar';
@@ -100,7 +101,7 @@ export default async function Certificates({ searchParams }) {
             <table className="cx3-table">
               <thead>
                 <tr>
-                  <th>Common name</th><th>Product</th><th>Status</th><th>Expires</th><th>Validation</th><th>Auto-renew</th><th>Price</th>
+                  <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Subscription</th><th>Auto-renew</th><th>Price</th>
                   {ctx.isAdmin ? <th>Partner cost</th> : null}
                   <th><span className="sr">Actions</span></th>
                 </tr>
@@ -115,16 +116,12 @@ export default async function Certificates({ searchParams }) {
                         <div className="cx3-sub">{r.extra ? `${r.extra} · ` : ''}#{r.ref || '—'}</div>
                       </td>
                       <td><div>{r.product}</div><div className="cx3-sub">{kind(r)}</div></td>
-                      <td><span className={`cx3-pill ${r.group}`}>{r.detail?.label && r.group !== 'ok' ? r.detail.label : r.status.label}</span></td>
+                      <td><span className={`cx3-pill ${r.group}`}>{r.detail?.label && r.group !== 'ok' ? r.detail.label : r.status.label}</span>{METHOD[r.method] ? <div className="cx3-sub">{METHOD[r.method]}</div> : null}</td>
                       <td>
-                        {r.date?.at ? (
-                          <>
-                            <div className={hot ? 't-red' : ''} style={{ fontWeight: 600 }}>{r.date.days < 0 ? `${-r.date.days} days ago` : r.date.days === 0 ? 'Today' : `${r.date.days} days`}</div>
-                            <div className="cx3-sub">{r.date.label === 'Renews' ? 'Renews ' : ''}{fmtDate(r.date.at)}</div>
-                          </>
-                        ) : <span className="cx3-sub">{r.group === 'ended' ? '—' : 'Not issued'}</span>}
+                        {r.type === 'cert' ? (r.cert ? <CertExpiry at={r.cert.at} days={r.cert.days} hot={hot} /> : <span className="cx3-sub">{r.group === 'ended' ? '—' : 'Not issued'}</span>)
+                          : r.date?.at ? <><div style={{ fontWeight: 600 }}>{r.date.days} days</div><div className="cx3-sub">Renews {fmtDate(r.date.at)}</div></> : <span className="cx3-sub">—</span>}
                       </td>
-                      <td>{METHOD[r.method] || '—'}</td>
+                      <td>{r.type === 'cert' ? <SubPeriod sub={r.sub} /> : <span className="cx3-sub">Automated</span>}</td>
                       <td>{r.group === 'ended' ? <span className="cx3-sub">—</span> : <span className={`cx3-flag ${r.autoRenew ? 'on' : ''}`}>{r.autoRenew ? 'On' : 'Off'}</span>}</td>
                       <td style={{ fontWeight: 600 }}>{r.price || <span className="cx3-sub">—</span>}</td>
                       {ctx.isAdmin ? <td className="mono cx3-sub">{r.cost || '—'}</td> : null}

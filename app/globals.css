@@ -1170,3 +1170,16 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .cx3-asuser { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 28px; background: var(--cx-ink); color: #E4E4E7; font-size: 13px; }
 .cx3-asuser strong { color: #fff; }
 .cx3-asuser .cx3-btn.light { height: 32px; }
+
+/* certificate vs subscription clocks */
+.cx3-clocks{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:0;padding:0;overflow:hidden;margin-bottom:16px}
+.cx3-clock{padding:16px 20px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--cx-line,#E4E4E7)}
+.cx3-clock:last-child{border-right:0}
+.cx3-clock.rule{background:var(--cx-accent-tint)}
+.cx3-clock-k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--cx-muted,#52525B)}
+.cx3-clock b{font-size:15px;color:var(--cx-ink,#18181B)}
+.cx3-clock b.t-red{color:#B91C1C}
+.cx3-clock small{font-size:12.5px;color:var(--cx-muted,#52525B);line-height:1.45}
+.cx3-clock-bar{height:5px;border-radius:9px;background:#EDEDF0;margin-top:6px;overflow:hidden}
+.cx3-clock-bar i{display:block;height:100%;background:var(--cx-accent);border-radius:9px}
+@media (max-width:860px){.cx3-clocks{grid-template-columns:1fr}.cx3-clock{border-right:0;border-bottom:1px solid var(--cx-line,#E4E4E7)}}

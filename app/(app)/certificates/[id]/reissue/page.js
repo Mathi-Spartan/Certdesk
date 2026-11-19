@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
-import { getOrderForWorkspace } from '@/lib/orders';
+import Link from 'next/link';
+import { getOrderForWorkspace, subscriptionOf, daysLeft } from '@/lib/orders';
+import { fmtDate } from '@/components/ui';
 import TopBar from '@/components/TopBar';
 import ReissueForm from './ReissueForm';
 
@@ -11,15 +13,26 @@ export default async function ReissuePage({ params }) {
   const ctx = await requireWorkspace();
   const order = await getOrderForWorkspace(id, ctx.workspaceId);
   if (!order) notFound();
+  const sub = subscriptionOf(order);
+  const certDays = order.valid_till ? daysLeft(order.valid_till) : null;
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/dashboard' }, { label: order.common_name, href: `/certificates/${order.id}` }, { label: 'Reissue' }]} />
+      {ctx.isAdmin ? <TopBar crumbs={[{ label: 'Certificates', href: '/orders' }, { label: order.common_name, href: `/certificates/${order.id}` }, { label: 'Reissue' }]} /> : null}
       <main className="page" style={{ maxWidth: 860 }}>
         <div>
           <h1 className="title">Reissue {order.common_name}</h1>
-          <p className="sub">Get a new certificate on the same order, with a new key. Use this if the key was lost or exposed. It doesn't cost anything.</p>
+          <p className="sub">Get a new certificate on the same order, at no cost. Use this when the current certificate is expiring or expired while the subscription is still running, or when the key was lost or exposed.</p>
         </div>
-        <ReissueForm orderId={order.id} commonName={order.common_name} sans={order.sans || []} wildcard={String(order.common_name || '').startsWith('*.')} />
+        {sub ? (
+          <div className={`cx3-alert ${sub.ended ? 'red' : 'amber'}`} style={{ margin: '14px 0' }}>
+            <div>
+              <strong>Current certificate:</strong> {order.valid_till ? `${certDays < 0 ? 'expired' : 'expires'} ${fmtDate(order.valid_till)}` : 'not issued'} ·{' '}
+              <strong>Subscription:</strong> {sub.months ? `${sub.months} months, ` : ''}{fmtDate(sub.start)} – {fmtDate(sub.end)}
+              {sub.ended ? <> · The subscription has ended, so a reissue is not possible. <Link href={`/buy?renew=${order.id}`}>Renew instead</Link>.</> : <> · {sub.days} days of subscription left; the new certificate is issued inside this period.</>}
+            </div>
+          </div>
+        ) : null}
+        {sub?.ended ? null : <ReissueForm orderId={order.id} commonName={order.common_name} sans={order.sans || []} wildcard={String(order.common_name || '').startsWith('*.')} />}
       </main>
     </>
   );

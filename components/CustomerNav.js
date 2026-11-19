@@ -79,7 +79,7 @@ const TITLES = [
   [(p) => p === '/subscriptions/new', 'Order', 'Automation plan'],
   [(p) => p.startsWith('/subscriptions/'), 'Certificates', 'Automated SSL'],
   [(p) => p === '/validation', 'Validation'],
-  [(p) => p === '/renewals', 'Renewals & automation'],
+  [(p) => p === '/renewals', 'Reissues & renewals'],
   [(p) => p.startsWith('/buy') || p === '/order', 'Order', 'SSL certificate'],
   [(p) => p === '/tools', 'Tools'],
   [(p) => p.startsWith('/tools/'), 'Tools', null],
