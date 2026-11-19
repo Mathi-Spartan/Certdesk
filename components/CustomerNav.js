@@ -5,47 +5,39 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 const I = {
   dash: <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
-  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
-  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-  alert: <><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></>,
-  loop: <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" />,
-  plus: <path d="M12 5v14M5 12h14" />,
+  lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  check: <><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" /></>,
+  renew: <><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></>,
+  cart: <><circle cx="9" cy="20" r="1.5" /><circle cx="18" cy="20" r="1.5" /><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L22 7H6" /></>,
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
   key: <><circle cx="8" cy="15" r="4" /><path d="m10.8 12.2 9.2-9.2M17 6l3 3" /></>,
   doc: <><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></>,
   shield: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>,
-  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
-  link: <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />,
-  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
-  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6" /></>,
-  card: <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></>,
-  swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />,
-  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>
+  swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
 };
 
 function Ico({ n }) {
-  return <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[n]}</svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[n]}</svg>;
 }
+
+const isCert = (p) => p === '/orders' || p.startsWith('/certificates') || /^\/subscriptions\/[0-9a-f-]{36}/.test(p);
 
 export default function CustomerNav({ counts = {} }) {
   const path = usePathname() || '';
-  const sp = useSearchParams();
-  const f = sp?.get('f') || '';
   const groups = [
-    { items: [{ href: '/dashboard', label: 'Dashboard', icon: 'dash', on: path === '/dashboard' }] },
     {
-      label: 'Certificates',
       items: [
-        { href: '/orders', label: 'All orders', icon: 'list', on: (path === '/orders' && !f) || path.startsWith('/certificates') || /^\/subscriptions\/[0-9a-f-]{36}/.test(path), n: counts.all },
-        { href: '/orders?f=action', label: 'Needs action', icon: 'alert', on: path === '/orders' && f === 'action', n: counts.action, tone: 'red' },
-        { href: '/orders?f=expiring', label: 'Expiring soon', icon: 'clock', on: path === '/orders' && f === 'expiring', n: counts.expiring, tone: 'amber' },
-        { href: '/orders?f=auto', label: 'Automated SSL', icon: 'loop', on: path === '/orders' && f === 'auto', n: counts.auto }
+        { href: '/dashboard', label: 'Overview', icon: 'dash', on: path === '/dashboard' },
+        { href: '/orders', label: 'Certificates', icon: 'lock', on: isCert(path), n: counts.all, tone: 'plain' },
+        { href: '/validation', label: 'Validation', icon: 'check', on: path === '/validation', n: counts.validation, tone: 'amber' },
+        { href: '/renewals', label: 'Renewals & automation', icon: 'renew', on: path === '/renewals', n: counts.renewals, tone: 'red' }
       ]
     },
     {
       label: 'Order',
       items: [
-        { href: '/buy', label: 'SSL certificate', icon: 'plus', on: path.startsWith('/buy') || path === '/order' },
+        { href: '/buy', label: 'SSL certificate', icon: 'cart', on: path.startsWith('/buy') || path === '/order' },
         { href: '/subscriptions/new', label: 'Automation plan', icon: 'bolt', on: path === '/subscriptions/new' }
       ]
     },
@@ -61,19 +53,50 @@ export default function CustomerNav({ counts = {} }) {
     }
   ];
   return (
-    <nav aria-label="Main" className="cc-nav">
+    <nav aria-label="Main" className="cx3-nav">
       {groups.map((g, gi) => (
-        <div key={gi} className="cc-group">
-          {g.label ? <div className="cc-label">{g.label}</div> : null}
-          {g.items.map((i) =>
-            (
-              <Link key={i.label} href={i.href} className={`cc-link ${i.on ? 'on' : ''}`} aria-current={i.on ? 'page' : undefined}>
-                <Ico n={i.icon} />{i.label}
-                {i.n ? <span className={`cc-n ${i.tone || ''}`}>{i.n}</span> : null}
-              </Link>
-            )
-          )}
+        <div key={gi} className="cx3-group">
+          {g.label ? <div className="cx3-label">{g.label}</div> : null}
+          {g.items.map((i) => (
+            <Link key={i.href} href={i.href} className={`cx3-link ${i.on ? 'on' : ''}`} aria-current={i.on ? 'page' : undefined}>
+              <Ico n={i.icon} /><span>{i.label}</span>
+              {i.n ? <em className={`cx3-n ${i.tone}`}>{i.n}</em> : null}
+            </Link>
+          ))}
         </div>
+      ))}
+    </nav>
+  );
+}
+
+const TITLES = [
+  [(p) => p === '/dashboard', 'Overview'],
+  [(p) => p === '/orders', 'Certificates'],
+  [(p) => p.startsWith('/certificates/'), 'Certificates', 'Certificate'],
+  [(p) => p === '/subscriptions/new', 'Order', 'Automation plan'],
+  [(p) => p.startsWith('/subscriptions/'), 'Certificates', 'Automated SSL'],
+  [(p) => p === '/validation', 'Validation'],
+  [(p) => p === '/renewals', 'Renewals & automation'],
+  [(p) => p.startsWith('/buy') || p === '/order', 'Order', 'SSL certificate'],
+  [(p) => p === '/tools', 'Tools'],
+  [(p) => p.startsWith('/tools/'), 'Tools', null],
+  [(p) => p === '/account', 'Profile & password']
+];
+const TOOL = { 'ssl-checker': 'SSL checker', csr: 'CSR generator', 'csr-decoder': 'CSR decoder', 'cert-decoder': 'Certificate decoder', converter: 'Format converter' };
+
+/** Breadcrumb for the header bar, derived from the current path. */
+export function Crumbs({ workspace }) {
+  const path = usePathname() || '';
+  const sp = useSearchParams();
+  const hit = TITLES.find(([t]) => t(path));
+  let parts = hit ? [hit[1], hit[2]].filter(Boolean) : [];
+  if (path.startsWith('/tools/')) parts = ['Tools', TOOL[path.split('/')[2]] || 'Tool'];
+  if (path === '/orders' && sp?.get('f')) parts = ['Certificates', { action: 'Needs action', expiring: 'Expiring soon', auto: 'Automated SSL', pending: 'In progress', closed: 'Closed' }[sp.get('f')] || 'Filtered'];
+  return (
+    <nav aria-label="Breadcrumb" className="cx3-crumbs">
+      <span>{workspace}</span>
+      {parts.map((p, i) => (
+        <span key={i} className={i === parts.length - 1 ? 'here' : ''}><i aria-hidden="true">/</i>{i === 0 && parts.length > 1 ? <Link href={p === 'Tools' ? '/tools' : p === 'Certificates' ? '/orders' : '/order'}>{p}</Link> : p}</span>
       ))}
     </nav>
   );

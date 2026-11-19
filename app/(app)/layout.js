@@ -51,10 +51,11 @@ export default async function AppLayout({ children }) {
          (select count(*) from console.orders where workspace_id = $1 and status not in ('cancelled','draft'))::int
            + (select count(*) from console.subscriptions where workspace_id = $1 and status not in ('cancelled','expired'))::int as total,
          (select count(*) from console.orders where workspace_id = $1 and status = 'issued' and valid_till <= now() + interval '30 days')::int as expiring,
-         (select count(*) from console.subscriptions where workspace_id = $1 and status not in ('cancelled','expired'))::int as auto`,
+         (select count(*) from console.subscriptions where workspace_id = $1 and status not in ('cancelled','expired'))::int as auto,
+         (select count(*) from console.orders where workspace_id = $1 and status in ('validating','incomplete','reissuing'))::int as validation`,
       [ctx.workspaceId]
     );
-    return <CustomerShell user={ctx.user} workspace={ctx.workspace} counts={{ all: c.total, expiring: c.expiring, auto: c.auto, action: needs }} help={help}>{children}</CustomerShell>;
+    return <CustomerShell user={ctx.user} workspace={ctx.workspace} counts={{ all: c.total, expiring: c.expiring, auto: c.auto, action: needs, validation: c.validation, renewals: c.expiring }} help={help}>{children}</CustomerShell>;
   }
 
   if (ctx.isAdmin) {
