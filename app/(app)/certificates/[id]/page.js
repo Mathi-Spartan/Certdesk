@@ -69,7 +69,7 @@ export default async function CertificateDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/' }, { label: order.common_name || 'Pending order' }]}>
+      <TopBar crumbs={[{ label: 'My SSL', href: '/dashboard' }, { label: order.common_name || 'Pending order' }]}>
         <span className="small muted">Order <span className="mono">{order.gg_order_id || '—'}</span></span>
       </TopBar>
       <main className="page" style={{ maxWidth: 1100 }}>

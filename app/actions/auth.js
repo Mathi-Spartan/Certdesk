@@ -14,7 +14,7 @@ export async function login(prev, formData) {
   }
   await createSession(user.id);
   await q('update console.users set last_login_at = now() where id = $1', [user.id]);
-  redirect(user.role === 'admin' ? '/partner' : '/');
+  redirect(user.role === 'admin' ? '/partner' : '/dashboard');
 }
 
 export async function logout() {

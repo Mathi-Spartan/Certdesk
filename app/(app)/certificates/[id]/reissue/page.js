@@ -13,7 +13,7 @@ export default async function ReissuePage({ params }) {
   if (!order) notFound();
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/' }, { label: order.common_name, href: `/certificates/${order.id}` }, { label: 'Reissue' }]} />
+      <TopBar crumbs={[{ label: 'My SSL', href: '/dashboard' }, { label: order.common_name, href: `/certificates/${order.id}` }, { label: 'Reissue' }]} />
       <main className="page" style={{ maxWidth: 860 }}>
         <div>
           <h1 className="title">Reissue {order.common_name}</h1>

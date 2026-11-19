@@ -117,7 +117,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'My SSL', href: '/' }, { label: sub.primary_domain || 'Pending' }]}>
+      <TopBar crumbs={[{ label: 'My SSL', href: '/dashboard' }, { label: sub.primary_domain || 'Pending' }]}>
         <form action={refreshSubscription}>{hidden}<SubmitButton className="btn sm" pendingText="Refreshing…">Refresh</SubmitButton></form>
       </TopBar>
       <main className="page" style={{ maxWidth: 1100 }}>

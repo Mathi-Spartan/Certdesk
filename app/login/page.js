@@ -7,7 +7,7 @@ export const metadata = { title: 'Sign in · CertDesk' };
 
 export default async function LoginPage() {
   const ctx = await getContext();
-  if (ctx) redirect(ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/');
+  if (ctx) redirect(ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard');
   return (
     <main className="login-wrap">
       <div className="card login-card">

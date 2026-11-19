@@ -41,7 +41,7 @@ export default async function Dashboard({ searchParams }) {
   const rows = term ? base.filter((i) => [i.domain, i.product, ...i.tags].join(' ').toLowerCase().includes(term)) : base;
   const link = (key, withTerm = true) => {
     const q = new URLSearchParams({ ...(key !== 'all' ? { show: key } : {}), ...(term && withTerm ? { q: term } : {}) }).toString();
-    return '/' + (q ? '?' + q : '');
+    return '/dashboard' + (q ? '?' + q : '');
   };
 
   return (
@@ -60,7 +60,7 @@ export default async function Dashboard({ searchParams }) {
             </p>
           </div>
           {live.length ? (
-            <form action="/" className="dash-search">
+            <form action="/dashboard" className="dash-search">
               {show !== 'all' ? <input type="hidden" name="show" value={show} /> : null}
               <label className="search">
                 <Icon name="search" stroke="var(--muted)" />
@@ -144,9 +144,9 @@ export default async function Dashboard({ searchParams }) {
             </section>
 
             {closed.length > 0 && show !== 'closed' ? (
-              <Link className="small muted" href="/?show=closed" style={{ alignSelf: 'center' }}>Show {closed.length} closed</Link>
+              <Link className="small muted" href="/dashboard?show=closed" style={{ alignSelf: 'center' }}>Show {closed.length} closed</Link>
             ) : show === 'closed' ? (
-              <Link className="small" href="/" style={{ alignSelf: 'center' }}>Back to active</Link>
+              <Link className="small" href="/dashboard" style={{ alignSelf: 'center' }}>Back to active</Link>
             ) : null}
           </>
         )}

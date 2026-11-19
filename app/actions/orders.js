@@ -216,7 +216,7 @@ export async function placeOrder(input) {
 async function loadOrder(formData) {
   const ctx = await requireWorkspace();
   const order = await getOrderForWorkspace(String(formData.get('order_id')), ctx.workspaceId);
-  if (!order) redirect('/?err=' + enc('Certificate not found'));
+  if (!order) redirect('/dashboard?err=' + enc('Certificate not found'));
   return { ctx, order, back: String(formData.get('back') || `/certificates/${order.id}`) };
 }
 
