@@ -19,6 +19,7 @@ const I = {
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6" /></>,
   card: <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></>,
+  swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />,
   globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>
 };
 
@@ -54,6 +55,7 @@ export default function CustomerNav({ counts = {} }) {
         { href: '/tools/csr', label: 'CSR generator', icon: 'key', on: path === '/tools/csr' },
         { href: '/tools/csr-decoder', label: 'CSR decoder', icon: 'doc', on: path === '/tools/csr-decoder' },
         { href: '/tools/cert-decoder', label: 'Certificate decoder', icon: 'shield', on: path === '/tools/cert-decoder' },
+        { href: '/tools/converter', label: 'Certificate converter', icon: 'swap', on: path === '/tools/converter' },
         { href: '/tools/ssl-checker', label: 'SSL checker', icon: 'search', on: path === '/tools/ssl-checker' },
         { label: 'Key matcher', icon: 'link', soon: true }
       ]

@@ -7,6 +7,7 @@ const TOOLS = [
   { href: '/tools/csr', name: 'CSR generator', text: 'Create a CSR and private key in your browser.' },
   { href: '/tools/csr-decoder', name: 'CSR decoder', text: 'See the domain, organisation and key inside a CSR.' },
   { href: '/tools/cert-decoder', name: 'Certificate decoder', text: 'Read the names, issuer and expiry of any certificate.' },
+  { href: '/tools/converter', name: 'Certificate converter', text: 'Convert to PFX, JKS, PEM, DER, P7B or a server-ready pack, offline in your browser.' },
   { href: '/tools/ssl-checker', name: 'SSL checker', text: 'Test a live website: trust, chain, names and expiry.' },
   { name: 'Key matcher', text: 'Confirm a certificate matches your private key.', soon: true }
 ];

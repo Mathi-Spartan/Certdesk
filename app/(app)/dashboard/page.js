@@ -85,7 +85,7 @@ export default async function Dashboard({ searchParams }) {
             <h1>{ctx.isAdmin ? ctx.workspace.name : `Welcome back${first ? `, ${first}` : ''}`}</h1>
             <p>
               {live.length === 0
-                ? 'Nothing here yet. Request a certificate or ask us to assign your existing ones.'
+                ? 'Nothing here yet. Request a certificate to get started.'
                 : p.action.length
                   ? `${p.action.length} order${p.action.length === 1 ? ' needs' : 's need'} your attention.`
                   : 'Everything is protected. Nothing needs you right now.'}
@@ -101,10 +101,9 @@ export default async function Dashboard({ searchParams }) {
             <div className="db-empty-text">
               <span className="db-empty-icon"><Icon name="lock" size={28} stroke="#fff" /></span>
               <h2>Secure your first website</h2>
-              <p>Order a certificate you install yourself, or an automated subscription that installs and renews on its own. Already have certificates with us? Ask and we&apos;ll add them here.</p>
+              <p>Order a certificate you install yourself, or an automated subscription that installs and renews on its own. </p>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <Link className="btn primary" href="/order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
-                {help ? <a className="btn" href={help}>Ask us to add my certificates</a> : null}
               </div>
             </div>
             <ol className="db-empty-steps">
@@ -196,7 +195,7 @@ export default async function Dashboard({ searchParams }) {
             <section className="cc-tiles">
               <Link href="/tools/csr" className="cc-tile"><strong>CSR generator</strong><span>Create a CSR and key in your browser.</span><em>Open →</em></Link>
               <Link href="/tools/ssl-checker" className="cc-tile"><strong>SSL checker</strong><span>Test a live site's certificate and chain.</span><em>Open →</em></Link>
-              <Link href="/tools/cert-decoder" className="cc-tile"><strong>Certificate decoder</strong><span>Read names, issuer and expiry.</span><em>Open →</em></Link>
+              <Link href="/tools/converter" className="cc-tile"><strong>Certificate converter</strong><span>PFX, JKS, PEM, P7B and server packs.</span><em>Open →</em></Link>
               {help ? <a href={help} className="cc-tile"><strong>Need help?</strong><span>Email your SSL team.</span><em>Contact →</em></a> : <Link href="/tools" className="cc-tile"><strong>All tools</strong><span>More utilities coming soon.</span><em>Open →</em></Link>}
             </section>
           </>

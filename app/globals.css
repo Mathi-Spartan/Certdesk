@@ -685,3 +685,6 @@ a.cc-tile:hover { color: var(--ink); border-color: var(--accent-mid); box-shadow
   .cc-search, .cc-order { display: none; }
   .cc-kpis { grid-template-columns: 1fr; }
 }
+.cc-page-wide { max-width: none; }
+.cc-frame { overflow: hidden; padding: 0; }
+.cc-frame iframe { display: block; width: 100%; height: calc(100vh - 210px); min-height: 640px; border: 0; }
