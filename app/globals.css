@@ -1150,3 +1150,20 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .cx3-wizard { max-width: none !important; }
 .cx3-wizard > section.card { flex: 999 1 560px !important; }
 .cx3-wizard aside.card { flex: 0 1 300px !important; max-width: 320px !important; }
+
+/* ---- partner: all orders + bulk assign ---- */
+.cx3-select { height: 38px; padding: 0 10px; border: 1px solid #D4D4D8; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; color: var(--cx-ink); }
+.cx3-bulkform { overflow: hidden; }
+.cx3-bulkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--cx-ink); color: #fff; font-size: 13px; }
+.cx3-bulk-sep { width: 1px; height: 18px; background: #52525B; }
+.cx3-bulk-info { margin-left: auto; color: #A1A1AA; font-size: 12px; }
+.cx3-select.dark { background: #27272A; border-color: #3F3F46; color: #fff; height: 32px; }
+.cx3-btn.ghostdark { background: #3F3F46; border-color: #3F3F46; color: #fff; height: 32px; }
+.cx3-btn.ghostdark:hover { background: #52525B; color: #fff; }
+.cx3-bulkbar .cx3-btn.light { height: 32px; }
+.cx3-btn:disabled { opacity: .45; cursor: not-allowed; }
+.cx3-table input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--cx-accent); cursor: pointer; }
+.cx3-table tr.sel td { background: var(--cx-accent-tint) !important; }
+.cx3-wslink { color: var(--cx-ink); font-weight: 600; text-decoration: none; }
+.cx3-wslink:hover { color: var(--cx-accent); }
+.cx3-pager { display: flex; justify-content: space-between; align-items: center; }

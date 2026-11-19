@@ -62,6 +62,7 @@ export default function CustomerNav({ counts = {}, partner = false, workspace = 
     label: 'Partner',
     items: [
       { href: '/partner', label: 'Customer workspaces', icon: 'building', on: path === '/partner' || path.startsWith('/partner/workspaces') },
+      { href: '/partner/orders', label: 'All orders', icon: 'lock', on: path === '/partner/orders' },
       { href: '/partner/catalogue', label: 'Catalogue', icon: 'grid', on: path === '/partner/catalogue' },
       { href: '/partner/pricing', label: 'Customer prices', icon: 'tag', on: path === '/partner/pricing' },
       { href: '/partner/api', label: 'Provider API', icon: 'code', on: path === '/partner/api' },
@@ -101,6 +102,7 @@ const TITLES = [
   [(p) => p === '/account', 'Profile & password'],
   [(p) => p === '/partner', 'Partner', 'Customer workspaces'],
   [(p) => p.startsWith('/partner/workspaces'), 'Partner', 'Workspace'],
+  [(p) => p === '/partner/orders', 'Partner', 'All orders'],
   [(p) => p === '/partner/catalogue', 'Partner', 'Catalogue'],
   [(p) => p === '/partner/pricing', 'Partner', 'Customer prices'],
   [(p) => p === '/partner/api', 'Partner', 'Provider API'],
