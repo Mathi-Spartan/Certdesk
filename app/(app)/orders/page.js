@@ -5,6 +5,7 @@ import TopBar from '@/components/TopBar';
 import TypeChip from '@/components/TypeChip';
 import { itemFromOrder, itemFromSub } from '@/lib/portfolio';
 import { Empty, fmtDate } from '@/components/ui';
+import { fmtMoney } from '@/lib/pricing';
 
 export const metadata = { title: 'Order history · CertDesk' };
 
@@ -23,8 +24,8 @@ export default async function Orders() {
     )
   ]);
   const rows = [
-    ...orders.map((o) => ({ ...itemFromOrder(o), at: o.created_at, by: o.by_name, kindLabel: o.renewal_of ? 'Renewal' : 'New order', term: o.period_months ? `${o.period_months} months` : null, cost: o.order_amount != null ? `${o.order_amount} ${o.currency || ''}` : null })),
-    ...subs.map((s) => ({ ...itemFromSub(s), at: s.created_at, by: s.by_name, kindLabel: 'Subscription', term: null, cost: null }))
+    ...orders.map((o) => ({ ...itemFromOrder(o), at: o.created_at, by: o.by_name, kindLabel: o.renewal_of ? 'Renewal' : 'New order', term: o.period_months ? `${o.period_months} months` : null, cost: o.order_amount != null ? `${o.order_amount} ${o.currency || ''}` : null, yours: fmtMoney(o.customer_price, o.customer_currency || 'USD') })),
+    ...subs.map((s) => ({ ...itemFromSub(s), at: s.created_at, by: s.by_name, kindLabel: 'Subscription', term: null, cost: null, yours: null }))
   ].sort((a, b) => new Date(b.at) - new Date(a.at));
 
   return (
@@ -39,7 +40,7 @@ export default async function Orders() {
           {rows.length === 0 ? <Empty title="No orders yet"><Link className="btn primary" href="/order">Order SSL</Link></Empty> : (
             <div className="table-wrap">
               <table className="t list" style={{ minWidth: 820 }}>
-                <thead><tr><th>Date</th><th>Domain</th><th>Type</th><th>Order</th><th>Status</th><th>Placed by</th>{ctx.isAdmin ? <th>Reference</th> : null}{ctx.isAdmin ? <th>Partner cost</th> : null}</tr></thead>
+                <thead><tr><th>Date</th><th>Domain</th><th>Type</th><th>Order</th><th>Status</th><th>Placed by</th><th>Price</th>{ctx.isAdmin ? <th>Reference</th> : null}{ctx.isAdmin ? <th>Partner cost</th> : null}</tr></thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.type + r.id}>
@@ -49,6 +50,7 @@ export default async function Orders() {
                       <td>{r.kindLabel}{r.term ? <div className="small muted">{r.term}</div> : null}</td>
                       <td><span className={`badge tone-${r.status.tone}`}>{r.status.label}</span></td>
                       <td>{r.by || 'Your provider'}</td>
+                      <td style={{ fontWeight: 600 }}>{r.yours || <span className="muted" style={{ fontWeight: 400 }}>—</span>}</td>
                       {ctx.isAdmin ? <td className="mono small">{r.ref || '—'}</td> : null}
                       {ctx.isAdmin ? <td className="mono small">{r.cost || '—'}</td> : null}
                     </tr>

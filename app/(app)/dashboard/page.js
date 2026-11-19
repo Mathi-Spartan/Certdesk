@@ -46,13 +46,28 @@ export default async function Dashboard({ searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'My SSL' }]}>
-        <Link className="btn primary" href="/order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
-      </TopBar>
+      {ctx.isAdmin ? (
+        <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'My SSL' }]}>
+          <Link className="btn primary" href="/order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
+        </TopBar>
+      ) : <div style={{ height: 22 }} />}
       <main className="page dash">
+        {!ctx.isAdmin ? (
+          <section className="cx-hello">
+            <div>
+              <h1>Hello{ctx.user.name ? `, ${String(ctx.user.name).split(' ')[0]}` : ''}</h1>
+              <p>{p.action.length ? `${p.action.length} item${p.action.length === 1 ? ' needs' : 's need'} your attention.` : live.length ? 'All your certificates are in order.' : 'Order your first certificate to get started.'}</p>
+            </div>
+            <div className="cx-hello-stats">
+              <div><b>{p.domains}</b><span>Domains</span></div>
+              <div><b>{count.ok}</b><span>Protected</span></div>
+              <div className={p.action.length ? 'warn' : ''}><b>{p.action.length}</b><span>Need you</span></div>
+            </div>
+          </section>
+        ) : null}
         <header className="dash-head">
           <div>
-            <h1 className="title">My SSL</h1>
+            <h1 className="title">{ctx.isAdmin ? 'My SSL' : 'Your certificates'}</h1>
             <p className="sub">
               {live.length === 0
                 ? 'Your certificates and automated subscriptions will appear here.'

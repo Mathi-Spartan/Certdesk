@@ -6,6 +6,7 @@ import { supportEmail, helpHref } from '@/lib/support';
 import Icon from '@/components/Icon';
 import { logout } from '@/app/actions/auth';
 import { exitWorkspace } from '@/app/actions/admin';
+import CustomerShell from '@/components/CustomerShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,12 +44,18 @@ export default async function AppLayout({ children }) {
     });
   }
 
+  if (!ctx.isAdmin) {
+    const help = helpHref(await supportEmail(), { subject: `Help with CertDesk · ${ctx.workspace?.name || ''}` });
+    return <CustomerShell user={ctx.user} workspace={ctx.workspace} needs={needs} help={help}>{children}</CustomerShell>;
+  }
+
   if (ctx.isAdmin) {
     groups.push({
       label: 'PARTNER',
       items: [
         { href: '/partner', label: 'Customer workspaces', icon: 'building' },
         { href: '/partner/catalogue', label: 'Catalogue', icon: 'list' },
+        { href: '/partner/pricing', label: 'Customer prices', icon: 'receipt' },
         { href: '/partner/api', label: 'Provider API', icon: 'code' },
         { href: '/partner/endpoints', label: 'API v2 reference', icon: 'list' }
       ]

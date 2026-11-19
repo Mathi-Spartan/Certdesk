@@ -202,6 +202,13 @@ export async function placeOrder(input) {
       false
     ]
   );
+  try {
+    const { customerPrices } = await import('@/lib/pricing');
+    const yours = (await customerPrices(ctx.workspaceId))[product.id]?.[period];
+    if (yours) await q('update console.orders set customer_price = $2, customer_currency = $3 where id = $1', [row.id, yours.price, yours.currency]);
+  } catch {
+    /* price can be set later */
+  }
   await addEvent(row.id, 'ordered', `${renewalOf ? 'Renewal' : 'Order'} placed with GoGetSSL (order ${res.order_id})`, ctx.user.id);
   if (renewalOf) await addEvent(renewalOf.id, 'renewal', `Renewal ordered (GoGetSSL order ${res.order_id})`, ctx.user.id);
   await q('update console.workspaces set contact = $2 where id = $1', [ctx.workspaceId, JSON.stringify({ ...contact, org: needsOrg ? o : null })]);

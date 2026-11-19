@@ -21,6 +21,18 @@ function kindLabel(p) {
   return VLABEL[p.validation] || 'SSL';
 }
 
+function money(v) {
+  if (!v) return null;
+  try { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: v.currency || 'USD' }).format(v.price); } catch { return `${v.price} ${v.currency}`; }
+}
+function yourPrice(p, m) {
+  return money((p?.prices || []).find((x) => Number(x.months) === Number(m))?.yours);
+}
+function fromPrice(p) {
+  const list = (p?.prices || []).filter((x) => x.yours).sort((a, b) => a.yours.price - b.yours.price);
+  return list.length ? money(list[0].yours) : null;
+}
+
 function months(n) {
   if (n % 12 === 0) return `${n / 12} year${n === 12 ? '' : 's'}`;
   return `${n} months`;
@@ -203,13 +215,14 @@ export default function BuyWizard({ products, renewal, defaults }) {
                       {i === 0 ? <span className="badge tone-violet">Suggested</span> : null}
                     </span>
                     <span className="d">{p.brand} · {kindLabel(p)}{p.multidomain && p.san_max ? ` · up to ${p.san_max} domains` : ''}</span>
+                    <span className="small" style={{ fontWeight: 700, color: fromPrice(p) ? 'var(--accent-ink)' : 'var(--muted)' }}>{fromPrice(p) ? `From ${fromPrice(p)}` : 'Price on request'}</span>
                   </button>
                 ))}
               </div>
               <div className="field" style={{ maxWidth: 360 }}>
                 <label htmlFor="term">Order term</label>
                 <select className="input" id="term" value={period} onChange={(e) => setPeriod(Number(e.target.value))}>
-                  {periodList.map((m) => <option key={m} value={m}>{months(m)}</option>)}
+                  {periodList.map((m) => <option key={m} value={m}>{months(m)}{yourPrice(product, m) ? ` · ${yourPrice(product, m)}` : ''}</option>)}
                 </select>
                 <span className="small muted">Each certificate lasts up to 200 days. Reissue free as often as you like during the term.</span>
               </div>
@@ -256,6 +269,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
                   ['Domain', <span className="mono" key="d">{cn}{sans.length ? ` +${sans.length}` : ''}</span>, 0],
                   ['Certificate', product.name, 1],
                   ['Order term', months(Number(period)), 1],
+                  ['Your price', yourPrice(product, period) || 'On request', 1],
                   ['Key', csr.mode === 'generate' ? `Made in your browser · ${csr.keyType === 'ec' ? 'ECDSA P-256' : csr.keyType.toUpperCase()}` : 'Your own CSR', 2],
                   ['Validation', dcv === 'email' ? `Email · ${approver}` : dcvOptions.find((d) => d.id === dcv)?.label, 3]
                 ].map(([k, val, go]) => (
@@ -317,6 +331,12 @@ export default function BuyWizard({ products, renewal, defaults }) {
           <div className="between"><dt className="muted">Domain</dt><dd style={{ margin: 0 }} className="mono">{cn || '—'}</dd></div>
           <div className="between"><dt className="muted">Order term</dt><dd style={{ margin: 0 }}>{months(Number(period))}</dd></div>
           <div className="between"><dt className="muted">Validation</dt><dd style={{ margin: 0 }}>{dcv.toUpperCase()}</dd></div>
+          {step >= 1 ? (
+            <div className="between" style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 10, marginTop: 2 }}>
+              <dt style={{ fontWeight: 600 }}>Your price</dt>
+              <dd style={{ margin: 0, fontWeight: 700, fontSize: 16 }}>{yourPrice(product, period) || <span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>On request</span>}</dd>
+            </div>
+          ) : null}
         </dl>
         <div className="small muted">Billing is handled by your provider.</div>
       </aside>

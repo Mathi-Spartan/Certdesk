@@ -109,7 +109,7 @@ export default async function CertificateDetail({ params, searchParams }) {
           </div>
           {validating ? (
             <div className="next-body">
-              <DcvPanel order={order} back={back} approverEmails={basicEmails(order.common_name)} locks={locks} />
+              <DcvPanel order={{ id: order.id, common_name: order.common_name, dcv: order.dcv, dcv_method: order.dcv_method, approver_email: order.approver_email, last_synced_at: order.last_synced_at }} back={back} approverEmails={basicEmails(order.common_name)} locks={locks} />
             </div>
           ) : null}
         </section>

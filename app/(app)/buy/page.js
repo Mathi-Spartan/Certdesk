@@ -5,16 +5,23 @@ import BuyWizard from './BuyWizard';
 import TopBar from '@/components/TopBar';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
+import { customerPrices } from '@/lib/pricing';
 
 export const metadata = { title: 'Buy certificate · CertDesk' };
 
 export default async function BuyPage({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
-  const products = await q(
+  const rows = await q(
     `select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices
        from console.products where enabled and not automation order by validation, wildcard, multidomain, name`
   );
+  // Only the order terms and the customer's own price leave the server; the GoGetSSL cost never does.
+  const mine = await customerPrices(ctx.workspaceId);
+  const products = rows.map(({ prices, ...p }) => ({
+    ...p,
+    prices: (prices || []).map((x) => ({ months: x.months, yours: mine[p.id]?.[x.months] || null }))
+  }));
   let renewal = null;
   if (sp.renew) {
     const o = await getOrderForWorkspace(sp.renew, ctx.workspaceId);
@@ -44,7 +51,7 @@ export default async function BuyPage({ searchParams }) {
   return (
     <>
       <TopBar crumbs={[{ label: 'Order SSL', href: '/order' }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
-        <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/'} aria-label="Close"><Icon name="x" />Close</Link>
+        <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/dashboard'} aria-label="Close"><Icon name="x" />Close</Link>
       </TopBar>
       {products.length === 0 ? (
         <main className="page">
