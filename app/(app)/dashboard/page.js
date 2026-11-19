@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { loadPortfolio } from '@/lib/portfolio';
+import { posture } from '@/lib/posture';
 import TopBar from '@/components/TopBar';
 import { FlashFromSearch, fmtDate } from '@/components/ui';
 
@@ -34,6 +35,13 @@ export default async function Overview({ searchParams }) {
     redirect('/orders' + (qs ? '?' + qs : ''));
   }
   const p = await loadPortfolio(ctx.workspaceId);
+  const [products, events] = await Promise.all([
+    q('select id, validation from console.products'),
+    q(`select e.kind, e.message, e.created_at, o.common_name, o.id as order_id, u.name as actor
+         from console.order_events e join console.orders o on o.id = e.order_id left join console.users u on u.id = e.actor_user_id
+        where o.workspace_id = $1 order by e.created_at desc limit 8`, [ctx.workspaceId])
+  ]);
+  const pos = posture(p.orders, products);
   const live = p.live;
   const certs = live.filter((i) => i.type === 'cert');
   const domains = new Set(live.map((i) => i.domain)).size;
@@ -118,7 +126,10 @@ export default async function Overview({ searchParams }) {
             <h1>{first ? `Hello, ${first}` : 'Overview'}</h1>
             <p>{todo ? `${todo} thing${todo === 1 ? '' : 's'} to do` : 'Everything is up to date'} · {certs.length} certificate{certs.length === 1 ? '' : 's'} across {domains} domain{domains === 1 ? '' : 's'}</p>
           </div>
-          <Link className="cx3-btn primary" href="/buy">Order new certificate</Link>
+          <div className="cx3-row">
+            <a className="cx3-btn" href="/api/orders/export">{ic(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Export CSV</a>
+            <Link className="cx3-btn primary" href="/buy">Order new certificate</Link>
+          </div>
         </div>
         <FlashFromSearch searchParams={sp} />
 
@@ -156,6 +167,55 @@ export default async function Overview({ searchParams }) {
             </div>
           )}
         </section>
+
+        <div className="cx3-pki">
+          <section className="cx3-card cx3-pad">
+            <div className="cx3-card-head"><div><h2>Security checks</h2><p>{pos.passed} of {pos.checks.length} passing</p></div><span className={`cx3-score ${pos.passed === pos.checks.length ? 'ok' : pos.checks.some((c) => c.bad && !c.soft) ? 'bad' : 'warn'}`}>{pos.passed}/{pos.checks.length}</span></div>
+            <ul className="cx3-checks">
+              {pos.checks.map((c) => (
+                <li key={c.id} className={c.bad ? (c.soft ? 'warn' : 'bad') : 'ok'}>
+                  <span className="cx3-check-ico" aria-hidden="true">{c.bad ? (c.soft ? '!' : '×') : '✓'}</span>
+                  <span className="cx3-check-label">{c.label}</span>
+                  {c.bad ? <Link href={c.href} className="cx3-check-fix">{c.bad} · {c.fix}</Link> : <span className="cx3-check-ok">Pass</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="cx3-card cx3-pad">
+            <div className="cx3-card-head"><div><h2>Inventory</h2><p>{pos.total} certificate{pos.total === 1 ? '' : 's'} in use · {pos.issuedCount} issued</p></div></div>
+            {[['Validation', pos.level], ['Type', pos.shape], ['Key', pos.keys], ['Issuer', pos.issuers]].map(([t, m]) => {
+              const list = Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 4);
+              const tot = list.reduce((n, [, v]) => n + v, 0) || 1;
+              return (
+                <div key={t} className="cx3-inv">
+                  <span className="cx3-inv-k">{t}</span>
+                  <div className="cx3-inv-bar" aria-hidden="true">{list.map(([k, v], n) => <i key={k} className={`g${n}`} style={{ width: `${(v / tot) * 100}%` }} />)}</div>
+                  <div className="cx3-inv-keys">{list.length ? list.map(([k, v], n) => <span key={k}><i className={`g${n}`} />{k} <b>{v}</b></span>) : <span className="cx3-muted">—</span>}</div>
+                </div>
+              );
+            })}
+          </section>
+
+          <section className="cx3-card cx3-pad">
+            <div className="cx3-card-head"><div><h2>Recent activity</h2><p>Audit trail for this account</p></div></div>
+            {events.length === 0 ? <p className="cx3-muted">No activity yet.</p> : (
+              <ol className="cx3-audit">
+                {events.map((e, n) => (
+                  <li key={n}>
+                    <span className={`cx3-audit-dot ${e.kind}`} />
+                    <div>
+                      <div><Link href={`/certificates/${e.order_id}`} className="mono">{e.common_name || 'Order'}</Link> · {e.message}</div>
+                      <time dateTime={new Date(e.created_at).toISOString()} title={new Date(e.created_at).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'}>
+                        {new Date(e.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST{e.actor ? ` · ${e.actor}` : ' · system'}
+                      </time>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
 
         <div className="cx3-note">
           <strong>Heads up:</strong> from 15 Mar 2027 certificates last at most 100 days ({to100} days from now), so reissues come more often. Your subscription still covers them at no cost.
