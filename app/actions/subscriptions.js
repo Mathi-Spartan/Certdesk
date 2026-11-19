@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { q, one } from '@/lib/db';
 import { requireWorkspace, requireAdmin } from '@/lib/auth';
+import { canOrder, CLOSED_MSG } from '@/lib/ordering';
 import * as v2 from '@/lib/gogetssl-v2';
 import { syncSubscription, addSubEvent, getSubForWorkspace, kindForProduct, SUBSCRIPTION_PRODUCTS, KIND_LABEL } from '@/lib/subscriptions';
 
@@ -41,6 +42,7 @@ async function withSub(formData, fn) {
 
 export async function orderSubscription(prev, formData) {
   const ctx = await requireWorkspace();
+  if (!canOrder(ctx)) return { error: CLOSED_MSG };
   const productId = Number(formData.get('product_id'));
   const kind = kindForProduct(productId);
   const product = SUBSCRIPTION_PRODUCTS.find((p) => p.id === productId);

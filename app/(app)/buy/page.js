@@ -6,12 +6,18 @@ import TopBar from '@/components/TopBar';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
 import { customerPrices } from '@/lib/pricing';
+import { canOrder } from '@/lib/ordering';
+import ComingSoonCatalogue from '@/components/console/ComingSoonCatalogue';
 
 export const metadata = { title: 'Buy certificate · CertDesk' };
 
 export default async function BuyPage({ searchParams }) {
   const sp = await searchParams;
   const ctx = await requireWorkspace();
+  if (!canOrder(ctx)) {
+    const all = await q('select id, name, brand, validation, wildcard, multidomain, san_max, automation from console.products order by automation, validation, wildcard, multidomain, name');
+    return <ComingSoonCatalogue products={all} tab={String(sp.type || 'all')} brand={String(sp.brand || '')} />;
+  }
   const rows = await q(
     `select id, name, brand, validation, wildcard, multidomain, san_included, san_max, prices
        from console.products where enabled and not automation order by validation, wildcard, multidomain, name`

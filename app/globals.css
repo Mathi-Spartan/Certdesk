@@ -1298,3 +1298,38 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .cx3-tl-body{font-size:13px;min-width:0}.cx3-tl-body a{color:#18181B;font-weight:600;text-decoration:none}
 @media (max-width:1200px){.cx3-dash{grid-template-columns:1fr}.cx3-hero{grid-template-columns:auto 1fr}.cx3-hero-actions{grid-column:1/-1;flex-direction:row}}
 @media (max-width:760px){.cx3-hero-stats{grid-template-columns:1fr 1fr}.cx3-action-list li{grid-template-columns:4px 1fr auto}.cx3-action-list .cx3-lane-dates{grid-column:2/4}}
+
+/* coming-soon catalogue */
+.cs-hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:26px 28px;border-radius:18px;color:#fff;
+  background:radial-gradient(900px 260px at 90% -30%,rgba(168,152,240,.5),transparent 60%),linear-gradient(135deg,#1E1442,#2A1B66 50%,#4527B8)}
+.cs-hero h1{color:#fff;margin:10px 0 6px;font-size:26px;letter-spacing:-.02em}
+.cs-hero p{margin:0;color:rgba(255,255,255,.8);max-width:760px;font-size:14px;line-height:1.55}
+.cs-badge{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#FDE68A;background:rgba(253,230,138,.12);border:1px solid rgba(253,230,138,.35);padding:4px 11px;border-radius:99px}
+.cs-badge i{width:7px;height:7px;border-radius:50%;background:#FCD34D;box-shadow:0 0 0 4px rgba(252,211,77,.2)}
+.cs-hero-stats{display:flex;gap:10px}
+.cs-hero-stats span{display:flex;flex-direction:column;align-items:center;padding:12px 18px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font-size:12px;color:rgba(255,255,255,.75)}
+.cs-hero-stats b{font-size:24px;color:#fff;line-height:1.1}
+.cs-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:#fff;border:1px solid var(--cx-line,#E4E4E7);border-radius:12px;align-self:flex-start}
+.cs-tabs a{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;font-size:13px;font-weight:600;color:#52525B;text-decoration:none}
+.cs-tabs a em{font-style:normal;font-size:11px;background:#F4F4F5;border-radius:99px;padding:1px 7px;color:#3F3F46}
+.cs-tabs a:hover{background:#FAFAFB}
+.cs-tabs a.on{background:var(--cx-accent);color:#fff}
+.cs-tabs a.on em{background:rgba(255,255,255,.22);color:#fff}
+.cs-brands{display:flex;flex-wrap:wrap;gap:6px}
+.cs-brands a{font-size:12.5px;padding:5px 11px;border-radius:99px;border:1px solid var(--cx-line,#E4E4E7);background:#fff;color:#3F3F46;text-decoration:none}
+.cs-brands a.on{border-color:var(--cx-accent);color:var(--cx-accent-ink);background:var(--cx-accent-soft);font-weight:600}
+.cs-group{display:flex;flex-direction:column;gap:12px}
+.cs-group-head{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--cx-line,#E4E4E7)}
+.cs-logo{display:inline-flex;align-items:center;height:30px;padding:4px 10px;background:#fff;border:1px solid var(--cx-line,#E4E4E7);border-radius:8px}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.cs-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:14px;background:#fff;border:1px solid var(--cx-line,#E4E4E7);transition:border-color .15s,box-shadow .15s}
+.cs-card:hover{border-color:var(--cx-accent-mid);box-shadow:0 14px 30px -22px rgba(69,39,184,.5)}
+.cs-card-top{display:flex;justify-content:space-between;align-items:center}
+.cs-kind{font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:#EEF2FF;color:#3730A3}
+.cs-card.k-dv .cs-kind{background:#E0F2FE;color:#075985}.cs-card.k-ov .cs-kind{background:#DBEAFE;color:#1E40AF}.cs-card.k-ev .cs-kind{background:#DCFCE7;color:#166534}.cs-card.k-code .cs-kind{background:#FCE7F3;color:#9D174D}.cs-card.k-auto .cs-kind{background:var(--cx-accent-soft);color:var(--cx-accent-ink)}
+.cs-soon{font-size:11px;font-weight:700;color:#92400E;background:#FEF3C7;padding:2px 8px;border-radius:99px}
+.cs-card h3{margin:0;font-size:14.5px;line-height:1.35;color:#18181B}
+.cs-tags{display:flex;flex-wrap:wrap;gap:5px}
+.cs-tags span{font-size:11.5px;color:#52525B;background:#F4F4F5;padding:2px 8px;border-radius:6px}
+.cs-btn{margin-top:auto;align-self:flex-start;cursor:not-allowed;opacity:.65}
+@media (max-width:900px){.cs-hero{grid-template-columns:1fr}}

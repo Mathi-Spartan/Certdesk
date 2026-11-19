@@ -1,4 +1,6 @@
 import { requireWorkspace } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { canOrder } from '@/lib/ordering';
 import { one } from '@/lib/db';
 import { SUBSCRIPTION_PRODUCTS } from '@/lib/subscriptions';
 import TopBar from '@/components/TopBar';
@@ -8,6 +10,7 @@ export const metadata = { title: 'New subscription · CertDesk' };
 
 export default async function NewSubscription() {
   const ctx = await requireWorkspace();
+  if (!canOrder(ctx)) redirect('/buy?type=auto');
   // product names follow the GoGetSSL v2 catalogue once the partner has read it
   const cached = await one(`select value from console.kv where key = 'v2_products'`);
   const live = Array.isArray(cached?.value) ? cached.value : [];

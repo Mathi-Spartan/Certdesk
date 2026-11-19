@@ -7,6 +7,7 @@ import { requireWorkspace } from '@/lib/auth';
 import * as gg from '@/lib/gogetssl';
 import { syncOrder, addEvent, getOrderForWorkspace, extractDcv } from '@/lib/orders';
 import { checkDcvRecord, dnsMessage } from '@/lib/dnscheck';
+import { canOrder, CLOSED_MSG } from '@/lib/ordering';
 
 const enc = encodeURIComponent;
 const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
@@ -91,6 +92,7 @@ export async function decodeCsr(csr) {
 /** Place a new order (or a renewal) from the wizard. */
 export async function placeOrder(input) {
   const ctx = await requireWorkspace();
+  if (!canOrder(ctx)) return { error: CLOSED_MSG };
   const product = await one('select * from console.products where id = $1 and enabled and not automation', [Number(input.productId)]);
   if (!product) return { error: 'That certificate is not available. Pick another one.' };
   const cn = cleanDomain(input.commonName);
