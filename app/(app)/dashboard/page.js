@@ -27,7 +27,7 @@ function Ring({ pct }) {
     <svg width="68" height="68" viewBox="0 0 68 68" aria-hidden="true" className="db-ring">
       <circle cx="34" cy="34" r={r} fill="none" stroke="#E7EEF5" strokeWidth="8" />
       <circle cx="34" cy="34" r={r} fill="none" stroke="url(#dbg)" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${(pct / 100) * c} ${c}`} transform="rotate(-90 34 34)" />
-      <defs><linearGradient id="dbg" x1="0" x2="1"><stop offset="0" stopColor="#146C47" /><stop offset="1" stopColor="#78A22E" /></linearGradient></defs>
+      <defs><linearGradient id="dbg" x1="0" x2="1"><stop offset="0" stopColor="#0174C3" /><stop offset="1" stopColor="#2AA8E8" /></linearGradient></defs>
       <text x="34" y="38" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0F172A">{pct}%</text>
     </svg>
   );

@@ -55,6 +55,13 @@ const FAQ = [
   ['Plan + Automate or ACME CaaS?', 'Plan + Automate covers one domain and installs certificates for you with the AutoInstall agent. ACME CaaS covers many domains for your own ACME client.']
 ];
 
+// 24-point rosette for the certificate seal
+const SEAL = Array.from({ length: 48 }, (_, i) => {
+  const r = i % 2 ? 41 : 48;
+  const t = (i / 48) * Math.PI * 2;
+  return `${(50 + r * Math.sin(t)).toFixed(1)},${(50 - r * Math.cos(t)).toFixed(1)}`;
+}).join(' ');
+
 function Icon({ name }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>
@@ -105,36 +112,56 @@ export default async function Landing({ searchParams }) {
               </ul>
             </div>
 
-            <div className="hx-visual" aria-hidden="true">
-              <div className="hx-window">
-                <div className="hx-bar"><span /><span /><span /><em>certdesk / my-ssl</em></div>
-                <div className="hx-app">
-                  <div className="hx-side"><i className="on" /><i /><i /></div>
-                  <div className="hx-main">
-                    <div className="hx-row-title">My SSL</div>
-                    <div className="hx-tiles">
-                      <div><b>12</b><small>Protected</small></div>
-                      <div className="warn"><b>1</b><small>Needs you</small></div>
-                      <div><b>2</b><small>In progress</small></div>
-                    </div>
-                    {[
-                      ['shop.example.com', 'Certificate · Sectigo OV', 'Protected', 'ok', 'Expires in 182 days'],
-                      ['*.example.com', 'Automated · RapidSSL Plan', 'Protected', 'ok', 'Renews automatically'],
-                      ['api.example.com', 'Certificate · DigiCert', 'Needs you', 'bad', 'Reissue in 21 days'],
-                      ['new.example.com', 'Certificate · GoGetSSL DV', 'In progress', 'mid', 'Validating DNS']
-                    ].map(([d, p, s, t, n]) => (
-                      <div key={d} className="hx-item">
-                        <span className={`hx-ico ${p.startsWith('Auto') ? 'auto' : ''}`} />
-                        <span className="hx-dom"><b>{d}</b><small>{p}</small></span>
-                        <span className={`hx-badge ${t}`}>{s}</span>
-                        <span className="hx-note">{n}</span>
-                      </div>
-                    ))}
+            <div className="hz" aria-hidden="true">
+              <div className="hz-glow" />
+              <div className="hz-orbit hz-o1">
+                {['digicert', 'sectigo', 'geotrust'].map((slug, i) => (
+                  <div key={slug} className="hz-sat" style={{ '--a': `${i * 120 + 20}deg` }}>
+                    <span className="hz-chip"><BrandLogo slug={slug} name={slug} height={18} /></span>
                   </div>
+                ))}
+              </div>
+              <div className="hz-orbit hz-o2">
+                {['thawte', 'rapidssl', 'comodo'].map((slug, i) => (
+                  <div key={slug} className="hz-sat" style={{ '--a': `${i * 120 + 80}deg` }}>
+                    <span className="hz-chip"><BrandLogo slug={slug} name={slug} height={16} /></span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hz-cert">
+                <div className="hz-url">
+                  <svg className="hz-lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+                  <span className="hz-https">https://</span><span className="hz-type">shop.example.com</span><span className="hz-caret" />
+                </div>
+                <div className="hz-body">
+                  <svg className="hz-seal" viewBox="0 0 100 100">
+                    <defs>
+                      <linearGradient id="hzs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2AA8E8" /><stop offset="1" stopColor="#0174C3" /></linearGradient>
+                    </defs>
+                    <polygon fill="url(#hzs)" points={SEAL} />
+                    <circle cx="50" cy="50" r="31" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.5" strokeDasharray="2 3" />
+                    <path d="m37 51 9 9 18-19" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <dl className="hz-fields">
+                    <div><dt>Issued to</dt><dd className="mono">shop.example.com</dd></div>
+                    <div><dt>Validation</dt><dd>Organization (OV)</dd></div>
+                    <div><dt>Valid for</dt><dd>200 days <span className="hz-ok">Trusted</span></dd></div>
+                  </dl>
+                </div>
+                <div className="hz-life"><span /></div>
+                <div className="hz-chain">
+                  <span className="hz-node"><i />Root CA</span>
+                  <span className="hz-link" />
+                  <span className="hz-node"><i />Intermediate</span>
+                  <span className="hz-link" />
+                  <span className="hz-node on"><i />Your site</span>
                 </div>
               </div>
-              <div className="hx-float hx-f1"><span className="hx-dot ok" />Certificate issued <b>in 4 min</b></div>
-              <div className="hx-float hx-f2"><span className="hx-dot auto" />Auto-renewal <b>on</b></div>
+
+              <div className="hx-float hz-f1"><span className="hx-dot ok" />Certificate issued <b>in 4 min</b></div>
+              <div className="hx-float hz-f2"><span className="hx-dot auto" />Auto-renewal <b>on</b></div>
+              <div className="hx-float hz-f3"><span className="hz-tick">✓</span>DNS validated</div>
             </div>
           </div>
 
