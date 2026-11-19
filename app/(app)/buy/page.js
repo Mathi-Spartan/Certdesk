@@ -50,9 +50,11 @@ export default async function BuyPage({ searchParams }) {
 
   return (
     <>
-      <TopBar crumbs={[{ label: 'Order SSL', href: '/order' }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
-        <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/dashboard'} aria-label="Close"><Icon name="x" />Close</Link>
-      </TopBar>
+      {ctx.isAdmin ? (
+        <TopBar crumbs={[{ label: 'Order SSL', href: '/order' }, { label: renewal ? `Renew order · ${renewal.commonName}` : 'New certificate' }]}>
+          <Link className="btn" href={renewal ? `/certificates/${renewal.id}` : '/dashboard'} aria-label="Close"><Icon name="x" />Close</Link>
+        </TopBar>
+      ) : null}
       {products.length === 0 ? (
         <main className="page">
           <div className="card pad">
