@@ -27,13 +27,26 @@ const SECTIONS = [
   { key: 'auto', title: 'Automated SSL', text: 'Subscriptions that issue, install and renew certificates on their own.' }
 ];
 
-const COMPARE = [
-  ['What is checked', 'Domain only', 'Domain + company', 'Full legal entity'],
-  ['Issued in', 'Minutes', '1–3 days', '3–5 days'],
-  ['Company name in certificate', '—', '✓', '✓'],
-  ['Best for', 'Blogs, tools, most sites', 'Business sites, portals', 'Payments, banking'],
-  ['Wildcard available', '✓', '✓', '—']
+const LEVEL_CARDS = [
+  { key: 'dv', glyph: 'D', title: 'Domain Validation', sub: 'Fastest and lowest cost', popular: true,
+    rows: [['What is checked', 'Domain only'], ['Issued in', 'Minutes'], ['Company name shown', false], ['Wildcard', true], ['Best for', 'Blogs, tools, most sites']] },
+  { key: 'ov', glyph: 'B', title: 'Organisation Validation', sub: 'Your business is verified',
+    rows: [['What is checked', 'Domain + company'], ['Issued in', '1–3 days'], ['Company name shown', true], ['Wildcard', true], ['Best for', 'Business sites, portals']] },
+  { key: 'ev', glyph: 'E', title: 'Extended Validation', sub: 'Highest assurance', 
+    rows: [['What is checked', 'Full legal entity'], ['Issued in', '3–5 days'], ['Company name shown', true], ['Wildcard', false], ['Best for', 'Payments, banking']] }
 ];
+
+const NEEDS = [
+  { glyph: 'D', key: 'dv', title: 'Domain SSL', text: 'Encrypt a site in minutes', points: ['Issued in minutes', 'www + non-www'] },
+  { glyph: 'A', key: 'auto', title: 'Automated SSL', text: 'Renews and installs itself', points: ['Plan + Automate', 'ACME CaaS'], isNew: true },
+  { glyph: 'B', key: 'ov', title: 'Business SSL', text: 'Company verified (OV)', points: ['Company in certificate', '1–3 days'] },
+  { glyph: 'W', key: 'wildcard', title: 'Wildcard SSL', text: 'All subdomains, one cert', points: ['*.yourdomain.com', 'DV or OV'] },
+  { glyph: 'M', key: 'multi', title: 'Multi-domain', text: 'Many sites, one cert', points: ['Up to 250 domains', 'DV, OV or EV'] }
+];
+
+function isNew(p) {
+  return p.automation || /cloud|acme|caas/i.test(p.name);
+}
 
 function section(p) {
   if (p.automation) return 'auto';
@@ -135,14 +148,49 @@ export default async function SslProducts({ searchParams }) {
           </div>
         </section>
 
+        {!brand && !type && !term ? (
+          <section className="lp-wrap lp-needs" aria-label="Shop by need">
+            {NEEDS.map((n) => (
+              <Link key={n.key} href={`/ssl?type=${n.key}`} className={`lp-need lp-need-${n.key}`}>
+                {n.isNew ? <span className="lp-new lp-need-new">New</span> : null}
+                <span className="lp-glyph">{n.glyph}</span>
+                <strong>{n.title}</strong>
+                <span className="lp-need-text">{n.text}</span>
+                <ul className="lp-checks">{n.points.map((x) => <li key={x}>{x}</li>)}</ul>
+                <span className="lp-need-go">View certificates →</span>
+              </Link>
+            ))}
+          </section>
+        ) : null}
+
         {!brand && (!type || ['dv', 'ov', 'ev'].includes(type.key)) && !term ? (
           <section className="lp-wrap lp-compare">
-            <h2>Compare validation levels</h2>
-            <div className="lp-table-card">
-              <table className="lp-table">
-                <thead><tr><th /><th>DV<span>Domain</span></th><th>OV<span>Organisation</span></th><th>EV<span>Extended</span></th></tr></thead>
-                <tbody>{COMPARE.map(([k, a, b, c]) => <tr key={k}><th scope="row">{k}</th><td>{a}</td><td>{b}</td><td>{c}</td></tr>)}</tbody>
-              </table>
+            <div className="lp-compare-head">
+              <h2>Compare validation levels</h2>
+              <p>Every level gives the same 256-bit encryption. The difference is how much the CA checks about you.</p>
+            </div>
+            <div className="lp-levels">
+              {LEVEL_CARDS.map((c) => (
+                <article key={c.key} className={`lp-levelcard lp-lc-${c.key} ${c.popular ? 'popular' : ''}`}>
+                  {c.popular ? <span className="lp-lc-flag">Most popular</span> : null}
+                  <div className="lp-lc-head">
+                    <span className="lp-glyph">{c.glyph}</span>
+                    <div>
+                      <strong>{c.title}</strong>
+                      <span>{c.sub}</span>
+                    </div>
+                  </div>
+                  <ul>
+                    {c.rows.map(([k, v]) => (
+                      <li key={k}>
+                        <span className="lp-lc-k">{k}</span>
+                        <span className={`lp-lc-v ${v === true ? 'yes' : v === false ? 'no' : ''}`}>{v === true ? '✓' : v === false ? '✕' : v}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={`/ssl?type=${c.key}`} className="lp-btn lp-btn-ghost lp-btn-block">See {c.key.toUpperCase()} certificates</Link>
+                </article>
+              ))}
             </div>
           </section>
         ) : null}
@@ -168,21 +216,27 @@ export default async function SslProducts({ searchParams }) {
                   {list.map((p) => {
                     const lv = LEVEL[p.validation] || LEVEL.dv;
                     return (
-                      <article key={p.id} className="lp-prod">
-                        <div className="lp-prod-top">
+                      <article key={p.id} className={`lp-prod lp-prod-${p.automation ? 'auto' : p.validation}`}>
+                        <div className="lp-prod-band">
                           <span className="lp-prod-logo"><BrandLogo slug={p.b.slug} name={p.b.name} height={22} /></span>
-                          <span className={`lp-level lp-level-${p.validation}`}>{p.automation ? 'Automated' : lv.label}</span>
+                          <span className="lp-prod-tags">
+                            {isNew(p) ? <span className="lp-new">New</span> : null}
+                            <span className={`lp-level lp-level-${p.automation ? 'auto' : p.validation}`}>{p.automation ? 'Auto' : lv.label}</span>
+                          </span>
                         </div>
-                        <h3>{p.name}</h3>
-                        <ul className="lp-ticks">
-                          {features(p).map((f) => <li key={f}>{f}</li>)}
-                          <li>{lv.checks}</li>
-                        </ul>
-                        <dl className="lp-prod-meta">
-                          <div><dt>Issued in</dt><dd>{p.automation ? 'Continuous' : lv.time}</dd></div>
-                          <div><dt>Price</dt><dd className="lp-muted">Coming soon</dd></div>
-                        </dl>
-                        <a {...orderProps} className="lp-btn lp-btn-ghost lp-btn-block">{signedIn ? 'Order in console' : 'Sign in to order'}</a>
+                        <div className="lp-prod-body">
+                          <h3>{p.name}</h3>
+                          <ul className="lp-checks">
+                            {features(p).map((f) => <li key={f}>{f}</li>)}
+                            <li>{lv.checks}</li>
+                            <li>Issued in {p.automation ? 'minutes, renews itself' : lv.time.toLowerCase()}</li>
+                          </ul>
+                          <div className="lp-prod-price">
+                            <span className="lp-price-label">Starting at</span>
+                            <span className="lp-price-soon">Price coming soon</span>
+                          </div>
+                          <a {...orderProps} className="lp-btn lp-btn-primary lp-btn-block">{p.automation ? 'Start subscription' : 'Buy now'}</a>
+                        </div>
                       </article>
                     );
                   })}
