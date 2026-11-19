@@ -799,3 +799,32 @@
 @media (max-width: 1080px) { .wx-in { grid-template-columns: 1fr; gap: 30px; } .wx-stage { padding: 56px 16px; } }
 @media (max-width: 640px) { .wx-list { grid-template-columns: 1fr; } .wx-win-body { grid-template-columns: 1fr; } .wx-side { display: none; } .wx-f3, .wx-f5 { display: none; } .wx-win { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .wx-float { animation: none; } .wx-win { transform: none; } }
+
+/* ───────── crispness pass ───────── */
+.lp { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-feature-settings: "ss01", "cv11"; --lp-ink: #0B1220; --lp-ink-2: #1F2A3D; --lp-muted: #4B5870; --lp-line: #DDE5EF; }
+.lp h1, .lp h2, .lp h3, .lp strong { color: var(--lp-ink); }
+.lp h1 { font-weight: 800; letter-spacing: -0.035em; }
+.lp p, .lp li, .lp span { text-wrap: pretty; }
+.lp .lp-sub, .lp .hx-lead, .lp .wx-sub { color: var(--lp-ink-2); }
+.lp .lp-kicker { color: #0168B0; }
+
+/* level cards: the glyph letters were inheriting the grey subtitle style */
+.lp-lc-head .lp-glyph { font-size: 20px; color: #fff; font-weight: 800; text-shadow: 0 1px 1px rgba(0,0,0,.15); }
+.lp-lc-head div > span { color: var(--lp-muted); }
+.lp-levelcard { border-color: #D6E1EE; }
+.lp-lc-k { color: #4B5870 !important; }
+.lp-lc-v { color: var(--lp-ink) !important; font-weight: 600; }
+.lp-lc-v.no { color: #DC2626 !important; } .lp-lc-v.yes { color: #0174C3 !important; }
+
+/* product stage: no 3D transform or glass blur, both make text render soft */
+.wx-win { transform: none !important; box-shadow: 0 40px 80px -36px rgba(1,40,80,.38), 0 0 0 1px rgba(1,40,80,.04); }
+.wx-stage:hover .wx-win { transform: none !important; }
+.wx-float { background: #fff; backdrop-filter: none; border-color: #DCE5EF; box-shadow: 0 18px 36px -18px rgba(1,40,80,.35), 0 1px 2px rgba(1,40,80,.06); }
+@keyframes wxFloat { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -6px, 0); } }
+.wx-row b, .wx-float b { color: #0B1220; }
+.wx-row small, .wx-float small, .wx-stats span { color: #4B5870; }
+.wx-glow { opacity: .2; }
+
+/* automation card: drop the blur behind the chart */
+.ax-card { backdrop-filter: none; background: linear-gradient(180deg, #0B2E4F, #072540); }
+.ax-text, .ax-plans p { color: #BCCBDD; }
