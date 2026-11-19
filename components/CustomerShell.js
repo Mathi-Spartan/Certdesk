@@ -16,9 +16,8 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
       <aside className="cx3-side">
         <Link href={workspace ? '/dashboard' : '/partner'} className="cx3-ws" title={wsName}>
           <span className={`cx3-ws-mark ${workspace ? '' : 'accent'}`}>{initials(wsName)}</span>
-          <span className="cx3-ws-text"><strong>{wsName}</strong><small>{workspace ? (admin ? 'Opened as partner' : 'Customer workspace') : 'Master account'}</small></span>
+          <span className="cx3-ws-text"><strong>{wsName}</strong><small>{workspace ? 'Customer account' : 'Master account'}</small></span>
         </Link>
-        {admin && workspace ? <form action={exitWorkspace}><button type="submit" className="cx3-btn sm cx3-wide">← Back to partner view</button></form> : null}
         {workspace ? <form action="/orders" className="cx3-jump" role="search">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <label className="sr" htmlFor="cx3-q">Search certificates</label>
@@ -49,6 +48,12 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
             </Link> : null}
           </div>
         </header>
+        {admin && workspace ? (
+          <div className="cx3-asuser" role="status">
+            <span><strong>Partner preview:</strong> you are seeing {workspace.name}&apos;s account exactly as their users see it.</span>
+            <form action={exitWorkspace}><button type="submit" className="cx3-btn sm light">← Back to master account</button></form>
+          </div>
+        ) : null}
         <div className="cx3-main">{children}</div>
       </div>
     </div>

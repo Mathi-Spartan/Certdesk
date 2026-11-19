@@ -31,30 +31,14 @@ const isCert = (p) => p === '/orders' || p.startsWith('/certificates') || /^\/su
 
 export default function CustomerNav({ counts = {}, partner = false, workspace = true }) {
   const path = usePathname() || '';
+  // Customer (user) accounts: a deliberately small menu — their orders, and ordering new ones.
   const customer = [
     {
       items: [
-        { href: '/dashboard', label: 'Overview', icon: 'dash', on: path === '/dashboard' },
-        { href: '/orders', label: 'Certificates', icon: 'lock', on: isCert(path), n: counts.all, tone: 'plain' },
-        { href: '/validation', label: 'Validation', icon: 'check', on: path === '/validation', n: counts.validation, tone: 'amber' },
-        { href: '/renewals', label: 'Renewals & automation', icon: 'renew', on: path === '/renewals', n: counts.renewals, tone: 'red' }
-      ]
-    },
-    {
-      label: 'Order',
-      items: [
-        { href: '/buy', label: 'SSL certificate', icon: 'cart', on: path.startsWith('/buy') || path === '/order' },
-        { href: '/subscriptions/new', label: 'Automation plan', icon: 'bolt', on: path === '/subscriptions/new' }
-      ]
-    },
-    {
-      label: 'Tools',
-      items: [
-        { href: '/tools/ssl-checker', label: 'SSL checker', icon: 'search', on: path === '/tools/ssl-checker' },
-        { href: '/tools/csr', label: 'CSR generator', icon: 'key', on: path === '/tools/csr' },
-        { href: '/tools/csr-decoder', label: 'CSR decoder', icon: 'doc', on: path === '/tools/csr-decoder' },
-        { href: '/tools/cert-decoder', label: 'Certificate decoder', icon: 'shield', on: path === '/tools/cert-decoder' },
-        { href: '/tools/converter', label: 'Format converter', icon: 'swap', on: path === '/tools/converter' }
+        { href: '/dashboard', label: 'Overview', icon: 'dash', on: path === '/dashboard' || path === '/validation' || path === '/renewals' },
+        { href: '/orders', label: 'My certificates', icon: 'lock', on: isCert(path), n: counts.all, tone: 'plain' },
+        { href: '/order', label: 'Order new certificate', icon: 'cart', on: path === '/order' || path.startsWith('/buy') || path === '/subscriptions/new' },
+        { href: '/tools', label: 'Tools', icon: 'search', on: path.startsWith('/tools') }
       ]
     }
   ];
@@ -67,10 +51,10 @@ export default function CustomerNav({ counts = {}, partner = false, workspace = 
       { href: '/partner/pricing', label: 'Customer prices', icon: 'tag', on: path === '/partner/pricing' },
       { href: '/partner/api', label: 'Provider API', icon: 'code', on: path === '/partner/api' },
       { href: '/partner/endpoints', label: 'API v2 reference', icon: 'book', on: path === '/partner/endpoints' },
-      ...(workspace ? [] : [{ href: '/account', label: 'Profile & password', icon: 'user', on: path === '/account' }])
+      { href: '/account', label: 'Profile & password', icon: 'user', on: path === '/account' }
     ]
   };
-  const groups = [...(workspace ? customer : []), ...(partner ? [partnerGroup] : [])];
+  const groups = workspace ? customer : partner ? [partnerGroup] : [];
   return (
     <nav aria-label="Main" className="cx3-nav">
       {groups.map((g, gi) => (
