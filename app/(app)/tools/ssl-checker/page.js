@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
+import ToolPage from '@/components/tools/ToolPage';
 import { SslChecker } from '@/components/tools/Tools';
 
 export const metadata = { title: 'SSL checker · CertDesk' };
@@ -7,15 +7,10 @@ export const metadata = { title: 'SSL checker · CertDesk' };
 export default async function Page() {
   await requireWorkspace();
   return (
-    <main className="page cc-page">
-      <header className="cc-page-head">
-        <div>
-          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/dashboard">Dashboard</Link><span>/</span><Link href="/tools">Tools</Link></nav>
-          <h1>SSL checker</h1>
-          <p>Check that a website's certificate is installed correctly and trusted.</p>
-        </div>
-      </header>
+    <ToolPage slug="ssl-checker" title="SSL checker" desc="Check that a website's certificate is installed correctly and trusted by browsers."
+      about={['Certificate covers the domain name', 'Full chain is served and trusted', 'Days left before expiry', 'TLS version and cipher in use']}
+      privacy="We connect to the public site on port 443 only. Nothing about the check is stored.">
       <SslChecker />
-    </main>
+    </ToolPage>
   );
 }

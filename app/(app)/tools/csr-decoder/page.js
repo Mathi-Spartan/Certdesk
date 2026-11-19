@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { requireWorkspace } from '@/lib/auth';
+import ToolPage from '@/components/tools/ToolPage';
 import { CsrDecoder } from '@/components/tools/Tools';
 
 export const metadata = { title: 'CSR decoder · CertDesk' };
@@ -7,15 +7,10 @@ export const metadata = { title: 'CSR decoder · CertDesk' };
 export default async function Page() {
   await requireWorkspace();
   return (
-    <main className="page cc-page">
-      <header className="cc-page-head">
-        <div>
-          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/dashboard">Dashboard</Link><span>/</span><Link href="/tools">Tools</Link></nav>
-          <h1>CSR decoder</h1>
-          <p>Check what a CSR contains before you use it to request a certificate.</p>
-        </div>
-      </header>
+    <ToolPage slug="csr-decoder" title="CSR decoder" desc="Check what a CSR contains before you use it to request a certificate."
+      about={['Common name and extra names', 'Organisation, city, state and country', 'Key type and size', 'Keys too weak for a CA']}
+      privacy="A CSR holds only public information. It is read on our server and not stored.">
       <CsrDecoder />
-    </main>
+    </ToolPage>
   );
 }

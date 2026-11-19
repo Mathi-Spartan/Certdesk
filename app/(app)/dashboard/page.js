@@ -78,7 +78,7 @@ export default async function Dashboard({ searchParams }) {
           <Link className="btn primary" href="/order"><Icon name="plus" stroke="#fff" width={2.4} />Order SSL</Link>
         </TopBar>
       ) : null}
-      <main className="page db">
+      <main className="page cc-page">
         <header className="cc-page-head">
           <div>
             <p className="cc-eyebrow">{today}</p>
@@ -195,7 +195,7 @@ export default async function Dashboard({ searchParams }) {
             <section className="cc-tiles">
               <Link href="/tools/csr" className="cc-tile"><strong>CSR generator</strong><span>Create a CSR and key in your browser.</span><em>Open →</em></Link>
               <Link href="/tools/ssl-checker" className="cc-tile"><strong>SSL checker</strong><span>Test a live site's certificate and chain.</span><em>Open →</em></Link>
-              <Link href="/tools/converter" className="cc-tile"><strong>Certificate converter</strong><span>PFX, JKS, PEM, P7B and server packs.</span><em>Open →</em></Link>
+              <Link href="/tools/converter" className="cc-tile"><strong>Format converter</strong><span>PFX, JKS, PEM, P7B and server packs.</span><em>Open →</em></Link>
               {help ? <a href={help} className="cc-tile"><strong>Need help?</strong><span>Email your SSL team.</span><em>Contact →</em></a> : <Link href="/tools" className="cc-tile"><strong>All tools</strong><span>More utilities coming soon.</span><em>Open →</em></Link>}
             </section>
           </>

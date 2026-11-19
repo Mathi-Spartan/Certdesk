@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import { generateCsr } from '@/lib/csr-browser';
 import { decodeCsrTool, decodeCertTool, checkSslTool } from '@/app/actions/tools';
 
@@ -29,6 +29,16 @@ function Rows({ rows }) {
         <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
       ))}
     </dl>
+  );
+}
+
+function Waiting({ title, text }) {
+  return (
+    <div className="cc-card cc-wait">
+      <span aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></svg></span>
+      <strong>{title}</strong>
+      <p>{text}</p>
+    </div>
   );
 }
 
@@ -98,7 +108,7 @@ export function CsrGenerator() {
             <p className="small"><strong>Keep this secret and safe.</strong> You need it to install the certificate, and nobody can recover it for you.</p>
           </section>
         </div>
-      ) : null}
+      ) : <Waiting title="Your CSR and key will appear here" text="Fill in the domain and choose a key type. Generation takes a second or two." />}
     </div>
   );
 }
@@ -126,7 +136,7 @@ export function CsrDecoder() {
           ]} />
           {state.key.type === 'RSA' && state.key.size < 2048 ? <div className="cc-alert bad">RSA keys under 2048 bits are rejected by every CA. Generate a new CSR.</div> : null}
         </section>
-      ) : null}
+      ) : <Waiting title="Nothing decoded yet" text="Paste a CSR on the left to see its domain, organisation details and key." />}
     </div>
   );
 }
@@ -166,7 +176,7 @@ export function CertDecoder() {
         <Err>{state?.error}</Err>
         <div><button className="btn primary" disabled={pending}>{pending ? 'Decoding…' : 'Decode certificate'}</button></div>
       </form>
-      {state?.ok ? <div className="cc-results">{state.certs.map((c, i) => <CertCard key={c.sha256} c={c} title={state.certs.length > 1 ? `${i === 0 ? 'Server' : 'Chain'} · ${c.cn || c.issuer}` : null} />)}</div> : null}
+      {state?.ok ? <div className="cc-results">{state.certs.map((c, i) => <CertCard key={c.sha256} c={c} title={state.certs.length > 1 ? `${i === 0 ? 'Server' : 'Chain'} · ${c.cn || c.issuer}` : null} />)}</div> : <Waiting title="Nothing decoded yet" text="Paste a certificate to see its names, issuer, validity and fingerprint." />}
     </div>
   );
 }
@@ -174,14 +184,19 @@ export function CertDecoder() {
 /* ------------------------------------------------------------- SSL checker */
 export function SslChecker({ initial = '' }) {
   const [state, action, pending] = useActionState(checkSslTool, null);
+  const ref = useRef(null);
   const leaf = state?.chain?.[0];
   const ok = state?.ok && state.authorized && state.covers && leaf?.daysLeft >= 0;
   return (
     <div className="cc-tool">
-      <form className="cc-card cc-form cc-inline" action={action}>
-        <label className="sr" htmlFor="host">Domain</label>
-        <input id="host" name="host" className="input" defaultValue={state?.host || initial} placeholder="www.example.com" required />
-        <button className="btn primary" disabled={pending}>{pending ? 'Checking…' : 'Check SSL'}</button>
+      <form className="cc-card cc-form" action={action}>
+        <label className="cc-flabel" htmlFor="host">Website address</label>
+        <div className="cc-combo">
+          <span className="cc-prefix">https://</span>
+          <input id="host" name="host" ref={ref} defaultValue={state?.host || initial} placeholder="www.example.com" autoComplete="off" spellCheck="false" required />
+          <button className="btn primary" disabled={pending}>{pending ? 'Checking…' : 'Run check'}</button>
+        </div>
+        <div className="cc-try">Try:{['www.google.com', 'github.com', 'www.digicert.com'].map((d) => <button key={d} type="button" onClick={() => { if (ref.current) { ref.current.value = d; ref.current.form?.requestSubmit(); } }}>{d}</button>)}</div>
       </form>
       <Err>{state?.error}</Err>
       {state?.ok ? (
@@ -197,7 +212,7 @@ export function SslChecker({ initial = '' }) {
           </section>
           <div className="cc-results">{state.chain.map((c, i) => <CertCard key={c.sha256 + i} c={c} title={`${i === 0 ? 'Server certificate' : i === state.chain.length - 1 && c.selfSigned ? 'Root' : 'Intermediate'} · ${c.cn || c.issuer}`} />)}</div>
         </>
-      ) : null}
+      ) : <Waiting title={pending ? 'Checking…' : 'No check run yet'} text="Enter a domain above. You'll see whether the certificate is trusted, which names it covers and when it expires." />}
     </div>
   );
 }

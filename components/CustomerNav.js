@@ -36,37 +36,27 @@ export default function CustomerNav({ counts = {} }) {
     {
       label: 'Certificates',
       items: [
-        { href: '/orders', label: 'Orders', icon: 'list', on: (path === '/orders' && !f) || path.startsWith('/certificates') || /^\/subscriptions\/[0-9a-f-]{36}/.test(path), n: counts.all },
+        { href: '/orders', label: 'All orders', icon: 'list', on: (path === '/orders' && !f) || path.startsWith('/certificates') || /^\/subscriptions\/[0-9a-f-]{36}/.test(path), n: counts.all },
         { href: '/orders?f=action', label: 'Needs action', icon: 'alert', on: path === '/orders' && f === 'action', n: counts.action, tone: 'red' },
         { href: '/orders?f=expiring', label: 'Expiring soon', icon: 'clock', on: path === '/orders' && f === 'expiring', n: counts.expiring, tone: 'amber' },
         { href: '/orders?f=auto', label: 'Automated SSL', icon: 'loop', on: path === '/orders' && f === 'auto', n: counts.auto }
       ]
     },
     {
-      label: 'Request',
+      label: 'Order',
       items: [
-        { href: '/buy', label: 'New certificate', icon: 'plus', on: path.startsWith('/buy') || path === '/order' },
-        { href: '/subscriptions/new', label: 'Automated SSL', icon: 'bolt', on: path === '/subscriptions/new' }
+        { href: '/buy', label: 'SSL certificate', icon: 'plus', on: path.startsWith('/buy') || path === '/order' },
+        { href: '/subscriptions/new', label: 'Automation plan', icon: 'bolt', on: path === '/subscriptions/new' }
       ]
     },
     {
       label: 'Tools',
       items: [
+        { href: '/tools/ssl-checker', label: 'SSL checker', icon: 'search', on: path === '/tools/ssl-checker' },
         { href: '/tools/csr', label: 'CSR generator', icon: 'key', on: path === '/tools/csr' },
         { href: '/tools/csr-decoder', label: 'CSR decoder', icon: 'doc', on: path === '/tools/csr-decoder' },
         { href: '/tools/cert-decoder', label: 'Certificate decoder', icon: 'shield', on: path === '/tools/cert-decoder' },
-        { href: '/tools/converter', label: 'Certificate converter', icon: 'swap', on: path === '/tools/converter' },
-        { href: '/tools/ssl-checker', label: 'SSL checker', icon: 'search', on: path === '/tools/ssl-checker' },
-        { label: 'Key matcher', icon: 'link', soon: true }
-      ]
-    },
-    {
-      label: 'Account',
-      items: [
-        { href: '/account', label: 'Profile & password', icon: 'user', on: path === '/account' },
-        { label: 'Domains', icon: 'globe', soon: true },
-        { label: 'Users', icon: 'users', soon: true },
-        { label: 'Billing', icon: 'card', soon: true }
+        { href: '/tools/converter', label: 'Format converter', icon: 'swap', on: path === '/tools/converter' }
       ]
     }
   ];
@@ -76,9 +66,7 @@ export default function CustomerNav({ counts = {} }) {
         <div key={gi} className="cc-group">
           {g.label ? <div className="cc-label">{g.label}</div> : null}
           {g.items.map((i) =>
-            i.soon ? (
-              <span key={i.label} className="cc-link soon" aria-disabled="true"><Ico n={i.icon} />{i.label}<em>Soon</em></span>
-            ) : (
+            (
               <Link key={i.label} href={i.href} className={`cc-link ${i.on ? 'on' : ''}`} aria-current={i.on ? 'page' : undefined}>
                 <Ico n={i.icon} />{i.label}
                 {i.n ? <span className={`cc-n ${i.tone || ''}`}>{i.n}</span> : null}
