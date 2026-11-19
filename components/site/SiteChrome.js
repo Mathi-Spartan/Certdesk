@@ -66,6 +66,7 @@ export function SiteHeader({ signedIn, consoleHref }) {
               ))}
             </div>
           </div>
+          <Link href="/finder" className="lp-nav-new">SSL Finder</Link>
           <Link href="/#automation">Automation</Link>
         </nav>
         <div className="lp-head-actions">

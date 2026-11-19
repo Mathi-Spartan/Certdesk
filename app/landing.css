@@ -828,3 +828,5 @@
 /* automation card: drop the blur behind the chart */
 .ax-card { backdrop-filter: none; background: linear-gradient(180deg, #0B2E4F, #072540); }
 .ax-text, .ax-plans p { color: #BCCBDD; }
+.lp-nav .lp-nav-new { position: relative; color: var(--lp-green); font-weight: 600; }
+.lp-nav .lp-nav-new::after { content: "New"; position: absolute; top: -12px; right: -22px; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: #10B981; padding: 1px 5px; border-radius: 99px; }

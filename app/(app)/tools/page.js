@@ -8,10 +8,12 @@ const P = {
   key: <><circle cx="8" cy="15" r="4" /><path d="m10.8 12.2 9.2-9.2M17 6l3 3" /></>,
   doc: <><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></>,
   shield: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>,
+  star: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" />,
   swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
 };
 
 const TOOLS = [
+  { href: '/tools/finder', icon: 'star', name: 'SSL Finder', text: 'Answer a few questions and get the right certificate, with the reasons.' },
   { href: '/tools/ssl-checker', icon: 'search', name: 'SSL checker', text: 'Test a live website: trust, chain, names covered and expiry.' },
   { href: '/tools/csr', icon: 'key', name: 'CSR generator', text: 'Create a CSR and private key in your browser.' },
   { href: '/tools/csr-decoder', icon: 'doc', name: 'CSR decoder', text: 'See the domain, organisation and key inside a CSR.' },

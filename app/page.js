@@ -103,7 +103,7 @@ export default async function Landing({ searchParams }) {
               </p>
               <div className="lp-cta">
                 <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}<span aria-hidden="true">→</span></a>
-                <Link href="/ssl" className="lp-btn lp-btn-glass lp-btn-lg">Browse {total > 20 ? `${total}+` : 'all'} certificates</Link>
+                <Link href="/finder" className="lp-btn lp-btn-glass lp-btn-lg">Find my certificate</Link>
               </div>
               <ul className="hx-trust">
                 <li><Icon name="check" />256-bit encryption</li>
