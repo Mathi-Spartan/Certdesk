@@ -16,21 +16,24 @@ const ago = (d) => {
   return `${Math.round(m / 1440)} d ago`;
 };
 const BRAND_NAME = { digicert: 'DigiCert', sectigo: 'Sectigo', comodo: 'Comodo', geotrust: 'GeoTrust', thawte: 'Thawte', rapidssl: 'RapidSSL', gogetssl: 'GoGetSSL' };
+const BRAND_COLOR = { digicert: '#0174C3', sectigo: '#0F766E', comodo: '#B91C1C', geotrust: '#1E40AF', thawte: '#BE123C', rapidssl: '#C2410C', gogetssl: '#15803D' };
+const Brand = ({ slug }) => <span className="ct-brand" style={{ '--bc': BRAND_COLOR[slug] || '#3F3F46' }}>{BRAND_NAME[slug] || 'SSL'}</span>;
+const stripBrand = (name, slug) => String(name || '').replace(new RegExp(`^${BRAND_NAME[slug] || ''}\\s*`, 'i'), '') || name;
 const tone = (days, warn = 30, hot = 14) => (days == null ? 'mute' : days < 0 ? 'red' : days <= hot ? 'red' : days <= warn ? 'amber' : 'green');
 const urgency = (r) => (r.group === 'action' ? 0 : r.group === 'progress' ? 1 : r.group === 'ok' ? 2 : 3);
 const certDays = (r) => (r.cert ? r.cert.days : r.autoDate ? r.autoDate.days : 99999);
 const subDays = (r) => (r.sub ? r.sub.days : 99999);
 
-function Bar({ label, days, pct, at, warn, hot, sub }) {
+function Life({ days, pct, line, warn, hot, empty }) {
+  if (empty) return <div className="ct-life mute"><span className="ct-life-d">{empty}</span></div>;
   const t = tone(days, warn, hot);
   return (
-    <div className={`ct-bar ${t}`}>
-      <div className="ct-bar-top">
-        <span className="ct-bar-k">{label}</span>
-        <b>{days == null ? '—' : days < 0 ? `${-days}d ago` : `${days}d`}</b>
+    <div className={`ct-life ${t}`}>
+      <div className="ct-life-top">
+        <b>{days == null ? '—' : days < 0 ? `${-days} days ago` : days === 0 ? 'Today' : `${days} days`}</b>
+        <span className="ct-life-d">{line}</span>
       </div>
-      <div className="ct-track" aria-hidden="true"><i style={{ width: `${Math.max(3, Math.min(100, pct ?? 0))}%` }} /></div>
-      <span className="ct-bar-date">{sub || fmt(at)}</span>
+      <div className="ct-track" aria-hidden="true"><i style={{ width: `${Math.max(2, Math.min(100, pct ?? 0))}%` }} /></div>
     </div>
   );
 }
@@ -144,14 +147,16 @@ export default function CertTable({ rows, admin, back, empty }) {
     ? <Link className={`cx3-btn sm ${r.next.cta === 'Renew' ? 'ct-renew' : r.next.cta === 'Reissue' ? 'ct-reissue' : 'primary'}`} href={r.next.href}>{r.next.cta}</Link>
     : <Link className="cx3-btn sm" href={r.href}>Manage</Link>);
 
+  const CertLife = ({ r }) => (r.type === 'cert'
+    ? (r.cert ? <Life days={r.cert.days} pct={certPct(r)} line={fmt(r.cert.at)} warn={30} hot={14} /> : <Life empty={r.group === 'ended' ? '—' : 'Not issued yet'} />)
+    : <Life days={r.autoDate?.days} pct={70} line={r.autoDate ? `renews ${fmt(r.autoDate.at)}` : 'Automated'} warn={14} hot={3} />);
+  const SubLife = ({ r }) => (r.type === 'cert'
+    ? (r.sub ? <Life days={r.sub.days} pct={subPct(r)} line={`${r.sub.months ? `${r.sub.months} mo · ` : ''}until ${fmt(r.sub.end)}`} warn={60} hot={30} /> : <Life empty="—" />)
+    : <Life empty="Renews on its own" />);
   const Bars = ({ r }) => (
     <div className="ct-bars">
-      {r.type === 'cert'
-        ? (r.cert ? <Bar label="Certificate" days={r.cert.days} pct={certPct(r)} at={r.cert.at} warn={30} hot={14} /> : <div className="ct-bar mute"><span className="ct-bar-k">Certificate</span><span className="ct-bar-date">{r.group === 'ended' ? '—' : 'Not issued yet'}</span></div>)
-        : <Bar label="Next renewal" days={r.autoDate?.days} pct={70} at={r.autoDate?.at} warn={14} hot={3} />}
-      {r.type === 'cert'
-        ? (r.sub ? <Bar label={`Subscription${r.sub.months ? ` · ${r.sub.months} mo` : ''}`} days={r.sub.days} pct={subPct(r)} at={r.sub.end} warn={60} hot={30} sub={`until ${fmt(r.sub.end)}`} /> : null)
-        : <div className="ct-bar green"><span className="ct-bar-k">Automated</span><span className="ct-bar-date">Renews on its own</span></div>}
+      <div><span className="ct-k">Certificate</span><CertLife r={r} /></div>
+      <div><span className="ct-k">Subscription</span><SubLife r={r} /></div>
     </div>
   );
 
@@ -196,12 +201,17 @@ export default function CertTable({ rows, admin, back, empty }) {
       {view === 'table' ? (
         <div className="cx3-card ct-wrap">
           <table className="ct-table">
+            <colgroup>
+              <col style={{ width: 44 }} /><col /><col style={{ width: 200 }} /><col style={{ width: 190 }} /><col style={{ width: 220 }} />
+              {showAuto ? <col style={{ width: 100 }} /> : null}{showPrice ? <col style={{ width: 110 }} /> : null}{showCost ? <col style={{ width: 120 }} /> : null}
+              <col style={{ width: 150 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th className="ct-chk"><input type="checkbox" checked={allOn} onChange={toggleAll} aria-label="Select all certificates" /></th>
                 <Th k="name">Certificate</Th>
                 <Th k="urgency">Status</Th>
-                <Th k="cert">Certificate life</Th>
+                <Th k="cert">Certificate expires</Th>
                 <Th k="sub">Subscription</Th>
                 {showAuto ? <th>Auto-renew</th> : null}
                 {showPrice ? <th>Price</th> : null}
@@ -217,19 +227,19 @@ export default function CertTable({ rows, admin, back, empty }) {
                     <td className="ct-chk">{r.type === 'cert' ? <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.domain}`} /> : null}</td>
                     <td className="ct-name">
                       <div className="ct-name-in" tabIndex={0}>
-                        <span className="ct-logo"><BrandLogo slug={r.brand} name={BRAND_NAME[r.brand]} height={13} /></span>
                         <div className="ct-name-txt">
                           <Link href={r.href} className="ct-cn">{r.domain}</Link>
-                          <span className="ct-meta">{r.product} · {r.kind}{r.extra ? ` · ${r.extra}` : ''}{r.ref ? ` · #${r.ref}` : ''}</span>
+                          <span className="ct-meta"><Brand slug={r.brand} /><span className="ct-meta-t">{stripBrand(r.product, r.brand)} · {r.kind}{r.extra ? ` · ${r.extra}` : ''}</span></span>
                         </div>
                         <Preview r={r} />
                       </div>
                     </td>
                     <td>
                       <span className={`ct-pill ${c}`}><i />{r.status}</span>
-                      {r.method ? <span className="ct-method">{r.method}</span> : null}
+                      <span className="ct-sub-line">{r.method ? `${r.method} validation` : ''}{r.ref ? `${r.method ? ' · ' : ''}#${r.ref}` : ''}</span>
                     </td>
-                    <td colSpan={2} className="ct-bars-cell"><Bars r={r} /></td>
+                    <td><CertLife r={r} /></td>
+                    <td><SubLife r={r} /></td>
                     {showAuto ? <td><span className={`cx3-flag ${r.autoRenew ? 'on' : ''}`}>{r.autoRenew ? 'On' : 'Off'}</span></td> : null}
                     {showPrice ? <td className="ct-price">{r.price || '—'}</td> : null}
                     {showCost ? <td className="mono ct-meta">{r.cost || '—'}</td> : null}
@@ -251,12 +261,12 @@ export default function CertTable({ rows, admin, back, empty }) {
                   return (
                     <article key={r.key} className={`ct-card ${c} ${sel.has(r.id) ? 'picked' : ''}`}>
                       <div className="ct-card-top">
-                        <span className="ct-logo"><BrandLogo slug={r.brand} name={BRAND_NAME[r.brand]} height={13} /></span>
+                        <Brand slug={r.brand} />
                         <span className={`ct-pill ${c}`}><i />{r.status}</span>
                         {r.type === 'cert' ? <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.domain}`} /> : null}
                       </div>
                       <Link href={r.href} className="ct-cn">{r.domain}</Link>
-                      <span className="ct-meta">{r.product} · {r.kind}{r.ref ? ` · #${r.ref}` : ''}</span>
+                      <span className="ct-meta"><span className="ct-meta-t">{stripBrand(r.product, r.brand)} · {r.kind}{r.ref ? ` · #${r.ref}` : ''}</span></span>
                       <Bars r={r} />
                       <div className="ct-card-foot"><span className="ct-method">{r.method || ''}</span><div className="ct-act-in"><Action r={r} /><Menu r={r} /></div></div>
                     </article>
