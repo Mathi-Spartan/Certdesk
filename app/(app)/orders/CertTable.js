@@ -184,7 +184,7 @@ export default function CertTable({ rows, admin, back, empty }) {
           </form>
         ) : (
           <>
-            <span className="ct-count">{rows.length} item{rows.length === 1 ? '' : 's'} · sorted by {sort.key === 'urgency' ? 'urgency' : sort.key === 'name' ? 'name' : sort.key === 'cert' ? 'certificate expiry' : 'subscription end'}</span>
+            <span className="ct-count">{rows.length} certificate{rows.length === 1 ? '' : 's'}</span>
           </>
         )}
         <div className="ct-view" role="group" aria-label="View">

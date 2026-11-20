@@ -1610,3 +1610,31 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .mc-alert{background:#fff;border-color:#E4E4E7;box-shadow:inset 3px 0 0 #DC2626}
 .mc-alert-ico{background:#DC2626}
 .mc-alert.ok{background:#fff;border-color:#E4E4E7;box-shadow:inset 3px 0 0 #16A34A}
+
+/* My certificates v3: one filter row, sharp and quiet */
+.mc-head{align-items:center}
+.mc-head h1{font-size:24px;font-weight:700}
+.mc-head p{font-size:13.5px;color:#3F3F46}
+.mc-head .cx3-btn.primary{background:#18181B;border-color:#18181B;color:#fff;height:38px;padding:0 16px;border-radius:9px;font-weight:600;box-shadow:none}
+.mc-head .cx3-btn.primary:hover{background:#3F3F46}
+.mc-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid #E4E4E7}
+.mc-seg{display:flex;gap:4px;flex-wrap:wrap}
+.mc-seg a{display:inline-flex;align-items:center;gap:7px;padding:10px 12px;margin-bottom:-1px;font-size:13.5px;font-weight:500;color:#52525B;text-decoration:none;border-bottom:2px solid transparent}
+.mc-seg a:hover{color:#18181B}
+.mc-seg a.on{color:#09090B;font-weight:600;border-bottom-color:#09090B}
+.mc-seg em{font-style:normal;font-size:12px;font-weight:600;color:#71717A;background:#F4F4F5;border-radius:6px;padding:0 6px;line-height:19px}
+.mc-seg a.on em{background:#18181B;color:#fff}
+.mc-seg em.hot{background:#FEE2E2;color:#B91C1C}
+.mc-seg a.on em.hot{background:#DC2626;color:#fff}
+.mc-search{display:flex;align-items:center;gap:8px;height:36px;width:260px;padding:0 11px;margin-bottom:8px;border:1px solid #E4E4E7;border-radius:9px;background:#fff;color:#71717A}
+.mc-search:focus-within{border-color:#18181B}
+.mc-search input{flex:1;min-width:0;border:0;outline:none;background:none;font:inherit;font-size:13.5px;color:#18181B}
+.mc-search input::placeholder{color:#A1A1AA}
+.mc-x{font-size:17px;line-height:1;color:#71717A;text-decoration:none}
+.ct-toolbar{border:0;box-shadow:none;padding:0;background:none}
+.ct-toolbar.sel{padding:8px 10px 8px 14px;background:#18181B;border-radius:10px}
+.ct-count{font-size:12.5px;color:#71717A}
+.ct-view button.on{box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.ct-wrap{border-radius:12px}
+.ct-table thead th{background:#FAFAFA;border-bottom:1px solid #E4E4E7;font-weight:600;color:#52525B}
+@media (max-width:760px){.mc-search{width:100%}}

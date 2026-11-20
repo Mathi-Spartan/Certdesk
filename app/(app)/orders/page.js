@@ -87,7 +87,7 @@ export default async function Certificates({ searchParams }) {
         <div className="mc-head">
           <div>
             <h1>My certificates</h1>
-            <p>{counts[''] ? `${counts['']} certificate${counts[''] === 1 ? '' : 's'} on this account. Anything that needs you is listed first.` : 'Your SSL certificates will appear here.'}</p>
+            <p>{counts[''] ? (need.total ? `${need.total} of ${counts['']} need your attention · ${[need.renew ? `${need.renew} renew` : null, need.reissue ? `${need.reissue} reissue` : null, need.validate ? `${need.validate} validate` : null].filter(Boolean).join(', ')}` : `${counts['']} certificates · all in order`) : 'Your SSL certificates will appear here.'}</p>
           </div>
           <Link className="cx3-btn primary" href="/order">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -96,53 +96,29 @@ export default async function Certificates({ searchParams }) {
         </div>
         <FlashFromSearch searchParams={sp} />
 
-        {need.total ? (
-          <div className="mc-alert">
-            <span className="mc-alert-ico" aria-hidden="true">!</span>
-            <div className="mc-alert-txt">
-              <strong>{need.total} certificate{need.total === 1 ? ' needs' : 's need'} your attention</strong>
-              <span>
-                {[need.renew ? `${need.renew} to renew` : null, need.reissue ? `${need.reissue} to reissue (free)` : null, need.validate ? `${need.validate} waiting for validation` : null].filter(Boolean).join(' · ')}
-              </span>
-            </div>
-            {f !== 'action' ? <Link href={href('action')} className="cx3-btn sm dark">Show them</Link> : null}
-          </div>
-        ) : counts[''] ? (
-          <div className="mc-alert ok">
-            <span className="mc-alert-ico" aria-hidden="true">✓</span>
-            <div className="mc-alert-txt"><strong>All your certificates are in order</strong><span>Nothing needs your attention right now.</span></div>
-          </div>
-        ) : null}
-
-        <div className="mc-tiles" role="tablist" aria-label="Filter certificates">
-          {[
-            { key: '', label: 'All certificates', tone: 'all', note: 'Everything on this account' },
-            { key: 'action', label: 'Needs action', tone: 'red', note: 'Renew, reissue or validate' },
-            { key: 'expiring', label: 'Expiring in 30 days', tone: 'amber', note: 'Certificate end date' },
-            { key: 'ok', label: 'Protected', tone: 'green', note: 'Nothing to do' }
-          ].map((t) => (
-            <Link key={t.key || 'all'} href={href(t.key)} role="tab" aria-selected={f === t.key} className={`mc-tile ${t.tone} ${f === t.key ? 'on' : ''}`}>
-              <span className="mc-tile-n">{counts[t.key]}</span>
-              <span className="mc-tile-l">{t.label}</span>
-              <span className="mc-tile-s">{t.note}</span>
-            </Link>
-          ))}
-        </div>
-        <div className="mc-more">
-          {counts.pending ? <Link href={href('pending')} className={f === 'pending' ? 'on' : ''}>In progress ({counts.pending})</Link> : null}
-          {counts.auto ? <Link href={href('auto')} className={f === 'auto' ? 'on' : ''}>Automated ({counts.auto})</Link> : null}
-          {counts.closed ? <Link href={href('closed')} className={f === 'closed' ? 'on' : ''}>Closed ({counts.closed})</Link> : null}
-        </div>
-
-        <form action="/orders" className="cx3-filterbar" role="search">
-          {f ? <input type="hidden" name="f" value={f} /> : null}
-          <label className="cx3-search">
+        <div className="mc-bar">
+          <nav className="mc-seg" aria-label="Filter certificates">
+            {[
+              { key: '', label: 'All' },
+              { key: 'action', label: 'Needs action', hot: true },
+              { key: 'expiring', label: 'Expiring soon' },
+              { key: 'ok', label: 'Protected' },
+              ...(counts.pending ? [{ key: 'pending', label: 'In progress' }] : []),
+              ...(counts.auto ? [{ key: 'auto', label: 'Automated' }] : []),
+              ...(counts.closed ? [{ key: 'closed', label: 'Closed' }] : [])
+            ].map((t) => (
+              <Link key={t.key || 'all'} href={href(t.key)} className={f === t.key ? 'on' : ''} aria-current={f === t.key ? 'page' : undefined}>
+                {t.label}<em className={t.hot && counts[t.key] ? 'hot' : ''}>{counts[t.key]}</em>
+              </Link>
+            ))}
+          </nav>
+          <form action="/orders" className="mc-search" role="search">
+            {f ? <input type="hidden" name="f" value={f} /> : null}
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-            <span className="sr">Filter certificates</span>
-            <input type="search" name="q" defaultValue={term} placeholder="Filter by domain, product, order ID or tag" />
-          </label>
-          {term ? <Link href={href(f, false)} className="cx3-chip on">“{term}” ×</Link> : null}
-        </form>
+            <input type="search" name="q" defaultValue={term} placeholder="Search domain or order" aria-label="Search certificates" />
+            {term ? <Link href={href(f, false)} className="mc-x" aria-label="Clear search">×</Link> : null}
+          </form>
+        </div>
 
         <CertTable
           rows={rows.map((r) => ({
