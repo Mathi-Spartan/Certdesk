@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import BrandLogo from './BrandLogo';
+import { COMPANY } from '@/lib/support';
 
 export const BRANDS = [
   { slug: 'digicert', name: 'DigiCert', match: ['digicert'] },
@@ -98,6 +99,8 @@ export function UtilityBar({ email }) {
 const FI = {
   mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  building: <><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" /><path d="M16 9h2a2 2 0 0 1 2 2v10M2 21h20M8 7h4M8 11h4M8 15h4" /></>,
   globe: <><circle cx="12" cy="12" r="9" /><path d="M3.6 9h16.8M3.6 15h16.8M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>,
   shield: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>
 };
@@ -116,9 +119,9 @@ export function SiteFooter({ email, contact }) {
           </Link>
           <p>SSL certificates, automation and PKI consulting in one place.</p>
           <ul className="ft-contact">
-            {email ? <li><Fi n="mail" /><a href={`mailto:${email}`}>{email}</a></li> : null}
-            <li><Fi n="clock" /><span>Support hours: Mon–Sat, IST (UTC+5:30)</span></li>
-            <li><Fi n="globe" /><span>Serving customers worldwide</span></li>
+            <li><Fi n="user" /><span>{COMPANY.contact}</span></li>
+            <li><Fi n="mail" /><a href={`mailto:${email || COMPANY.email}`}>{email || COMPANY.email}</a></li>
+            <li><Fi n="building" /><span>{COMPANY.name}</span></li>
           </ul>
           <span className="ft-k">Certificates from</span>
           <div className="ft-brands">
@@ -174,7 +177,7 @@ export function SiteFooter({ email, contact }) {
       </div>
 
       <div className="lp-wrap ft-bottom">
-        <span>© {new Date().getFullYear()} CertDesk. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} {COMPANY.name}. All rights reserved.</span>
         <span className="ft-trust"><Fi n="shield" />Certificates are issued by globally trusted certificate authorities.</span>
       </div>
     </footer>
