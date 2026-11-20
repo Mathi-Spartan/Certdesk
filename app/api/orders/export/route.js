@@ -12,10 +12,13 @@ const csv = (v) => {
 };
 
 /** Certificate inventory as CSV (ISO 8601 dates, UTC). */
-export async function GET() {
+export async function GET(req) {
   const ctx = await getContext();
   if (!ctx?.workspaceId) return new Response('Not signed in', { status: 401 });
-  const orders = await q(`select * from console.orders where workspace_id = $1 and status <> 'draft' order by valid_till nulls last`, [ctx.workspaceId]);
+  const ids = (new URL(req.url).searchParams.get('ids') || '').split(',').filter((x) => /^[0-9a-f-]{36}$/i.test(x));
+  const orders = ids.length
+    ? await q(`select * from console.orders where workspace_id = $1 and id = any($2::uuid[]) order by valid_till nulls last`, [ctx.workspaceId, ids])
+    : await q(`select * from console.orders where workspace_id = $1 and status <> 'draft' order by valid_till nulls last`, [ctx.workspaceId]);
   const head = ['Common name', 'Other names', 'Product', 'Order', 'Status', 'Certificate valid from', 'Certificate expires', 'Subscription start', 'Subscription end', 'Subscription months', 'Issuer', 'Key', 'Serial', 'SHA-256 fingerprint', 'Validation method', 'Auto-renew'];
   const lines = [head.join(',')];
   for (const o of orders) {

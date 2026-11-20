@@ -1,11 +1,13 @@
 import Link from 'next/link';
-import { SubPeriod, CertExpiry } from '@/components/SubPeriod';
 import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import TopBar from '@/components/TopBar';
 import { itemFromOrder, itemFromSub } from '@/lib/portfolio';
 import { fmtDate, FlashFromSearch } from '@/components/ui';
 import { fmtMoney } from '@/lib/pricing';
+import { certFacts } from '@/lib/certs';
+import { brandOf } from '@/components/site/SiteChrome';
+import CertTable from './CertTable';
 
 export const metadata = { title: 'Certificates · CertDesk' };
 
@@ -46,7 +48,16 @@ export default async function Certificates({ searchParams }) {
     return [String(pr?.validation || '').toUpperCase(), pr?.wildcard ? 'Wildcard' : null, pr?.multidomain ? 'Multi-domain' : null].filter(Boolean).join(' · ') || 'Certificate';
   };
   const all = [
-    ...orders.map((o) => ({ ...itemFromOrder(o), price: fmtMoney(o.customer_price, o.customer_currency || 'USD'), cost: o.order_amount != null ? `${o.order_amount} ${o.currency || ''}` : null })),
+    ...orders.map((o) => {
+      const f = o.status === 'issued' ? certFacts(o) : null;
+      return {
+        ...itemFromOrder(o),
+        price: fmtMoney(o.customer_price, o.customer_currency || 'USD'),
+        cost: o.order_amount != null ? `${o.order_amount} ${o.currency || ''}` : null,
+        facts: f ? { issuer: f.issuer, key: f.key, sans: f.san.length, serial: String(f.serial || '').slice(0, 20) } : null,
+        certFrom: o.valid_from, synced: o.last_synced_at, canDownload: o.status === 'issued' && !!o.crt_code
+      };
+    }),
     ...subs.map((s) => ({ ...itemFromSub(s), price: null, cost: null }))
   ].sort((a, b) => {
     const ad = a.date?.at ? new Date(a.date.at).getTime() : Infinity;
@@ -91,50 +102,19 @@ export default async function Certificates({ searchParams }) {
           {term ? <Link href={href(f, false)} className="cx3-chip on">“{term}” ×</Link> : null}
         </form>
 
-        <div className="cx3-card cx3-table-wrap">
-          {rows.length === 0 ? (
-            <div className="cx3-none">
-              <strong>{all.length ? 'No certificates in this view' : 'No certificates yet'}</strong>
-              {all.length ? <Link href="/orders">Show all certificates</Link> : <Link className="cx3-btn primary" href="/buy">Buy your first certificate</Link>}
-            </div>
-          ) : (
-            <table className="cx3-table">
-              <thead>
-                <tr>
-                  <th>Common name</th><th>Product</th><th>Status</th><th>Certificate expires</th><th>Subscription</th><th>Auto-renew</th><th>Price</th>
-                  {ctx.isAdmin ? <th>Partner cost</th> : null}
-                  <th><span className="sr">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const hot = r.date?.at && r.date.days <= 30 && r.date.label !== 'Renews' && r.group !== 'ended';
-                  return (
-                    <tr key={r.type + r.id}>
-                      <td>
-                        <Link href={r.href} className="cx3-cn">{r.domain}</Link>
-                        <div className="cx3-sub">{r.extra ? `${r.extra} · ` : ''}#{r.ref || '—'}</div>
-                      </td>
-                      <td><div>{r.product}</div><div className="cx3-sub">{kind(r)}</div></td>
-                      <td><span className={`cx3-pill ${r.group}`}>{r.detail?.label && r.group !== 'ok' ? r.detail.label : r.status.label}</span>{METHOD[r.method] ? <div className="cx3-sub">{METHOD[r.method]}</div> : null}</td>
-                      <td>
-                        {r.type === 'cert' ? (r.cert ? <CertExpiry at={r.cert.at} days={r.cert.days} hot={hot} /> : <span className="cx3-sub">{r.group === 'ended' ? '—' : 'Not issued'}</span>)
-                          : r.date?.at ? <><div style={{ fontWeight: 600 }}>{r.date.days} days</div><div className="cx3-sub">Renews {fmtDate(r.date.at)}</div></> : <span className="cx3-sub">—</span>}
-                      </td>
-                      <td>{r.type === 'cert' ? <SubPeriod sub={r.sub} /> : <span className="cx3-sub">Automated</span>}</td>
-                      <td>{r.group === 'ended' ? <span className="cx3-sub">—</span> : <span className={`cx3-flag ${r.autoRenew ? 'on' : ''}`}>{r.autoRenew ? 'On' : 'Off'}</span>}</td>
-                      <td style={{ fontWeight: 600 }}>{r.price || <span className="cx3-sub">—</span>}</td>
-                      {ctx.isAdmin ? <td className="mono cx3-sub">{r.cost || '—'}</td> : null}
-                      <td className="cx3-actions">
-                        {r.next?.cta ? <Link className="cx3-btn sm dark" href={r.next.href}>{r.next.cta}</Link> : <Link className="cx3-btn sm" href={r.href}>Manage</Link>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <CertTable
+          rows={rows.map((r) => ({
+            key: r.type + r.id, id: r.id, type: r.type, href: r.href, domain: r.domain, extra: r.extra || null, ref: r.ref || null,
+            product: r.product, kind: kind(r), brand: brandOf({ name: r.product || '', brand: r.brand || '' })?.slug || 'sectigo',
+            status: r.detail?.label && r.group !== 'ok' ? r.detail.label : r.status.label, group: r.group, method: METHOD[r.method] || null,
+            cert: r.cert || null, certFrom: r.certFrom || null, sub: r.sub || null, autoDate: r.type === 'auto' && r.date?.at ? r.date : null,
+            autoRenew: !!r.autoRenew, price: r.price || null, cost: r.cost || null, next: r.next?.cta ? { cta: r.next.cta, href: r.next.href } : null,
+            facts: r.facts || null, synced: r.synced || null, canDownload: !!r.canDownload, tags: r.tags || []
+          }))}
+          admin={!!ctx.isAdmin}
+          back={href(f)}
+          empty={all.length ? 'none' : 'first'}
+        />
       </main>
     </>
   );

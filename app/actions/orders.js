@@ -374,3 +374,34 @@ export async function reissue(input) {
   }
   return { id: order.id };
 }
+
+/** Bulk: switch auto-renew on or off for the selected certificates in this workspace. */
+export async function bulkOrderAutoRenew(formData) {
+  const ctx = await requireWorkspace();
+  const ids = formData.getAll('id').map(String).filter((x) => /^[0-9a-f-]{36}$/i.test(x));
+  const on = String(formData.get('auto_on')) === 'true';
+  const back = safeBack(formData.get('back'));
+  if (!ids.length) redirect(withMsg(back, 'err', 'Select at least one certificate'));
+  const done = await q('update console.orders set auto_renew = $3, updated_at = now() where workspace_id = $1 and id = any($2::uuid[]) and auto_renew is distinct from $3 returning id', [ctx.workspaceId, ids, on]);
+  for (const r of done) await addEvent(r.id, 'settings', `Auto-renew turned ${on ? 'on' : 'off'}`, ctx.user.id);
+  redirect(withMsg(back, 'ok', `Auto-renew turned ${on ? 'on' : 'off'} for ${done.length} certificate${done.length === 1 ? '' : 's'}`));
+}
+
+/** Bulk: ask GoGetSSL for the latest state of the selected certificates. */
+export async function bulkRefresh(formData) {
+  const ctx = await requireWorkspace();
+  const ids = formData.getAll('id').map(String).filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 25);
+  const back = safeBack(formData.get('back'));
+  if (!ids.length) redirect(withMsg(back, 'err', 'Select at least one certificate'));
+  const orders = await q('select * from console.orders where workspace_id = $1 and id = any($2::uuid[]) and gg_order_id is not null', [ctx.workspaceId, ids]);
+  let ok = 0;
+  for (const o of orders) {
+    try { await syncOrder(o); ok++; } catch {}
+  }
+  redirect(withMsg(back, 'ok', `Refreshed ${ok} of ${orders.length} certificate${orders.length === 1 ? '' : 's'} from GoGetSSL`));
+}
+
+function safeBack(v) {
+  const s = String(v || '/orders');
+  return s.startsWith('/orders') ? s : '/orders';
+}
