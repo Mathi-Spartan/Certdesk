@@ -102,78 +102,51 @@ export default async function Landing({ searchParams }) {
       <SiteHeader signedIn={signedIn} consoleHref={consoleHref} />
 
       <main id="main">
-        <section className="hx">
+        <section className="hx hv">
           <div className="hx-bg" aria-hidden="true" />
           <div className="hx-spot" aria-hidden="true" />
-          <div className="lp-wrap hx-in">
-            <div className="hx-text">
-              <span className="hx-pill"><span className="lp-new">New</span> Plan + Automate and ACME subscriptions are here</span>
+          <div className="lp-wrap hv-in">
+            <div className="hv-text">
+              <Link href="/ssl?type=auto" className="hv-pill"><span>New</span>Plan + Automate and ACME subscriptions <i aria-hidden="true">→</i></Link>
               <HeroTitle />
-              <p className="hx-lead">
-                Order DV, OV, EV, wildcard, multi-domain and code signing certificates, follow guided validation, and see every reissue
-                and renewal coming. Or let an automated subscription handle it all.
-              </p>
-              <div className="lp-cta">
-                <a {...consoleProps} className="lp-btn lp-btn-primary lp-btn-lg">{signedIn ? 'Open your console' : 'Sign in to your console'}<span aria-hidden="true">→</span></a>
-                <Link href="/finder" className="lp-btn lp-btn-glass lp-btn-lg">Find my certificate</Link>
+              <p className="hv-lead">Order DV, OV, EV, wildcard and code signing certificates, get guided validation, and see every reissue and renewal before it is due.</p>
+              <div className="hv-cta">
+                <a {...consoleProps} className="hv-btn primary">{signedIn ? 'Open your console' : 'Sign in to your console'}<span aria-hidden="true">→</span></a>
+                <Link href="/finder" className="hv-btn ghost">Find my certificate</Link>
               </div>
-              <ul className="hx-trust">
+              <ul className="hv-trust">
                 <li><Icon name="check" />256-bit encryption</li>
                 <li><Icon name="bolt" />DV in minutes</li>
-                <li><Icon name="key" />Key stays on your machine</li>
+                <li><Icon name="key" />Private key stays with you</li>
               </ul>
             </div>
 
-            <div className="hz" aria-hidden="true">
-              <div className="hz-glow" />
-              <div className="hz-orbit hz-o1">
-                {['digicert', 'sectigo', 'geotrust'].map((slug, i) => (
-                  <div key={slug} className="hz-sat" style={{ '--a': `${i * 120 + 20}deg` }}>
-                    <span className="hz-chip"><BrandLogo slug={slug} name={slug} height={18} /></span>
+            <div className="hv-stage" aria-hidden="true">
+              <div className="hv-win">
+                <div className="hv-bar"><i /><i /><i /><span>certdesk · My certificates</span></div>
+                <div className="hv-body">
+                  <div className="hv-head">
+                    <div><b>My certificates</b><small>3 of 19 need your attention</small></div>
+                    <span className="hv-new">+ Order</span>
                   </div>
-                ))}
-              </div>
-              <div className="hz-orbit hz-o2">
-                {['thawte', 'rapidssl', 'comodo'].map((slug, i) => (
-                  <div key={slug} className="hz-sat" style={{ '--a': `${i * 120 + 80}deg` }}>
-                    <span className="hz-chip"><BrandLogo slug={slug} name={slug} height={16} /></span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="hz-cert">
-                <div className="hz-url">
-                  <svg className="hz-lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-                  <span className="hz-https">https://</span><span className="hz-type">shop.example.com</span><span className="hz-caret" />
-                </div>
-                <div className="hz-body">
-                  <svg className="hz-seal" viewBox="0 0 100 100">
-                    <defs>
-                      <linearGradient id="hzs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F97316" /><stop offset="1" stopColor="#C2410C" /></linearGradient>
-                    </defs>
-                    <polygon fill="url(#hzs)" points={SEAL} />
-                    <circle cx="50" cy="50" r="31" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.5" strokeDasharray="2 3" />
-                    <path d="m37 51 9 9 18-19" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <dl className="hz-fields">
-                    <div><dt>Issued to</dt><dd className="mono">shop.example.com</dd></div>
-                    <div><dt>Validation</dt><dd>Organization (OV)</dd></div>
-                    <div><dt>Valid for</dt><dd>200 days <span className="hz-ok">Trusted</span></dd></div>
-                  </dl>
-                </div>
-                <div className="hz-life"><span /></div>
-                <div className="hz-chain">
-                  <span className="hz-node"><i />Root CA</span>
-                  <span className="hz-link" />
-                  <span className="hz-node"><i />Intermediate</span>
-                  <span className="hz-link" />
-                  <span className="hz-node on"><i />Your site</span>
+                  <div className="hv-tabs"><span className="on">All <em>19</em></span><span>Needs action <em className="hot">3</em></span><span>Valid <em>14</em></span></div>
+                  {[
+                    ['shop.example.com', 'RapidSSL · DV', 'Valid', 'ok', '164 days', 'Manage'],
+                    ['*.example.org', 'DigiCert · OV Wildcard', 'Reissue – pending validation', 'warn', '21 days', 'Validate'],
+                    ['api.example.net', 'Sectigo · DV', 'Renewal due', 'bad', '6 days', 'Renew'],
+                    ['mail.example.io', 'GeoTrust · DV', 'Valid', 'ok', '212 days', 'Manage']
+                  ].map(([d, p, st, t, left, btn], i) => (
+                    <div key={d} className="hv-row" style={{ '--i': i }}>
+                      <div className="hv-cn"><b>{d}</b><small>{p}</small></div>
+                      <span className={`hv-st ${t}`}><i />{st}</span>
+                      <span className={`hv-left ${t === 'bad' ? 'bad' : ''}`}>{left}</span>
+                      <span className={`hv-act ${btn === 'Manage' ? 'ghost' : ''}`}>{btn}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="hx-float hz-f1"><span className="hx-dot ok" />Certificate issued <b>in 4 min</b></div>
-              <div className="hx-float hz-f2"><span className="hx-dot auto" />Auto-renewal <b>on</b></div>
-              <div className="hx-float hz-f3"><span className="hz-tick">✓</span>DNS validated</div>
+              <div className="hv-toast t1"><span className="hv-check">✓</span><div><b>Certificate issued</b><small>shop.example.com · 4 min</small></div></div>
+              <div className="hv-toast t2"><div><b>Auto-renew</b><small>Plan + Automate</small></div><span className="hv-switch" /></div>
             </div>
           </div>
 
