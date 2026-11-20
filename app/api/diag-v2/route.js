@@ -1,4 +1,5 @@
 import { getContext } from '@/lib/auth';
+import { q } from '@/lib/db';
 // Temporary probe: does GoGetSSL API v2 accept switching the Plan + Automate install method?
 // Calls use a non-existent subscription id, so nothing is changed. Removed after the check.
 export const dynamic = 'force-dynamic';
@@ -34,5 +35,6 @@ export async function GET() {
       out.push({ method, path, error: e.message });
     }
   }
+  await q(`insert into console.kv (key, value) values ('diag_v2', $1) on conflict (key) do update set value = excluded.value`, [JSON.stringify({ at: new Date().toISOString(), out })]).catch(() => {});
   return new Response(JSON.stringify(out, null, 2), { headers: { 'content-type': 'application/json' } });
 }
