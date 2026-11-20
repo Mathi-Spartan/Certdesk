@@ -93,7 +93,7 @@ export default async function SslProducts({ searchParams }) {
   return (
     <div className="lp">
       <UtilityBar email={email} />
-      <SiteHeader signedIn={signedIn} consoleHref={ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin'} />
+      <SiteHeader signedIn={signedIn} consoleHref={ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/orders') : '#signin'} />
 
       <main id="main">
         <section className="lp-cat-hero">

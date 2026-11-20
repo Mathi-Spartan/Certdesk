@@ -20,7 +20,7 @@ export default async function FinderPage({ searchParams }) {
     q('select id, name, brand, validation, wildcard, multidomain, san_max, automation from console.products order by name').catch(() => [])
   ]);
   const signedIn = !!ctx;
-  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin';
+  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/orders') : '#signin';
   const contact = email ? `mailto:${email}?subject=${encodeURIComponent('Which certificate should I choose?')}` : '#';
   return (
     <div className="lp">

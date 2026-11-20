@@ -35,8 +35,7 @@ export default function CustomerNav({ counts = {}, partner = false, workspace = 
   const customer = [
     {
       items: [
-        { href: '/dashboard', label: 'Overview', icon: 'dash', on: path === '/dashboard' || path === '/validation' || path === '/renewals' },
-        { href: '/orders', label: 'My certificates', icon: 'lock', on: isCert(path), n: counts.all, tone: 'plain' },
+        { href: '/orders', label: 'My certificates', icon: 'lock', on: isCert(path) || path === '/validation' || path === '/renewals', n: counts.all, tone: 'plain' },
         { href: '/order', label: 'Order new certificate', icon: 'cart', on: path === '/order' || path.startsWith('/buy') || path === '/subscriptions/new' },
         { href: '/tools', label: 'Tools', icon: 'search', on: path.startsWith('/tools') }
       ]
@@ -73,9 +72,9 @@ export default function CustomerNav({ counts = {}, partner = false, workspace = 
 }
 
 const TITLES = [
-  [(p) => p === '/dashboard', 'Overview'],
-  [(p) => p === '/orders', 'Certificates'],
-  [(p) => p.startsWith('/certificates/'), 'Certificates', 'Certificate'],
+  [(p) => p === '/dashboard', 'My certificates'],
+  [(p) => p === '/orders', 'My certificates'],
+  [(p) => p.startsWith('/certificates/'), 'My certificates', 'Certificate'],
   [(p) => p === '/subscriptions/new', 'Order', 'Automation plan'],
   [(p) => p.startsWith('/subscriptions/'), 'Certificates', 'Automated SSL'],
   [(p) => p === '/validation', 'Validation'],

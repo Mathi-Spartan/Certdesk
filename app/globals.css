@@ -1547,3 +1547,34 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .ct-act .cx3-btn.primary{background:#5B3FD9;border-color:#5B3FD9}
 .ct-legend .red::before{background:#EF4444}.ct-legend .green::before{background:#10B981}
 .ct-card .ct-meta{margin-top:-2px}
+
+/* My certificates: single clean home for customers */
+.mc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.mc-head h1{margin:0;font-size:26px;letter-spacing:-.02em;color:#09090B}
+.mc-head p{margin:6px 0 0;font-size:14px;color:#3F3F46}
+.mc-head .cx3-btn{gap:7px}
+.mc-alert{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:#FFF7ED;border:1px solid #FED7AA}
+.mc-alert.ok{background:#F0FDF4;border-color:#BBF7D0}
+.mc-alert-ico{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;background:#EA580C}
+.mc-alert.ok .mc-alert-ico{background:#16A34A}
+.mc-alert-txt{flex:1;display:flex;flex-direction:column;gap:2px}
+.mc-alert-txt strong{font-size:14.5px;color:#18181B}
+.mc-alert-txt span{font-size:13px;color:#3F3F46}
+.mc-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.mc-tile{position:relative;display:flex;flex-direction:column;gap:2px;padding:16px 18px;border-radius:14px;background:#fff;border:1.5px solid #E4E4E7;text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
+.mc-tile:hover{transform:translateY(-1px);box-shadow:0 12px 24px -18px rgba(0,0,0,.35)}
+.mc-tile::before{content:"";position:absolute;left:18px;top:18px;width:8px;height:8px;border-radius:50%;background:#A1A1AA}
+.mc-tile.red::before{background:#EF4444}.mc-tile.amber::before{background:#F59E0B}.mc-tile.green::before{background:#10B981}.mc-tile.all::before{background:#5B3FD9}
+.mc-tile-n{font-size:28px;font-weight:700;line-height:1.1;color:#09090B;margin-top:14px;font-variant-numeric:tabular-nums}
+.mc-tile.red .mc-tile-n{color:#DC2626}
+.mc-tile-l{font-size:13.5px;font-weight:600;color:#18181B}
+.mc-tile-s{font-size:12px;color:#52525B}
+.mc-tile.on{border-color:#18181B;box-shadow:0 0 0 3px rgba(24,24,27,.06)}
+.mc-tile.on.red{border-color:#EF4444;box-shadow:0 0 0 3px #FEE2E2}
+.mc-tile.on.amber{border-color:#F59E0B;box-shadow:0 0 0 3px #FEF3C7}
+.mc-tile.on.green{border-color:#10B981;box-shadow:0 0 0 3px #D1FAE5}
+.mc-tile.on.all{border-color:#5B3FD9;box-shadow:0 0 0 3px #EFEBFF}
+.mc-more{display:flex;gap:16px;margin-top:-4px}
+.mc-more a{font-size:12.5px;font-weight:600;color:#52525B;text-decoration:none}
+.mc-more a:hover,.mc-more a.on{color:#4527B8;text-decoration:underline}
+@media (max-width:900px){.mc-tiles{grid-template-columns:1fr 1fr}}

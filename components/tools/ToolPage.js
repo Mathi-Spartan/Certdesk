@@ -14,7 +14,7 @@ export default function ToolPage({ slug, title, desc, about = [], privacy, actio
     <main className="page cc-page">
       <header className="cc-page-head">
         <div>
-          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/dashboard">Dashboard</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>{title}</span></nav>
+          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/orders">My certificates</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>{title}</span></nav>
           <h1>{title}</h1>
           <p>{desc}</p>
         </div>

@@ -9,12 +9,13 @@ import { certFacts } from '@/lib/certs';
 import { brandOf } from '@/components/site/SiteChrome';
 import CertTable from './CertTable';
 
-export const metadata = { title: 'Certificates · CertDesk' };
+export const metadata = { title: 'My certificates · CertDesk' };
 
 const FILTERS = [
   { key: '', label: 'All' },
   { key: 'action', label: 'Needs action' },
   { key: 'expiring', label: 'Expiring in 30 days' },
+  { key: 'ok', label: 'Protected' },
   { key: 'pending', label: 'In progress' },
   { key: 'auto', label: 'Automated' },
   { key: 'closed', label: 'Closed' }
@@ -24,6 +25,7 @@ const TEST = {
   '': (i) => i.group !== 'ended',
   action: (i) => i.group === 'action',
   expiring: (i) => i.group !== 'ended' && i.type === 'cert' && i.date?.at && i.date.days <= 30,
+  ok: (i) => i.group === 'ok',
   pending: (i) => i.group === 'progress',
   auto: (i) => i.type === 'auto' && i.group !== 'ended',
   closed: (i) => i.group === 'ended'
@@ -65,6 +67,13 @@ export default async function Certificates({ searchParams }) {
     return ad !== bd ? ad - bd : new Date(b.ordered) - new Date(a.ordered);
   });
   const counts = Object.fromEntries(FILTERS.map((x) => [x.key, all.filter(TEST[x.key]).length]));
+  const act = all.filter(TEST.action);
+  const need = {
+    total: act.length,
+    renew: act.filter((i) => i.next?.cta === 'Renew').length,
+    reissue: act.filter((i) => i.next?.cta === 'Reissue').length,
+    validate: act.filter((i) => i.next?.cta === 'Validate').length
+  };
   const rows = all.filter(TEST[f]).filter((i) => !term || [i.domain, i.product, String(i.ref || ''), ...(i.tags || [])].join(' ').toLowerCase().includes(term));
   const href = (key, withTerm = true) => {
     const qs = new URLSearchParams({ ...(key ? { f: key } : {}), ...(term && withTerm ? { q: term } : {}) }).toString();
@@ -75,21 +84,54 @@ export default async function Certificates({ searchParams }) {
     <>
       {ctx.isAdmin ? <TopBar crumbs={[{ label: ctx.workspace.name }, { label: 'Certificates' }]} /> : null}
       <main className="cx3-page">
-        <div className="cx3-head">
+        <div className="mc-head">
           <div>
-            <h1>Certificates</h1>
-            <p>{counts['']} active · {counts.action} need action · {counts.expiring} expiring in 30 days</p>
+            <h1>My certificates</h1>
+            <p>{counts[''] ? `${counts['']} certificate${counts[''] === 1 ? '' : 's'} on this account. Anything that needs you is listed first.` : 'Your SSL certificates will appear here.'}</p>
           </div>
-          <Link className="cx3-btn primary" href="/order">Buy certificate</Link>
+          <Link className="cx3-btn primary" href="/order">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            Order new certificate
+          </Link>
         </div>
         <FlashFromSearch searchParams={sp} />
 
-        <div className="cx3-tabs" aria-label="Filter certificates">
-          {FILTERS.map((x) => (
-            <Link key={x.key || 'all'} href={href(x.key)} className={f === x.key ? 'on' : ''} aria-current={f === x.key ? 'page' : undefined}>
-              {x.label}<span>{counts[x.key]}</span>
+        {need.total ? (
+          <div className="mc-alert">
+            <span className="mc-alert-ico" aria-hidden="true">!</span>
+            <div className="mc-alert-txt">
+              <strong>{need.total} certificate{need.total === 1 ? ' needs' : 's need'} your attention</strong>
+              <span>
+                {[need.renew ? `${need.renew} to renew` : null, need.reissue ? `${need.reissue} to reissue (free)` : null, need.validate ? `${need.validate} waiting for validation` : null].filter(Boolean).join(' · ')}
+              </span>
+            </div>
+            {f !== 'action' ? <Link href={href('action')} className="cx3-btn sm dark">Show them</Link> : null}
+          </div>
+        ) : counts[''] ? (
+          <div className="mc-alert ok">
+            <span className="mc-alert-ico" aria-hidden="true">✓</span>
+            <div className="mc-alert-txt"><strong>All your certificates are in order</strong><span>Nothing needs your attention right now.</span></div>
+          </div>
+        ) : null}
+
+        <div className="mc-tiles" role="tablist" aria-label="Filter certificates">
+          {[
+            { key: '', label: 'All certificates', tone: 'all', note: 'Everything on this account' },
+            { key: 'action', label: 'Needs action', tone: 'red', note: 'Renew, reissue or validate' },
+            { key: 'expiring', label: 'Expiring in 30 days', tone: 'amber', note: 'Certificate end date' },
+            { key: 'ok', label: 'Protected', tone: 'green', note: 'Nothing to do' }
+          ].map((t) => (
+            <Link key={t.key || 'all'} href={href(t.key)} role="tab" aria-selected={f === t.key} className={`mc-tile ${t.tone} ${f === t.key ? 'on' : ''}`}>
+              <span className="mc-tile-n">{counts[t.key]}</span>
+              <span className="mc-tile-l">{t.label}</span>
+              <span className="mc-tile-s">{t.note}</span>
             </Link>
           ))}
+        </div>
+        <div className="mc-more">
+          {counts.pending ? <Link href={href('pending')} className={f === 'pending' ? 'on' : ''}>In progress ({counts.pending})</Link> : null}
+          {counts.auto ? <Link href={href('auto')} className={f === 'auto' ? 'on' : ''}>Automated ({counts.auto})</Link> : null}
+          {counts.closed ? <Link href={href('closed')} className={f === 'closed' ? 'on' : ''}>Closed ({counts.closed})</Link> : null}
         </div>
 
         <form action="/orders" className="cx3-filterbar" role="search">

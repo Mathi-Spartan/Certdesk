@@ -79,7 +79,7 @@ export default async function Landing({ searchParams }) {
   for (const p of allProducts) { const b = brandOf(p).slug; byBrand[b] = (byBrand[b] || 0) + 1; }
   const total = allProducts.length;
   const signedIn = !!ctx;
-  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/dashboard') : '#signin';
+  const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/orders') : '#signin';
   const consoleProps = signedIn ? { href: consoleHref } : { href: '#signin', 'data-signin': '' };
   const contact = email ? `mailto:${email}?subject=${encodeURIComponent('CertDesk account request')}` : '#faq';
   const daysTo100 = Math.max(0, Math.ceil((new Date('2027-03-15T00:00:00Z') - Date.now()) / 86400000));

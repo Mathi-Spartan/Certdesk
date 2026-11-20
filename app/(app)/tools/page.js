@@ -27,7 +27,7 @@ export default async function ToolsHome() {
     <main className="page cc-page">
       <header className="cc-page-head">
         <div>
-          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/dashboard">Dashboard</Link><span>/</span><span>Tools</span></nav>
+          <nav className="cc-crumbs" aria-label="Breadcrumb"><Link href="/orders">My certificates</Link><span>/</span><span>Tools</span></nav>
           <h1>Tools</h1>
           <p>Everyday SSL utilities for checking, creating and converting certificates.</p>
         </div>

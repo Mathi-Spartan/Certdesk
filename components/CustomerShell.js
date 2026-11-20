@@ -14,7 +14,7 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
   return (
     <div className="cx3">
       <aside className="cx3-side">
-        <Link href={workspace ? '/dashboard' : '/partner'} className="cx3-ws" title={wsName}>
+        <Link href={workspace ? '/orders' : '/partner'} className="cx3-ws" title={wsName}>
           <span className={`cx3-ws-mark ${workspace ? '' : 'accent'}`}>{initials(wsName)}</span>
           <span className="cx3-ws-text"><strong>{wsName}</strong><small>{workspace ? 'Customer account' : 'Master account'}</small></span>
         </Link>

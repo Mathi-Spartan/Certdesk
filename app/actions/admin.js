@@ -16,7 +16,7 @@ export async function openWorkspace(formData) {
   const ws = await one('select id from console.workspaces where id = $1', [id]);
   if (!ws) redirect('/partner?err=' + enc('Workspace not found'));
   await setActingWorkspace(ctx.tokenHash, ws.id);
-  redirect('/dashboard');
+  redirect('/orders');
 }
 
 export async function exitWorkspace() {
