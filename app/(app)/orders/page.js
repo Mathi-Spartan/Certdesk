@@ -15,7 +15,7 @@ const FILTERS = [
   { key: '', label: 'All' },
   { key: 'action', label: 'Needs action' },
   { key: 'expiring', label: 'Expiring in 30 days' },
-  { key: 'ok', label: 'Protected' },
+  { key: 'ok', label: 'Valid' },
   { key: 'pending', label: 'In progress' },
   { key: 'auto', label: 'Automated' },
   { key: 'closed', label: 'Closed' }
@@ -102,7 +102,7 @@ export default async function Certificates({ searchParams }) {
               { key: '', label: 'All' },
               { key: 'action', label: 'Needs action', hot: true },
               { key: 'expiring', label: 'Expiring soon' },
-              { key: 'ok', label: 'Protected' },
+              { key: 'ok', label: 'Valid' },
               ...(counts.pending ? [{ key: 'pending', label: 'In progress' }] : []),
               ...(counts.auto ? [{ key: 'auto', label: 'Automated' }] : []),
               ...(counts.closed ? [{ key: 'closed', label: 'Closed' }] : [])
