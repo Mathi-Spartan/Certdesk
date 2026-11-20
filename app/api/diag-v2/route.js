@@ -1,13 +1,13 @@
+import { getContext } from '@/lib/auth';
 // Temporary probe: does GoGetSSL API v2 accept switching the Plan + Automate install method?
 // Calls use a non-existent subscription id, so nothing is changed. Removed after the check.
 export const dynamic = 'force-dynamic';
 
 const BASE = (process.env.GOGETSSL_API_V2_URL || 'https://my.gogetssl.com/api/v2').replace(/\/+$/, '');
 
-export async function GET(req) {
-  if (!process.env.DIAG_TOKEN || req.headers.get('x-diag') !== process.env.DIAG_TOKEN && new URL(req.url).searchParams.get('t') !== process.env.DIAG_TOKEN) {
-    return new Response('Not found', { status: 404 });
-  }
+export async function GET() {
+  const ctx = await getContext().catch(() => null);
+  if (!ctx?.isAdmin) return new Response('Not found', { status: 404 });
   const code = process.env.GOGETSSL_PARTNER_CODE;
   const pass = process.env.GOGETSSL_V2_PASS || process.env.GOGETSSL_PASS;
   const headers = { Authorization: `GGS ${code}:${pass}`, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'CertDesk/1.0' };
@@ -34,5 +34,5 @@ export async function GET(req) {
       out.push({ method, path, error: e.message });
     }
   }
-  return Response.json(out);
+  return new Response(JSON.stringify(out, null, 2), { headers: { 'content-type': 'application/json' } });
 }
