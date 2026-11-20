@@ -149,7 +149,7 @@ export default async function Landing({ searchParams }) {
                 <div className="hz-body">
                   <svg className="hz-seal" viewBox="0 0 100 100">
                     <defs>
-                      <linearGradient id="hzs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2AA8E8" /><stop offset="1" stopColor="#0174C3" /></linearGradient>
+                      <linearGradient id="hzs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F97316" /><stop offset="1" stopColor="#C2410C" /></linearGradient>
                     </defs>
                     <polygon fill="url(#hzs)" points={SEAL} />
                     <circle cx="50" cy="50" r="31" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.5" strokeDasharray="2 3" />
