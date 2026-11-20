@@ -7,7 +7,6 @@ import { SiteHeader, SiteFooter, UtilityBar, BRANDS, brandOf } from '@/component
 import { NeedsGrid, LevelCards } from '@/components/site/Sections';
 import BrandLogo from '@/components/site/BrandLogo';
 import TlmCheck from '@/components/site/TlmCheck';
-import HeroTitle from '@/components/site/HeroTitle';
 import './landing.css';
 
 export const metadata = {
@@ -104,21 +103,16 @@ export default async function Landing({ searchParams }) {
       <main id="main">
         <section className="hx hv">
           <div className="hx-bg" aria-hidden="true" />
-          <div className="hx-spot" aria-hidden="true" />
-          <div className="lp-wrap hv-in">
+                    <div className="lp-wrap hv-in">
             <div className="hv-text">
-              <Link href="/ssl?type=auto" className="hv-pill"><span>New</span>Plan + Automate and ACME subscriptions <i aria-hidden="true">→</i></Link>
-              <HeroTitle />
-              <p className="hv-lead">Order DV, OV, EV, wildcard and code signing certificates, get guided validation, and see every reissue and renewal before it is due.</p>
+              <p className="hv-eyebrow"><i />SSL &amp; code signing for teams</p>
+              <h1 className="hv-title">Every SSL certificate,<span>in one clean console.</span></h1>
+              <p className="hv-lead">Order, validate, reissue and renew from one place. You see what needs attention before it expires.</p>
               <div className="hv-cta">
-                <a {...consoleProps} className="hv-btn primary">{signedIn ? 'Open your console' : 'Sign in to your console'}<span aria-hidden="true">→</span></a>
+                <a {...consoleProps} className="hv-btn primary">{signedIn ? 'Open your console' : 'Sign in'}<span aria-hidden="true">→</span></a>
                 <Link href="/finder" className="hv-btn ghost">Find my certificate</Link>
               </div>
-              <ul className="hv-trust">
-                <li><Icon name="check" />256-bit encryption</li>
-                <li><Icon name="bolt" />DV in minutes</li>
-                <li><Icon name="key" />Private key stays with you</li>
-              </ul>
+              <p className="hv-note">DigiCert · Sectigo · GeoTrust · RapidSSL · Thawte</p>
             </div>
 
             <div className="hv-stage" aria-hidden="true">
@@ -145,8 +139,7 @@ export default async function Landing({ searchParams }) {
                   ))}
                 </div>
               </div>
-              <div className="hv-toast t1"><span className="hv-check">✓</span><div><b>Certificate issued</b><small>shop.example.com · 4 min</small></div></div>
-              <div className="hv-toast t2"><div><b>Auto-renew</b><small>Plan + Automate</small></div><span className="hv-switch" /></div>
+              <div className="hv-toast t1"><span className="hv-check">✓</span><div><b>Certificate issued</b><small>shop.example.com · 4 min ago</small></div></div>
             </div>
           </div>
 
