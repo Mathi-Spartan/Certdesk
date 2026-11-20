@@ -7,6 +7,7 @@ import { SiteHeader, SiteFooter, UtilityBar, BRANDS, brandOf } from '@/component
 import { NeedsGrid, LevelCards } from '@/components/site/Sections';
 import BrandLogo from '@/components/site/BrandLogo';
 import TlmCheck from '@/components/site/TlmCheck';
+import HeroTitle from '@/components/site/HeroTitle';
 import './landing.css';
 
 export const metadata = {
@@ -103,10 +104,11 @@ export default async function Landing({ searchParams }) {
       <main id="main">
         <section className="hx">
           <div className="hx-bg" aria-hidden="true" />
+          <div className="hx-spot" aria-hidden="true" />
           <div className="lp-wrap hx-in">
             <div className="hx-text">
               <span className="hx-pill"><span className="lp-new">New</span> Plan + Automate and ACME subscriptions are here</span>
-              <h1>SSL certificates, issued and managed <span className="hx-grad">from one clean console.</span></h1>
+              <HeroTitle />
               <p className="hx-lead">
                 Order DV, OV, EV, wildcard, multi-domain and code signing certificates, follow guided validation, and see every reissue
                 and renewal coming. Or let an automated subscription handle it all.

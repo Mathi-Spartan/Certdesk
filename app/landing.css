@@ -802,10 +802,11 @@
 
 /* ───────── crispness pass ───────── */
 .lp { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-feature-settings: "ss01", "cv11"; --lp-ink: #0B1220; --lp-ink-2: #1F2A3D; --lp-muted: #4B5870; --lp-line: #DDE5EF; }
-.lp h1, .lp h2, .lp h3, .lp strong { color: var(--lp-ink); }
-.lp h1 { font-weight: 800; letter-spacing: -0.035em; }
+/* zero-specificity default: dark sections (hero, automation, final CTA, footer, finder banner) keep their own light colours */
+.lp :where(h1, h2, h3) { color: var(--lp-ink); }
+.lp :where(h1) { font-weight: 800; letter-spacing: -0.035em; }
 .lp p, .lp li, .lp span { text-wrap: pretty; }
-.lp .lp-sub, .lp .hx-lead, .lp .wx-sub { color: var(--lp-ink-2); }
+.lp .lp-sub, .lp .wx-sub, .lp .pk-sub { color: var(--lp-ink-2); }
 .lp .lp-kicker { color: #0168B0; }
 
 /* level cards: the glyph letters were inheriting the grey subtitle style */
@@ -905,3 +906,23 @@
 .tc-reset { margin-top: 10px; font: inherit; font-size: 12.5px; color: var(--lp-muted); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
 @media (max-width: 1080px) { .pk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pk-tlm { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .pk-grid { grid-template-columns: 1fr; } .pk-steps ol { grid-template-columns: 1fr 1fr; } .pk-tlm { padding: 20px; } }
+
+
+/* dark sections: always light text */
+.hx h1, .hx h2, .ax h2, .ax h3, .ax strong, .hx-final h2, .lp-foot h4, .sf-banner h1 { color: #fff; }
+.hx-lead { color: #C9DAEC !important; }
+.hx-final p { color: rgba(255,255,255,.82); }
+
+/* interactive hero headline */
+.hx-title { position: relative; }
+.hx-rot { position: relative; display: inline-grid; vertical-align: bottom; }
+.hx-rot > span { grid-area: 1 / 1; color: #fff; opacity: 0; transform: translateY(40%); filter: blur(4px); transition: opacity .5s, transform .5s cubic-bezier(.2,.8,.2,1), filter .5s; white-space: nowrap; }
+.hx-rot > span.on { opacity: 1; transform: none; filter: none; }
+.hx-rot > span.out { opacity: 0; transform: translateY(-40%); filter: blur(4px); }
+.hx-rot::after { content: ""; position: absolute; left: 0; right: 0; bottom: .06em; height: .09em; border-radius: 99px; background: linear-gradient(90deg, #5CC8F0, #34D399); transform-origin: left; animation: hxLine 2.6s ease-in-out infinite; }
+@keyframes hxLine { 0% { transform: scaleX(0); } 30%, 80% { transform: scaleX(1); } 100% { transform: scaleX(0); transform-origin: right; } }
+.hx-grad { background: linear-gradient(100deg, #8FD8FF 0%, #2AA8E8 30%, #6EE7B7 55%, #8FD8FF 80%, #2AA8E8 100%) 0 0 / 200% 100% !important; -webkit-background-clip: text !important; background-clip: text !important; color: transparent !important; animation: hxShine 6s linear infinite; }
+@keyframes hxShine { to { background-position: -200% 0; } }
+.hx-spot { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(520px circle at var(--mx, 30%) var(--my, 40%), rgba(92,200,240,.16), transparent 60%); transition: background .1s; }
+.hx > .lp-wrap { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .hx-rot > span, .hx-rot::after, .hx-grad { animation: none !important; transition: none !important; } }
