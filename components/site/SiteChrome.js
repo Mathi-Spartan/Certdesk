@@ -68,6 +68,7 @@ export function SiteHeader({ signedIn, consoleHref }) {
           </div>
           <Link href="/finder" className="lp-nav-new">SSL Finder</Link>
           <Link href="/#automation">Automation</Link>
+          <Link href="/#pki">PKI consulting</Link>
         </nav>
         <div className="lp-head-actions">
           {signedIn ? null : <a href="#signin" data-signin="" className="lp-link">Sign in</a>}

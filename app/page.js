@@ -6,6 +6,7 @@ import SignInDialog from '@/components/SignInDialog';
 import { SiteHeader, SiteFooter, UtilityBar, BRANDS, brandOf } from '@/components/site/SiteChrome';
 import { NeedsGrid, LevelCards } from '@/components/site/Sections';
 import BrandLogo from '@/components/site/BrandLogo';
+import TlmCheck from '@/components/site/TlmCheck';
 import './landing.css';
 
 export const metadata = {
@@ -68,6 +69,14 @@ function Icon({ name }) {
   );
 }
 
+const PK_ICONS = {
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
+  building: <><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" /><path d="M16 9h2a2 2 0 0 1 2 2v10M2 21h20M8 7h4M8 11h4M8 15h4" /></>,
+  bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  shield: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>
+};
+const PkIcon = ({ n }) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{PK_ICONS[n]}</svg>;
+
 export default async function Landing({ searchParams }) {
   const sp = (await searchParams) || {};
   const [ctx, email, allProducts] = await Promise.all([
@@ -81,6 +90,7 @@ export default async function Landing({ searchParams }) {
   const signedIn = !!ctx;
   const consoleHref = ctx ? (ctx.isAdmin && !ctx.workspaceId ? '/partner' : '/orders') : '#signin';
   const consoleProps = signedIn ? { href: consoleHref } : { href: '#signin', 'data-signin': '' };
+  const pkiContact = email ? `mailto:${email}?subject=${encodeURIComponent('PKI consultation')}` : '#faq';
   const contact = email ? `mailto:${email}?subject=${encodeURIComponent('CertDesk account request')}` : '#faq';
   const daysTo100 = Math.max(0, Math.ceil((new Date('2027-03-15T00:00:00Z') - Date.now()) / 86400000));
 
@@ -357,6 +367,58 @@ export default async function Landing({ searchParams }) {
               <div className="wx-float wx-f3"><span className="wx-f-ico a"><Icon name="bell" /></span><div><b>Reissue in 7 days</b><small>*.example.org · free</small></div></div>
               <div className="wx-float wx-f4"><div><b>Auto-renew</b><small>Plan + Automate</small></div><span className="wx-switch" /></div>
               <div className="wx-float wx-f5"><span className="wx-avs"><i>PS</i><i>AK</i><i>RM</i></span><small>Orders assigned by your provider</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="lp-section pk" id="pki">
+          <div className="lp-wrap">
+            <div className="pk-top">
+              <div>
+                <p className="lp-kicker hx-left">PKI consulting</p>
+                <h2 className="pk-title">Enterprise PKI, <span>planned and run with you.</span></h2>
+                <p className="pk-sub">From a first certificate inventory to a full private PKI, our consultants help you design, migrate and automate, and get ready for 47-day certificates and post-quantum cryptography.</p>
+              </div>
+              <a className="lp-btn lp-btn-primary lp-btn-lg" href={`${pkiContact}`}>Book a free consultation</a>
+            </div>
+
+            <div className="pk-grid">
+              {[
+                ['search', 'Certificate inventory & risk review', 'Find every certificate across servers, cloud and devices, then rank what could cause an outage.'],
+                ['building', 'Private PKI design', 'Plan internal CAs, Microsoft CA migration and certificate profiles for users, devices and Wi-Fi.'],
+                ['bolt', 'Automation rollout', 'ACME, SCEP and EST rollouts so renewals happen without tickets as lifetimes shrink.'],
+                ['shield', 'Crypto-agility & PQC readiness', 'Map algorithms and keys in use and plan the move to post-quantum cryptography.']
+              ].map(([i, t, d]) => (
+                <article key={t} className="pk-card">
+                  <span className="pk-ico"><PkIcon n={i} /></span>
+                  <h3>{t}</h3>
+                  <p>{d}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="pk-tlm">
+              <div className="pk-tlm-copy">
+                <span className="pk-badge"><BrandLogo slug="digicert" name="DigiCert" height={16} /> Trust Lifecycle Manager</span>
+                <h3>We help you deploy DigiCert Trust Lifecycle Manager</h3>
+                <p>Trust Lifecycle Manager is DigiCert’s platform for CA-agnostic certificate management and PKI services, part of DigiCert ONE. It gives one place to discover, manage and automate public and private certificates.</p>
+                <ul className="pk-list">
+                  <li><b>Discovery:</b> scan networks and cloud, and import certificates from any CA into one inventory.</li>
+                  <li><b>Automation:</b> ACME, SCEP and EST plus agents and connectors for issuance, renewal and installation.</li>
+                  <li><b>Public and private PKI:</b> manage DigiCert public certificates and your own private CAs together.</li>
+                  <li><b>Integrations:</b> Microsoft CA, HSMs, ITSM, MDM and DevOps tools.</li>
+                </ul>
+                <div className="pk-steps">
+                  <span className="pk-steps-k">How we help</span>
+                  <ol>
+                    <li><b>Scope</b>Requirements and licensing</li>
+                    <li><b>Proof of concept</b>Your systems, real data</li>
+                    <li><b>Deploy</b>Connectors, discovery, policies</li>
+                    <li><b>Hand over</b>Runbooks and training</li>
+                  </ol>
+                </div>
+              </div>
+              <TlmCheck contact={email ? `mailto:${email}?subject=${encodeURIComponent('DigiCert Trust Lifecycle Manager consultation')}` : '#faq'} />
             </div>
           </div>
         </section>
