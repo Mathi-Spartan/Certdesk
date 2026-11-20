@@ -1011,3 +1011,30 @@
 .lp-foot { background: #1C1917; }
 .lp-nav .lp-nav-new { color: #C2410C; }
 .lp-nav .lp-nav-new::after { background: #EA580C; }
+
+/* ═════════ Footer (light, warm) ═════════ */
+.ft { position: relative; background: #fff; color: #44403C; font-size: 14px; border-top: 1px solid #EEE7E1; }
+.ft-edge { height: 6px; background: linear-gradient(90deg, #FDBA74 0%, #F97316 30%, #EA580C 60%, #C2410C 85%, #9A3412 100%); }
+.ft-in { display: grid; grid-template-columns: 1.7fr repeat(4, 1fr) .8fr; gap: 36px; padding-top: 56px; padding-bottom: 44px; }
+.ft-logo { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #1C1917; text-decoration: none; }
+.ft-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #F97316, #C2410C); box-shadow: 0 8px 18px -8px rgba(194,65,12,.6); }
+.ft-brand p { margin: 14px 0 0; max-width: 320px; color: #57534E; line-height: 1.55; }
+.ft-contact { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.ft-contact li { display: flex; align-items: center; gap: 10px; color: #44403C; }
+.ft-contact svg { flex: none; color: #EA580C; }
+.ft-contact a { color: #44403C; text-decoration: none; }
+.ft-contact a:hover { color: #C2410C; }
+.ft-k { display: block; margin-top: 24px; font-size: 12px; font-weight: 600; color: #78716C; }
+.ft-brands { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ft-ca { display: grid; place-items: center; height: 34px; padding: 0 10px; border-radius: 9px; background: #fff; border: 1px solid #EEE7E1; transition: border-color .15s, transform .15s; }
+.ft-ca:hover { border-color: #FDBA74; transform: translateY(-1px); }
+.ft-ca img { max-height: 16px; }
+.ft-col { display: flex; flex-direction: column; gap: 11px; }
+.ft-col h4 { margin: 4px 0 6px; font-size: 14.5px; font-weight: 700; color: #1C1917 !important; }
+.ft-col a { color: #57534E; text-decoration: none; width: fit-content; transition: color .15s; }
+.ft-col a:hover { color: #C2410C; }
+.ft-bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 20px; padding-bottom: 26px; border-top: 1px solid #F0EBE6; font-size: 13px; color: #78716C; }
+.ft-trust { display: inline-flex; align-items: center; gap: 8px; }
+.ft-trust svg { color: #EA580C; }
+@media (max-width: 1100px) { .ft-in { grid-template-columns: 1fr 1fr 1fr; } .ft-brand { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .ft-in { grid-template-columns: 1fr 1fr; } }
