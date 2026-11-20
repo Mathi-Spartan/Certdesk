@@ -1578,3 +1578,35 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D8; box-shadow: 0 8px
 .mc-more a{font-size:12.5px;font-weight:600;color:#52525B;text-decoration:none}
 .mc-more a:hover,.mc-more a.on{color:#4527B8;text-decoration:underline}
 @media (max-width:900px){.mc-tiles{grid-template-columns:1fr 1fr}}
+
+/* ───────── certificates table v4: one calm palette ─────────
+   Neutral by default; red is the only signal colour, used for overdue / urgent. */
+.ct-row td:first-child{box-shadow:none!important}
+.ct-row:hover{background:#FAFAFA}
+.ct-row.picked{background:#F4F4F5}
+.ct-track{display:none}
+.ct-life{gap:0}
+.ct-life b,.ct-life.amber b,.ct-life.green b{color:#18181B;font-weight:600}
+.ct-life.red b{color:#DC2626}
+.ct-life-d,.ct-sub-line,.ct-meta-t{color:#52525B}
+.ct-brand{color:#3F3F46!important;background:#F4F4F5!important;border-color:#E4E4E7!important;font-weight:600}
+.ct-brand::before{display:none}
+.ct-pill,.ct-pill.red,.ct-pill.amber,.ct-pill.green,.ct-pill.violet,.ct-pill.mute{background:transparent;border:0;padding:0;color:#18181B;font-weight:600;font-size:13px;gap:8px}
+.ct-pill i{width:8px;height:8px;background:#A1A1AA}
+.ct-pill.red i{background:#DC2626}
+.ct-pill.amber i{background:#D97706}
+.ct-pill.green i{background:#16A34A}
+.ct-pill.violet i{background:#71717A}
+.ct-act .cx3-btn.sm,.cx3-btn.ct-renew,.cx3-btn.ct-reissue,.ct-act .cx3-btn.primary{background:#18181B;border-color:#18181B;color:#fff;box-shadow:none}
+.ct-act .cx3-btn.sm:hover{background:#3F3F46;border-color:#3F3F46}
+.ct-act a.cx3-btn.sm:not(.ct-renew):not(.ct-reissue):not(.primary){background:#fff;color:#18181B;border-color:#E4E4E7}
+.ct-act a.cx3-btn.sm:not(.ct-renew):not(.ct-reissue):not(.primary):hover{background:#F4F4F5}
+.ct-card::before{display:none}
+.ct-sort.on{color:#18181B}
+/* tiles and banner follow the same rule */
+.mc-tile::before{background:#D4D4D8!important}
+.mc-tile.red::before{background:#DC2626!important}
+.mc-tile.on,.mc-tile.on.red,.mc-tile.on.amber,.mc-tile.on.green,.mc-tile.on.all{border-color:#18181B;box-shadow:0 0 0 3px #F4F4F5}
+.mc-alert{background:#fff;border-color:#E4E4E7;box-shadow:inset 3px 0 0 #DC2626}
+.mc-alert-ico{background:#DC2626}
+.mc-alert.ok{background:#fff;border-color:#E4E4E7;box-shadow:inset 3px 0 0 #16A34A}
