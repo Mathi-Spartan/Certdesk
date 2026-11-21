@@ -16,6 +16,7 @@ const I = {
   shield: <><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6z" /><path d="m9 12 2 2 4-4" /></>,
   swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />,
   building: <path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1" />,
+  chat: <><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></>,
   wallet: <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M16 15h2" /></>,
   tag: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
@@ -47,6 +48,7 @@ export default function CustomerNav({ counts = {}, partner = false, workspace = 
     items: [
       { href: '/partner', label: 'Customer workspaces', icon: 'building', on: path === '/partner' || path.startsWith('/partner/workspaces') },
       { href: '/partner/orders', label: 'All orders', icon: 'lock', on: path === '/partner/orders' },
+      { href: '/partner/support', label: 'Support inbox', icon: 'chat', on: path.startsWith('/partner/support'), n: counts.support, tone: 'red' },
       { href: '/partner/catalogue', label: 'Catalogue', icon: 'grid', on: path === '/partner/catalogue' },
       { href: '/partner/pricing', label: 'Customer prices', icon: 'tag', on: path === '/partner/pricing' },
       { href: '/partner/billing', label: 'Billing', icon: 'wallet', on: path === '/partner/billing' },

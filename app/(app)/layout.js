@@ -21,6 +21,14 @@ export default async function AppLayout({ children }) {
     );
     counts = { all: c.total, expiring: c.expiring, auto: c.auto, validation: c.validation, renewals: c.expiring };
   }
+  if (ctx.isAdmin && !ctx.workspaceId) {
+    try {
+      const s = await one(`select count(*)::int as n from console.assist_conversations where status = 'waiting' or (status = 'human' and unread_admin > 0)`);
+      counts = { support: s?.n || 0 };
+    } catch {
+      counts = {};
+    }
+  }
   const help = ctx.isAdmin ? null : helpHref(await supportEmail(), { subject: `Help with CertDesk · ${ctx.workspace?.name || ''}` });
   return (
     <CustomerShell user={ctx.user} workspace={ctx.workspaceId ? ctx.workspace : null} counts={counts} help={help} admin={ctx.isAdmin}>

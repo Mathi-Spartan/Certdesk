@@ -3,6 +3,7 @@ import Link from 'next/link';
 import CustomerNav, { Crumbs } from './CustomerNav';
 import { logout } from '@/app/actions/auth';
 import { exitWorkspace } from '@/app/actions/admin';
+import AssistWidget from './assist/AssistWidget';
 
 function initials(name) {
   return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
@@ -68,6 +69,7 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
         ) : null}
         <div className="cx3-main">{children}</div>
       </div>
+      {workspace ? <AssistWidget firstName={String(user.name || '').split(' ')[0]} /> : null}
     </div>
   );
 }
