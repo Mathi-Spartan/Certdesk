@@ -32,7 +32,7 @@ NODES.forEach((p, i) => {
 export default function HeroBackdrop() {
   return (
     <div className="hb" aria-hidden="true">
-      <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMin slice">
         <defs>
           <linearGradient id="hbCurtain" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity="0" />
@@ -42,16 +42,20 @@ export default function HeroBackdrop() {
           </linearGradient>
           <pattern id="hbRays" width="14" height="900" patternUnits="userSpaceOnUse">
             <rect width="14" height="900" fill="#000" />
-            <rect x="1" width="2" height="900" fill="#fff" opacity=".9" />
-            <rect x="6" width="1" height="900" fill="#fff" opacity=".5" />
-            <rect x="10" width="3" height="900" fill="#fff" opacity=".75" />
+            <rect x="1" width="2" height="900" fill="#fff" opacity=".55" />
+            <rect x="6" width="1" height="900" fill="#fff" opacity=".28" />
+            <rect x="10" width="3" height="900" fill="#fff" opacity=".42" />
           </pattern>
           <mask id="hbRayMask"><rect width="1600" height="900" fill="url(#hbRays)" /></mask>
-          <filter id="hbSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" /></filter>
+          <filter id="hbSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" /></filter>
           <filter id="hbGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40" /></filter>
           <radialGradient id="hbGlobe" cx="50%" cy="0%" r="60%">
             <stop offset="0" stopColor="#fff" stopOpacity=".10" />
             <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="hbPool" cx="28%" cy="48%" r="38%">
+            <stop offset="0" stopColor="#0A0A0A" stopOpacity=".72" />
+            <stop offset="1" stopColor="#0A0A0A" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="hbFade" x1="0" y1="0" x2="0" y2="1">
             <stop offset=".55" stopColor="#0A0A0A" stopOpacity="0" />
@@ -95,6 +99,7 @@ export default function HeroBackdrop() {
           ))}
         </g>
 
+        <rect width="1600" height="900" fill="url(#hbPool)" />
         <rect width="1600" height="900" fill="url(#hbFade)" />
       </svg>
     </div>

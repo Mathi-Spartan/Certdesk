@@ -1644,3 +1644,48 @@ h1, h2, h3, .cx3-head h1, .cc-page-head h1, .mc-head h1 { font-family: var(--fon
 .cx3 .btn.primary, .cx3-btn.primary, .btn.primary { border-radius: 999px; }
 .cx3-dlall { width: 100%; height: 44px; gap: 8px; font-weight: 600; }
 .cx3-dlsub { margin: 12px 0 8px; font-size: 13px; color: #737373; }
+
+/* ═════════ Console backdrop: soft wash + dot field at the top of every page ═════════ */
+.cx3-main { position: relative; isolation: isolate; }
+.cx3-main::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 520px; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 70% at 18% 0%, rgba(255,255,255,.95), transparent 70%),
+    radial-gradient(ellipse 45% 60% at 85% 0%, rgba(10,10,10,.045), transparent 70%),
+    radial-gradient(rgba(10,10,10,.11) 1px, transparent 1.3px) 0 0 / 20px 20px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); }
+
+/* filter tabs scroll sideways on phones instead of wrapping */
+@media (max-width: 760px) {
+  .mc-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .mc-seg::-webkit-scrollbar { display: none; }
+  .mc-seg a { white-space: nowrap; flex: none; }
+}
+
+/* ═════════ Certificates table → stacked rows on phones ═════════ */
+@media (max-width: 760px) {
+  .ct-wrap { overflow: visible !important; }
+  .ct-table, .ct-table tbody { display: block; width: 100%; }
+  .ct-table colgroup, .ct-table thead { display: none; }
+  .ct-table tbody tr.ct-row {
+    display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 8px;
+    grid-template-areas: "chk name act" ". status status" ". life life" ". sub sub";
+    padding: 14px 14px 14px 12px; border-bottom: 1px solid #F0F0F0; box-shadow: inset 3px 0 0 var(--strip, transparent);
+  }
+  .ct-table tbody tr.ct-row:last-child { border-bottom: 0; }
+  .ct-table tbody td { display: block; padding: 0 !important; border: 0 !important; box-shadow: none !important; min-width: 0; }
+  .ct-table tbody td:nth-child(1) { grid-area: chk; padding-top: 2px !important; }
+  .ct-table tbody td.ct-name { grid-area: name; min-width: 0; }
+  .ct-table tbody td:nth-child(3) { grid-area: status; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .ct-table tbody td:nth-child(4) { grid-area: life; }
+  .ct-table tbody td:nth-child(5) { grid-area: sub; }
+  .ct-table tbody td.ct-act { grid-area: act; align-self: start; }
+  .ct-table tbody td:nth-child(n+6):not(.ct-act) { display: none; }
+  .ct-table tbody td:nth-child(4)::before { content: "Certificate"; }
+  .ct-table tbody td:nth-child(5)::before { content: "Subscription"; }
+  .ct-table tbody td:nth-child(4)::before, .ct-table tbody td:nth-child(5)::before { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #8A8A8A; }
+  .ct-table tbody td:nth-child(4), .ct-table tbody td:nth-child(5) { background: #FAFAFA; border-radius: 10px; padding: 9px 11px !important; }
+  .ct-cn { font-size: 15px; font-weight: 600; white-space: normal; word-break: break-word; }
+  .ct-sub-line { font-size: 12px; }
+  .ct-pop { display: none !important; }
+  .ct-name-in { gap: 0; }
+}

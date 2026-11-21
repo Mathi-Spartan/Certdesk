@@ -1189,3 +1189,23 @@
 .hv-in, .hv > .lp-wrap { position: relative; z-index: 1; }
 .hv-title { font-weight: 600 !important; letter-spacing: -0.032em !important; line-height: 1.06; }
 @media (prefers-reduced-motion: reduce) { .hb-aur, .hb-node circle { animation: none !important; } }
+
+/* ═════════ Polish: backdrop on small screens, header, hero window rows ═════════ */
+@media (max-width: 760px) {
+  .hb { opacity: .55; }
+  .hb svg { height: 70%; }
+  .lp-brand-tag { display: none; }
+  .hv-in { padding-top: 48px; gap: 36px; }
+  .hv-title { font-size: 40px; }
+  .hv-cta { gap: 10px; }
+  .hv-btn { height: 48px; padding: 0 18px; font-size: 15px; }
+  .hv-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "cn act" "st left"; row-gap: 6px; }
+  .hv-cn { grid-area: cn; } .hv-act { grid-area: act; }
+  .hv-st { grid-area: st; display: inline-flex !important; }
+  .hv-left { grid-area: left; display: block !important; justify-self: end; }
+}
+/* landing: faint dot field behind alternate sections */
+.lp-alt, .hx-sec { position: relative; isolation: isolate; }
+.lp-alt::before, .hx-sec::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(rgba(10,10,10,.10) 1px, transparent 1.3px); background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 0%, #000 0%, transparent 75%); mask-image: radial-gradient(ellipse 60% 55% at 50% 0%, #000 0%, transparent 75%); }
