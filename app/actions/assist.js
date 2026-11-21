@@ -48,7 +48,7 @@ export async function returnToBot(formData) {
   const id = String(formData.get('id'));
   await conv(id);
   await q(`update console.assist_conversations set status = 'bot', unread_admin = 0 where id = $1`, [id]);
-  await system(id, 'Arivu is back. Ask anything, or tap Talk to support again if you need us.');
+  await system(id, 'Nunmathi is back. Ask anything, or tap Talk to support again if you need us.');
   revalidatePath(`/partner/support/${id}`);
 }
 

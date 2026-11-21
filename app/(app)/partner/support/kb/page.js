@@ -29,7 +29,7 @@ export default async function KnowledgeBase({ searchParams }) {
       <main className="page">
         <div>
           <h1 className="title">Knowledge base</h1>
-          <p className="sub">Approved answers Arivu gives word for word. It finds them by title, keywords and text, so add the words customers actually type.</p>
+          <p className="sub">Approved answers Nunmathi gives word for word. It finds them by title, keywords and text, so add the words customers actually type.</p>
         </div>
         <FlashFromSearch searchParams={sp} />
         {!ready ? <div className="cx3-alert amber"><div>Support chat isn’t set up yet. The tables in <code>db/assist.sql</code> need to be created once.</div></div> : null}

@@ -179,7 +179,7 @@ export default function AssistWidget({ firstName }) {
 
   return (
     <>
-      <button type="button" className={`as-fab ${open ? 'on' : ''}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="as-panel" aria-label={open ? 'Close Arivu, the support assistant' : 'Open Arivu, the support assistant'}>
+      <button type="button" className={`as-fab ${open ? 'on' : ''}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="as-panel" aria-label={open ? 'Close Nunmathi, the support assistant' : 'Open Nunmathi, the support assistant'}>
         {open ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         ) : (
@@ -194,7 +194,7 @@ export default function AssistWidget({ firstName }) {
             <span className="as-avatar" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z" /><path d="m9 12 2 2 4-4" /></svg>
             </span>
-            <div className="as-title"><strong>Arivu <span lang="ta">அறிவு</span></strong><small className={`as-st ${status[0]}`}><i />{status[1]}</small></div>
+            <div className="as-title"><strong>Nunmathi <span lang="ta">நுண்மதி</span></strong><small className={`as-st ${status[0]}`}><i />{status[1]}</small></div>
             <button type="button" className="as-hbtn" onClick={() => setConfirmClear(true)} title="Clear chat" aria-label="Clear chat" disabled={!msgs.length}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
             </button>
@@ -213,7 +213,7 @@ export default function AssistWidget({ firstName }) {
             {!msgs.length ? (
               <div className="as-msg bot">
                 <div className="as-bubble">
-                  <Md text={`Hi${firstName ? ` ${firstName}` : ''}! I’m **Arivu** (அறிவு), your CertDesk assistant. I check your certificates live, explain validation and get you the right files. Ask anything, type a domain name, or tap a question:`} />
+                  <Md text={`Hi${firstName ? ` ${firstName}` : ''}! I’m **Nunmathi** (நுண்மதி), your CertDesk assistant. I check your certificates live, explain validation and get you the right files. Ask anything, type a domain name, or tap a question:`} />
                 </div>
                 <div className="as-btns">{QUICK.map(([l, t]) => <button key={l} type="button" className="as-btn" onClick={() => send(t)}>{l}</button>)}</div>
               </div>

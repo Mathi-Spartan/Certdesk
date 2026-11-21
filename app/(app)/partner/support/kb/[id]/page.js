@@ -35,7 +35,7 @@ export default async function EditArticle({ params, searchParams }) {
           </div>
           <label className="cx3-field"><span>Answer</span><textarea name="body" defaultValue={a.body} required rows={16} className="mono" /></label>
           <p className="cx3-muted" style={{ margin: 0 }}>Formatting: <code>**bold**</code>, <code>`code`</code>, lines starting with <code>- </code> or <code>1. </code> for lists, a blank line between paragraphs.</p>
-          <label className="kb-check"><input type="checkbox" name="published" defaultChecked={a.published} /> Published (Arivu can use it)</label>
+          <label className="kb-check"><input type="checkbox" name="published" defaultChecked={a.published} /> Published (Nunmathi can use it)</label>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="cx3-btn primary" type="submit">Save</button>
             <Link className="cx3-btn" href="/partner/support/kb">Cancel</Link>
