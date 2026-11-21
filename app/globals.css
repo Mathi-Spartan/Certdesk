@@ -1706,3 +1706,12 @@ h1, h2, h3, .cx3-head h1, .cc-page-head h1, .mc-head h1 { font-family: var(--fon
   .cx3-bar-actions { margin-left: auto; }
   .cx3-bar .cx3-out { display: none; }
 }
+@media (max-width: 900px) {
+  .cx3-side { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .cx3-ws { grid-column: 1; min-width: 0; flex: none; }
+  .cx3-ws-text { min-width: 0; }
+  .cx3-ws-text strong, .cx3-ws-text small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cx3-out-m { grid-column: 2; align-self: center; }
+  .cx3-jump { grid-column: 1 / -1; flex: none; }
+  .cx3-side > nav, .cx3-nav { grid-column: 1 / -1; }
+}
