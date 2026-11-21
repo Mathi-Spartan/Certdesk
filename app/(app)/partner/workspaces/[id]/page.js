@@ -90,7 +90,7 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
                   <tbody>
                     {orders.map((o) => (
                       <tr key={o.id}>
-                        <td className="mono">{o.common_name || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-geist)' }}>{o.product_name}</div></td>
+                        <td className="mono">{o.common_name || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-sans)' }}>{o.product_name}</div></td>
                         <td className="mono">{o.gg_order_id}</td>
                         <td><StatusBadge order={o} /></td>
                         <td>{fmtDate(o.valid_till)}</td>
@@ -130,7 +130,7 @@ export default async function WorkspaceAdmin({ params, searchParams }) {
                       const st = subDisplay(s);
                       return (
                         <tr key={s.id}>
-                          <td className="mono">{s.primary_domain || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-geist)' }}>{s.product_name}</div></td>
+                          <td className="mono">{s.primary_domain || '—'}<div className="small muted" style={{ fontFamily: 'var(--font-sans)' }}>{s.product_name}</div></td>
                           <td>{KIND_LABEL[s.kind]}</td>
                           <td className="mono">{s.item_id}</td>
                           <td><span className={`badge tone-${st.tone}`}>{st.label}</span></td>

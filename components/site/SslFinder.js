@@ -125,7 +125,7 @@ export default function SslFinder({ products, orderHref, signedIn, contact }) {
           <div className="sf-mini">
             <div className="sf-mini-bar"><i /><i /><i /><span><b>🔒</b> https://example.com</span></div>
             <div className="sf-mini-body">
-              <svg viewBox="0 0 100 100" className="sf-mini-seal"><defs><linearGradient id="sfs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FED7AA" /><stop offset="1" stopColor="#C2410C" /></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#sfs)" /><circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,.55)" strokeDasharray="2 3" /><path d="m36 51 9 9 19-20" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <svg viewBox="0 0 100 100" className="sf-mini-seal"><defs><linearGradient id="sfs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#DEDEDE" /><stop offset="1" stopColor="#0A0A0A" /></linearGradient></defs><circle cx="50" cy="50" r="44" fill="url(#sfs)" /><circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,.55)" strokeDasharray="2 3" /><path d="m36 51 9 9 19-20" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               <div><b>Certificate valid</b><small>Matched to your answers</small></div>
             </div>
           </div>

@@ -63,7 +63,7 @@ export default async function CertificateDetail({ params, searchParams }) {
   const days = issued ? life.certDays : null;
   const lifetime = issued && order.valid_from && order.valid_till ? Math.round((new Date(order.valid_till) - new Date(order.valid_from)) / DAY) : null;
   const ringPct = lifetime && days !== null ? Math.max(0, Math.min(1, days / lifetime)) : 0;
-  const ringTone = days === null ? '#A1A1AA' : days <= 14 ? '#DC2626' : days <= 30 ? '#F59E0B' : 'var(--cx-accent)';
+  const ringTone = days === null ? '#A2A2A2' : days <= 14 ? '#DC2626' : days <= 30 ? '#F59E0B' : 'var(--cx-accent)';
   const pillTone = item.group === 'action' ? (days !== null && days <= 14 ? 'red' : 'action') : item.group;
   const pillText = issued && days !== null ? (days < 0 ? `Expired ${-days} days ago` : `Expires in ${days} days`) : item.detail?.label || item.status.label;
 
@@ -194,7 +194,7 @@ export default async function CertificateDetail({ params, searchParams }) {
             <section className="cx3-card cx3-pad cx3-life-card">
               <div className="cx3-ring sm">
                 <svg width="88" height="88" viewBox="0 0 88 88" role="img" aria-label={days === null ? 'Not issued' : `${days} days left`}>
-                  <circle cx="44" cy="44" r="37" fill="none" stroke="#F4F4F5" strokeWidth="9" />
+                  <circle cx="44" cy="44" r="37" fill="none" stroke="#F4F4F4" strokeWidth="9" />
                   <circle cx="44" cy="44" r="37" fill="none" stroke={ringTone} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${ringPct * 232.5} 232.5`} transform="rotate(-90 44 44)" />
                 </svg>
                 <div><b style={{ color: days !== null && days <= 14 ? '#B91C1C' : undefined }}>{days === null ? '—' : Math.max(0, days)}</b><small>{days === null ? 'not issued' : 'days left'}</small></div>

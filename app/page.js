@@ -103,6 +103,7 @@ export default async function Landing({ searchParams }) {
       <main id="main">
         <section className="hx hv">
           <div className="hx-bg" aria-hidden="true" />
+          <div className="hv-aurora" aria-hidden="true"><span /><span /></div>
                     <div className="lp-wrap hv-in">
             <div className="hv-text">
               <p className="hv-eyebrow"><i />SSL &amp; code signing for teams</p>

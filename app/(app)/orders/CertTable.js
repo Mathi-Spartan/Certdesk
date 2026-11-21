@@ -16,8 +16,8 @@ const ago = (d) => {
   return `${Math.round(m / 1440)} d ago`;
 };
 const BRAND_NAME = { digicert: 'DigiCert', sectigo: 'Sectigo', comodo: 'Comodo', geotrust: 'GeoTrust', thawte: 'Thawte', rapidssl: 'RapidSSL', gogetssl: 'GoGetSSL' };
-const BRAND_COLOR = { digicert: '#0174C3', sectigo: '#0F766E', comodo: '#B91C1C', geotrust: '#1E40AF', thawte: '#BE123C', rapidssl: '#C2410C', gogetssl: '#15803D' };
-const Brand = ({ slug }) => <span className="ct-brand" style={{ '--bc': BRAND_COLOR[slug] || '#3F3F46' }}>{BRAND_NAME[slug] || 'SSL'}</span>;
+const BRAND_COLOR = { digicert: '#0A0A0A', sectigo: '#565656', comodo: '#B91C1C', geotrust: '#424242', thawte: '#BE123C', rapidssl: '#0A0A0A', gogetssl: '#15803D' };
+const Brand = ({ slug }) => <span className="ct-brand" style={{ '--bc': BRAND_COLOR[slug] || '#404040' }}>{BRAND_NAME[slug] || 'SSL'}</span>;
 const stripBrand = (name, slug) => String(name || '').replace(new RegExp(`^${BRAND_NAME[slug] || ''}\\s*`, 'i'), '') || name;
 const tone = (days, warn = 30, hot = 14) => (days == null ? 'mute' : days < 0 ? 'red' : days <= hot ? 'red' : days <= warn ? 'amber' : 'green');
 const urgency = (r) => (r.group === 'action' ? 0 : r.group === 'progress' ? 1 : r.group === 'ok' ? 2 : 3);

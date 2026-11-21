@@ -56,11 +56,11 @@ export default async function ProviderApi({ searchParams }) {
           <section className="dark" style={{ flex: '2 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="between"><h2 style={{ margin: 0, fontSize: 16, color: '#fff' }}>Last 24 hours</h2><span className="eyebrow">SERVER-SIDE ONLY</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 }}>
-              <div><div style={{ fontSize: 28, fontWeight: 600 }}>{stats.calls}</div><div className="small" style={{ color: '#A1A1AA' }}>API calls</div></div>
-              <div><div style={{ fontSize: 28, fontWeight: 600, color: stats.failed ? '#FCA5A5' : '#86EFAC' }}>{stats.failed}</div><div className="small" style={{ color: '#A1A1AA' }}>Failed</div></div>
-              <div><div style={{ fontSize: 28, fontWeight: 600 }}>{stats.avg_ms ?? '—'}<span style={{ fontSize: 14 }}> ms</span></div><div className="small" style={{ color: '#A1A1AA' }}>Average time</div></div>
+              <div><div style={{ fontSize: 28, fontWeight: 600 }}>{stats.calls}</div><div className="small" style={{ color: '#A2A2A2' }}>API calls</div></div>
+              <div><div style={{ fontSize: 28, fontWeight: 600, color: stats.failed ? '#FCA5A5' : '#86EFAC' }}>{stats.failed}</div><div className="small" style={{ color: '#A2A2A2' }}>Failed</div></div>
+              <div><div style={{ fontSize: 28, fontWeight: 600 }}>{stats.avg_ms ?? '—'}<span style={{ fontSize: 14 }}> ms</span></div><div className="small" style={{ color: '#A2A2A2' }}>Average time</div></div>
             </div>
-            <div className="small" style={{ color: '#A1A1AA' }}>Daily background sync: {cron ? `${timeAgo(cron.updated_at)} · ${cron.value.synced ?? 0} orders checked` : 'not run yet'}</div>
+            <div className="small" style={{ color: '#A2A2A2' }}>Daily background sync: {cron ? `${timeAgo(cron.updated_at)} · ${cron.value.synced ?? 0} orders checked` : 'not run yet'}</div>
           </section>
         </div>
         <section className="card">

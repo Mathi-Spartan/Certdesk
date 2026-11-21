@@ -8,7 +8,7 @@ export default function CopyButton({ text, label = 'Copy', dark = false }) {
     <button
       type="button"
       className="btn sm"
-      style={dark ? { background: '#27272A', color: '#E4E4E7', borderColor: '#3F3F46' } : undefined}
+      style={dark ? { background: '#272727', color: '#E4E4E4', borderColor: '#404040' } : undefined}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text || '');

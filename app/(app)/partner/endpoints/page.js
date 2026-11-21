@@ -30,10 +30,10 @@ export default async function Endpoints() {
         </div>
         <section className="dark" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div className="eyebrow">AUTHENTICATION</div>
-          <pre className="code" style={{ margin: 0, background: '#18181B', whiteSpace: 'pre-wrap' }}>
+          <pre className="code" style={{ margin: 0, background: '#0A0A0A', whiteSpace: 'pre-wrap' }}>
             <span className="k">Authorization:</span> GGS {'<partner code>'}:{'<API password>'}{'\n'}<span className="k">Accept:</span> application/json{'\n'}<span className="k">Content-Type:</span> application/json
           </pre>
-          <span className="small" style={{ color: '#A1A1AA' }}>
+          <span className="small" style={{ color: '#A2A2A2' }}>
             HTTP 400 and above is an error with a <span className="mono">message</span> field. 204 is a success with no body.
             {ctx.isAdmin ? (v2Configured() ? ' Credentials are set in Vercel.' : ' Add GOGETSSL_PARTNER_CODE in Vercel to enable API v2.') : ''}
           </span>

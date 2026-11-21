@@ -33,19 +33,19 @@ function AcmeCard({ sub }) {
         </div>
         {a.kid ? <span className="badge tone-green">Ready</span> : <span className="badge tone-amber">Waiting for GoGetSSL</span>}
       </div>
-      <div style={row}><span style={{ color: '#A1A1AA' }}>Directory URL</span><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="mono" style={{ flex: 1, overflowWrap: 'anywhere' }}>{a.server_url || '—'}</span>{a.server_url ? <CopyButton text={a.server_url} dark /> : null}</span></div>
-      <div style={row}><span style={{ color: '#A1A1AA' }}>EAB key ID</span><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="mono" style={{ flex: 1, overflowWrap: 'anywhere' }}>{a.kid || '—'}</span>{a.kid ? <CopyButton text={a.kid} dark /> : null}</span></div>
-      <div style={row}><span style={{ color: '#A1A1AA' }}>EAB HMAC key</span><SecretValue value={a.hmac} label="EAB HMAC key" /></div>
-      {a.id ? <div style={row}><span style={{ color: '#A1A1AA' }}>Account ID</span><span className="mono">{a.id}</span></div> : null}
+      <div style={row}><span style={{ color: '#A2A2A2' }}>Directory URL</span><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="mono" style={{ flex: 1, overflowWrap: 'anywhere' }}>{a.server_url || '—'}</span>{a.server_url ? <CopyButton text={a.server_url} dark /> : null}</span></div>
+      <div style={row}><span style={{ color: '#A2A2A2' }}>EAB key ID</span><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="mono" style={{ flex: 1, overflowWrap: 'anywhere' }}>{a.kid || '—'}</span>{a.kid ? <CopyButton text={a.kid} dark /> : null}</span></div>
+      <div style={row}><span style={{ color: '#A2A2A2' }}>EAB HMAC key</span><SecretValue value={a.hmac} label="EAB HMAC key" /></div>
+      {a.id ? <div style={row}><span style={{ color: '#A2A2A2' }}>Account ID</span><span className="mono">{a.id}</span></div> : null}
       {a.kid ? (
         <details>
           <summary style={{ cursor: 'pointer', color: '#86EFAC', fontSize: 13 }}>Set up Certbot or acme.sh</summary>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-            <div className="between"><span className="small" style={{ color: '#A1A1AA' }}>Certbot</span><CopyButton text={certbot.replace(/\\\n\s*/g, '')} dark /></div>
-            <pre className="code" style={{ margin: 0, background: '#18181B', whiteSpace: 'pre-wrap' }}>{certbot}</pre>
-            <div className="between"><span className="small" style={{ color: '#A1A1AA' }}>acme.sh</span><CopyButton text={acmesh} dark /></div>
-            <pre className="code" style={{ margin: 0, background: '#18181B', whiteSpace: 'pre-wrap' }}>{acmesh}</pre>
-            <span className="small" style={{ color: '#A1A1AA' }}>The HMAC key is a secret. Anyone holding it can issue certificates for the domains in this subscription.</span>
+            <div className="between"><span className="small" style={{ color: '#A2A2A2' }}>Certbot</span><CopyButton text={certbot.replace(/\\\n\s*/g, '')} dark /></div>
+            <pre className="code" style={{ margin: 0, background: '#0A0A0A', whiteSpace: 'pre-wrap' }}>{certbot}</pre>
+            <div className="between"><span className="small" style={{ color: '#A2A2A2' }}>acme.sh</span><CopyButton text={acmesh} dark /></div>
+            <pre className="code" style={{ margin: 0, background: '#0A0A0A', whiteSpace: 'pre-wrap' }}>{acmesh}</pre>
+            <span className="small" style={{ color: '#A2A2A2' }}>The HMAC key is a secret. Anyone holding it can issue certificates for the domains in this subscription.</span>
           </div>
         </details>
       ) : null}
@@ -81,7 +81,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
     action: { icon: 'alert', bg: '#FEF2F2', fg: 'var(--red-strong)', border: '#FECACA' },
     progress: { icon: 'clock', bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
     ok: { icon: 'tick', bg: '#F0FDF4', fg: '#15803D', border: '#BBF7D0' },
-    ended: { icon: 'info', bg: '#F4F4F5', fg: 'var(--ink-2)', border: 'var(--line)' }
+    ended: { icon: 'info', bg: '#F4F4F4', fg: 'var(--ink-2)', border: 'var(--line)' }
   }[item.group];
   const needsAgent = !isCaas && !autoInstallDone(ai) && active;
   const needsAcmeSetup = (isCaas || method === 'acme') && sub.account?.kid && active;
