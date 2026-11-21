@@ -1176,3 +1176,16 @@
 .hv-win { border-radius: 16px; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 40px 90px -30px rgba(0,0,0,.9); }
 .hv-new, .hv-act { border-radius: 999px; }
 @media (prefers-reduced-motion: reduce) { .hv-aurora span { animation: none; } }
+
+/* hero backdrop */
+.hv .hx-bg::before { display: none; }
+.hb { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.hb svg { width: 100%; height: 100%; display: block; }
+.hb-aur { transform-box: fill-box; transform-origin: center; animation: hbDrift 22s ease-in-out infinite alternate; }
+.hb-aur.a2 { animation-duration: 30s; animation-direction: alternate-reverse; }
+@keyframes hbDrift { from { transform: translateX(-2%) skewX(-2deg); opacity: .85; } to { transform: translateX(2%) skewX(2deg); opacity: 1; } }
+.hb-node.big circle:last-child { animation: hbPulse 3.2s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes hbPulse { 50% { opacity: .35; } }
+.hv-in, .hv > .lp-wrap { position: relative; z-index: 1; }
+.hv-title { font-weight: 600 !important; letter-spacing: -0.032em !important; line-height: 1.06; }
+@media (prefers-reduced-motion: reduce) { .hb-aur, .hb-node circle { animation: none !important; } }

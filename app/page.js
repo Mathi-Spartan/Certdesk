@@ -1,3 +1,4 @@
+import HeroBackdrop from '@/components/site/HeroBackdrop';
 import Link from 'next/link';
 import { getContext } from '@/lib/auth';
 import { q } from '@/lib/db';
@@ -103,7 +104,7 @@ export default async function Landing({ searchParams }) {
       <main id="main">
         <section className="hx hv">
           <div className="hx-bg" aria-hidden="true" />
-          <div className="hv-aurora" aria-hidden="true"><span /><span /></div>
+          <HeroBackdrop />
                     <div className="lp-wrap hv-in">
             <div className="hv-text">
               <p className="hv-eyebrow"><i />SSL &amp; code signing for teams</p>
