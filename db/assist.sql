@@ -33,6 +33,9 @@ create table if not exists console.assist_messages (
 create index if not exists assist_msg_conv on console.assist_messages (conversation_id, id);
 create index if not exists assist_msg_unmatched on console.assist_messages (created_at desc) where matched = false;
 
+-- array_to_string is not immutable, so a generated column needs this wrapper.
+create or replace function console.assist_kw(text[]) returns text language sql immutable parallel safe as $$ select coalesce(array_to_string($1, ' '), '') $$;
+
 create table if not exists console.assist_articles (
   id serial primary key,
   slug text unique not null,
@@ -46,9 +49,9 @@ create table if not exists console.assist_articles (
   unhelpful int not null default 0,
   updated_at timestamptz not null default now(),
   search tsvector generated always as (
-    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-    setweight(to_tsvector('english', array_to_string(keywords, ' ')), 'A') ||
-    setweight(to_tsvector('english', coalesce(body, '')), 'C')
+    setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('english'::regconfig, console.assist_kw(keywords)), 'A') ||
+    setweight(to_tsvector('english'::regconfig, coalesce(body, '')), 'C')
   ) stored
 );
 create index if not exists assist_articles_search on console.assist_articles using gin (search);
