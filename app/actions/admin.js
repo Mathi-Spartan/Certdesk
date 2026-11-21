@@ -164,3 +164,17 @@ export async function saveWorkspaceProducts(formData) {
   revalidatePath(`/partner/workspaces/${ws}/products`);
   redirect(`/partner/workspaces/${ws}/products?ok=${encodeURIComponent(`${known.length} product${known.length === 1 ? '' : 's'} available to order for this customer`)}`);
 }
+
+/** Master account: low-balance alert threshold (in the account currency). */
+export async function saveBillingSettings(formData) {
+  await requireAdmin();
+  const raw = String(formData.get('threshold') || '').trim();
+  const threshold = raw === '' ? null : Number(raw);
+  if (threshold !== null && !(threshold >= 0 && threshold < 1e7)) redirect('/partner/billing?err=' + encodeURIComponent('Enter a valid amount'));
+  await q(
+    `insert into console.kv (key, value, updated_at) values ('billing_settings', $1, now())
+     on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [JSON.stringify({ threshold })]
+  );
+  redirect('/partner/billing?ok=' + encodeURIComponent(threshold === null ? 'Low-balance alert turned off' : `You will be alerted below ${threshold}`));
+}

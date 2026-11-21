@@ -5,6 +5,7 @@ import * as gg from '@/lib/gogetssl';
 import { computeInsights } from '@/lib/insights';
 import { openWorkspace, createWorkspace } from '@/app/actions/admin';
 import TopBar from '@/components/TopBar';
+import LowBalance from '@/components/console/LowBalance';
 import { Kpi, Empty, FlashFromSearch } from '@/components/ui';
 
 export const metadata = { title: 'Customer workspaces · CertDesk' };
@@ -38,6 +39,7 @@ export default async function Partner({ searchParams }) {
           <p className="sub">Create a workspace for each customer, add their logins, assign existing orders, or open a workspace to order for them.</p>
         </div>
         <FlashFromSearch searchParams={sp} />
+        <LowBalance />
         <div className="kpis">
           <Kpi label="Workspaces" value={workspaces.length} icon="building" />
           <Kpi label="Certificates managed" value={all.live.length} icon="lock" />

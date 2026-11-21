@@ -2,14 +2,15 @@ import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
 import Link from 'next/link';
 import { getOrderForWorkspace, subscriptionOf, daysLeft } from '@/lib/orders';
-import { fmtDate } from '@/components/ui';
+import { fmtDate, FlashFromSearch } from '@/components/ui';
 import TopBar from '@/components/TopBar';
 import ReissueForm from './ReissueForm';
 
 export const metadata = { title: 'Reissue · CertDesk' };
 
-export default async function ReissuePage({ params }) {
+export default async function ReissuePage({ params, searchParams }) {
   const { id } = await params;
+  const sp = await searchParams;
   const ctx = await requireWorkspace();
   const order = await getOrderForWorkspace(id, ctx.workspaceId);
   if (!order) notFound();
@@ -19,6 +20,7 @@ export default async function ReissuePage({ params }) {
     <>
       {ctx.isAdmin ? <TopBar crumbs={[{ label: 'Certificates', href: '/orders' }, { label: order.common_name, href: `/certificates/${order.id}` }, { label: 'Reissue' }]} /> : null}
       <main className="page" style={{ maxWidth: 860 }}>
+        <FlashFromSearch searchParams={sp} />
         <div>
           <h1 className="title">Reissue {order.common_name}</h1>
           <p className="sub">Get a new certificate on the same order, at no cost. Use this when the current certificate is expiring or expired while the subscription is still running, or when the key was lost or exposed.</p>
@@ -32,7 +34,7 @@ export default async function ReissuePage({ params }) {
             </div>
           </div>
         ) : null}
-        {sub?.ended ? null : <ReissueForm orderId={order.id} commonName={order.common_name} sans={order.sans || []} wildcard={String(order.common_name || '').startsWith('*.')} />}
+        {sub?.ended ? null : <ReissueForm orderId={order.id} commonName={order.common_name} sans={order.sans || []} wildcard={String(order.common_name || '').startsWith('*.')} multi={(order.sans || []).length > 0 || /multi|ucc|\bsan\b|flex/i.test(order.product_name || '')} />}
       </main>
     </>
   );

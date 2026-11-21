@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/Icon';
 import CsrStep from '@/components/CsrStep';
-import { preflight, approverEmails, placeOrder } from '@/app/actions/orders';
+import { preflight, approverEmails, placeOrder, productAgreement } from '@/app/actions/orders';
 
 const STEPS = ['Domain', 'Certificate', 'Key', 'Validation', 'Review'];
 const LEVELS = {
@@ -44,6 +44,8 @@ export default function BuyWizard({ products, renewal, defaults }) {
   const [moreDomains, setMoreDomains] = useState(!!renewal?.sans?.length);
   const [level, setLevel] = useState(null);
   const [showContact, setShowContact] = useState(false);
+  const [terms, setTerms] = useState({ id: null, text: '', loading: false });
+  const [agreed, setAgreed] = useState(false);
   const [productId, setProductId] = useState(renewal?.productId && products.some((p) => p.id === renewal.productId) ? renewal.productId : products[0].id);
   const [cn, setCn] = useState(renewal?.commonName || '');
   const [sansText, setSansText] = useState((renewal?.sans || []).join('\n'));
@@ -107,7 +109,19 @@ export default function BuyWizard({ products, renewal, defaults }) {
     setEmails(r.emails || []);
   }
 
+  useEffect(() => {
+    if (step !== 4 || !product?.id || terms.id === product.id) return;
+    let live = true;
+    setTerms({ id: product.id, text: '', loading: true });
+    setAgreed(false);
+    productAgreement(product.id).then((r) => { if (live) setTerms({ id: product.id, text: r?.text || '', loading: false }); });
+    return () => { live = false; };
+  }, [step, product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const needsAgree = !!terms.text;
+
   async function submit() {
+    if (needsAgree && !agreed) { setErr('Please accept the subscriber agreement first.'); return; }
     setBusy(true);
     setErr(null);
     const r = await placeOrder({
@@ -310,6 +324,19 @@ export default function BuyWizard({ products, renewal, defaults }) {
             </>
           ) : null}
 
+          {step === 4 && (terms.loading || terms.text) ? (
+            <div className="bw-terms">
+              {terms.loading ? <span className="small muted">Loading the subscriber agreement…</span> : (
+                <>
+                  <details>
+                    <summary>Subscriber agreement for {product.name}</summary>
+                    <div className="bw-terms-text">{terms.text}</div>
+                  </details>
+                  <label className="bw-agree"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} /> I have read and accept the subscriber agreement</label>
+                </>
+              )}
+            </div>
+          ) : null}
           {err ? <div role="alert" className="alert red"><Icon name="alert" />{err}</div> : null}
         </div>
 
@@ -319,7 +346,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
           {step < STEPS.length - 1 ? (
             <button type="button" className="btn primary" onClick={() => { setErr(null); if (step === 0) { if (!checks) runPreflight(); if (!productFits) { const first = fitting.find((p) => p.validation === activeLevel) || fitting[0]; if (first) pickProduct(first); } } setStep(step + 1); }} disabled={!canNext()}>Continue</button>
           ) : (
-            <button type="button" className="btn dark-btn" onClick={submit} disabled={busy}>{busy ? 'Placing order…' : renewal ? 'Place renewal order' : 'Place order'}</button>
+            <button type="button" className="btn dark-btn" onClick={submit} disabled={busy || terms.loading || (needsAgree && !agreed)}>{busy ? 'Placing order…' : renewal ? 'Place renewal order' : 'Place order'}</button>
           )}
         </div>
       </section>

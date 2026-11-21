@@ -1,6 +1,6 @@
 import CopyButton from './CopyButton';
 import Icon from './Icon';
-import { checkNow, changeDcvMethod, resendEmail, revalidateDomain } from '@/app/actions/orders';
+import { checkNow, changeDcvMethod, resendEmail, revalidateDomain, changeDomainDcv } from '@/app/actions/orders';
 import { timeAgo } from './ui';
 import SubmitButton from './SubmitButton';
 
@@ -45,10 +45,16 @@ function Record({ item }) {
   return <div className="small muted">Validation details will appear here once GoGetSSL provides them. Use “Check now” in a minute.</div>;
 }
 
+function emailsFor(domain) {
+  const base = String(domain || '').replace(/^\*\./, '').replace(/^www\./, '');
+  return ['admin', 'administrator', 'hostmaster', 'postmaster', 'webmaster'].map((p) => `${p}@${base}`);
+}
+
 export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
   const items = Array.isArray(order.dcv) && order.dcv.length ? order.dcv : [{ domain: order.common_name, method: order.dcv_method }];
   const method = String(order.dcv_method || '').toLowerCase();
   const isEmail = method.includes('mail') || method.includes('@');
+  const multi = items.length > 1;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {items.map((it, i) => (
@@ -59,6 +65,33 @@ export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
             <span className="small muted">{(it.method || order.dcv_method || '').toString().toUpperCase()}{it.statusText ? ` · ${it.statusText}` : ''}</span>
           </div>
           {it.status === 'validated' ? null : <Record item={{ ...it, email: it.email || (isEmail ? order.approver_email : null) }} />}
+          {multi && it.status !== 'validated' && it.domain ? (
+            <div className="dcv-dom">
+              <form action={revalidateDomain}>
+                <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
+                <input type="hidden" name="domain" value={it.domain} />
+                <SubmitButton className="btn sm" pendingText="Asking…" lockedSeconds={locks.revalidate || 0} lockLabel="Re-check in">Re-check this domain</SubmitButton>
+              </form>
+              <details>
+                <summary>Change method for this domain</summary>
+                <form action={changeDomainDcv} className="dcv-dom-form">
+                  <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
+                  <input type="hidden" name="domain" value={it.domain} />
+                  <select className="input" name="method" defaultValue={String(it.method || '').toLowerCase().includes('http') ? 'http' : 'dns'} aria-label={`Method for ${it.domain}`}>
+                    <option value="dns">DNS CNAME</option>
+                    {String(it.domain).startsWith('*.') ? null : <option value="http">HTTP file</option>}
+                    {String(it.domain).startsWith('*.') ? null : <option value="https">HTTPS file</option>}
+                    <option value="email">Approver email</option>
+                  </select>
+                  <select className="input" name="approver_email" defaultValue="" aria-label={`Approver email for ${it.domain}`}>
+                    <option value="">Approver email (email only)</option>
+                    {emailsFor(it.domain).map((e) => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <SubmitButton className="btn sm dark-btn" pendingText="Changing…">Change</SubmitButton>
+                </form>
+              </details>
+            </div>
+          ) : null}
         </div>
       ))}
 
@@ -86,7 +119,7 @@ export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
       </div>
 
       <details>
-        <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>Change validation method</summary>
+        <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{multi ? 'Change validation method for all domains' : 'Change validation method'}</summary>
         <form action={changeDcvMethod} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginTop: 12 }}>
           <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
           <div className="field" style={{ flex: '1 1 160px' }}>

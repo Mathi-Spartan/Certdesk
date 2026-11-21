@@ -4,6 +4,7 @@ import { q } from '@/lib/db';
 import { importFromAccount, assignOrders, unassignOrders, bulkAutoRenew } from '@/app/actions/partner-orders';
 import SubmitButton from '@/components/SubmitButton';
 import { FlashFromSearch, fmtDate } from '@/components/ui';
+import LowBalance from '@/components/console/LowBalance';
 import { SelectAll } from './BulkBar';
 import { SubPeriod, CertExpiry } from '@/components/SubPeriod';
 import { subscriptionOf, displayStatus } from '@/lib/orders';
@@ -74,6 +75,7 @@ export default async function PartnerOrders({ searchParams }) {
         </form>
       </div>
       <FlashFromSearch searchParams={sp} />
+        <LowBalance />
 
       <div className="cx3-tabs">
         {VIEWS.map((v) => (

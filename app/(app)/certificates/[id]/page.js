@@ -4,7 +4,7 @@ import { requireWorkspace } from '@/lib/auth';
 import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle, subscriptionOf, daysLeft } from '@/lib/orders';
 import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
-import { saveReminderSettings, requestCancel, setOrderAutoRenew } from '@/app/actions/orders';
+import { saveReminderSettings, requestCancel, setOrderAutoRenew, buySanSlots } from '@/app/actions/orders';
 import TopBar from '@/components/TopBar';
 import DcvPanel from '@/components/DcvPanel';
 import SubmitButton from '@/components/SubmitButton';
@@ -78,6 +78,7 @@ export default async function CertificateDetail({ params, searchParams }) {
   if (ended) steps.push({ label: 'Closed', sub: order.status === 'cancel_requested' ? 'Cancellation requested' : 'Cancelled', state: 'done' });
 
   const sub = subscriptionOf(order);
+  const multi = (order.sans || []).length > 0 || /multi|ucc|\bsan\b|flex/i.test(order.product_name || '');
   const subPct = sub?.start ? Math.max(0, Math.min(100, Math.round(((Date.now() - new Date(sub.start)) / (new Date(sub.end) - new Date(sub.start))) * 100))) : null;
   const certDaysAny = order.valid_till ? daysLeft(order.valid_till) : null;
   const alert = item.group === 'action' && !validating ? item.next : null;
@@ -245,6 +246,22 @@ export default async function CertificateDetail({ params, searchParams }) {
                   <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=csr`}>CSR</a>
                 </div>
                 <p className="cx3-muted">Use the private key you saved when the key was created. Need PFX or JKS? Use the <Link href="/tools/converter">format converter</Link>.</p>
+              </section>
+            ) : null}
+
+            {multi && !ended && order.gg_order_id && !sub?.ended ? (
+              <section className="cx3-card cx3-pad">
+                <h2>Add more domains</h2>
+                {ctx.isAdmin ? (
+                  <form action={buySanSlots} className="cx3-form">
+                    <input type="hidden" name="order_id" value={order.id} />
+                    <p className="cx3-muted" style={{ margin: 0 }}>This order covers {1 + (order.sans || []).length} domain{(order.sans || []).length ? 's' : ''}. Buy extra slots, then reissue with the new names. The cost is charged to your GoGetSSL balance.</p>
+                    <label className="cx3-field"><span>Extra domains</span><input name="count" type="number" min="1" max="100" defaultValue="1" required /></label>
+                    <SubmitButton className="cx3-btn sm primary" pendingText="Buying…">Buy domain slots</SubmitButton>
+                  </form>
+                ) : (
+                  <p className="cx3-muted" style={{ margin: 0 }}>Need this certificate to cover more domains? {help ? <a href={help}>Ask us to add them</a> : 'Ask your provider to add them'}. Once added, you reissue with the new names.</p>
+                )}
               </section>
             ) : null}
 

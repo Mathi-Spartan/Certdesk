@@ -351,7 +351,13 @@ export async function reissue(input) {
   if (order.order_expires_at && new Date(order.order_expires_at).getTime() < Date.now()) return { error: 'The subscription period has ended. Renew the order instead of reissuing.' };
   if (!String(input.csr || '').includes('BEGIN CERTIFICATE REQUEST')) return { error: 'A new CSR is required.' };
   const method = ['dns', 'http', 'https', 'email'].includes(input.dcvMethod) ? input.dcvMethod : 'dns';
-  const sans = order.sans || [];
+  let sans = order.sans || [];
+  if (Array.isArray(input.sans)) {
+    const cn = String(order.common_name || '').toLowerCase();
+    sans = [...new Set(input.sans.map((d) => String(d).trim().toLowerCase()).filter(Boolean))].filter((d) => d !== cn);
+    const bad = sans.find((d) => !/^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i.test(d));
+    if (bad) return { error: `"${bad}" is not a valid domain name.` };
+  }
   try {
     await gg.reissueOrder(order.gg_order_id, {
       csr: input.csr,
@@ -365,7 +371,7 @@ export async function reissue(input) {
   } catch (e) {
     return { error: 'GoGetSSL: ' + e.message };
   }
-  await q(`update console.orders set status = 'reissuing', csr = $2, dcv_method = $3, updated_at = now() where id = $1`, [order.id, input.csr, method]);
+  await q(`update console.orders set status = 'reissuing', csr = $2, dcv_method = $3, sans = $4, updated_at = now() where id = $1`, [order.id, input.csr, method, sans]);
   await addEvent(order.id, 'reissue', 'Reissue requested with a new key', ctx.user.id);
   try {
     await syncOrder(order);
@@ -404,4 +410,55 @@ export async function bulkRefresh(formData) {
 function safeBack(v) {
   const s = String(v || '/orders');
   return s.startsWith('/orders') ? s : '/orders';
+}
+
+const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
+
+/** Multi-domain: switch the validation method for one domain on the order. */
+export async function changeDomainDcv(formData) {
+  const { ctx, order, back } = await loadOrder(formData);
+  const domain = String(formData.get('domain') || '').trim().toLowerCase();
+  const method = String(formData.get('method') || '');
+  const email = String(formData.get('approver_email') || '').trim();
+  if (!DOMAIN_RE.test(domain)) redirect(withMsg(back, 'err', 'Pick a domain from this order'));
+  if (!['dns', 'http', 'https', 'email'].includes(method)) redirect(withMsg(back, 'err', 'Pick a validation method'));
+  if (method === 'email' && !/^[^@\s]+@[^@\s]+$/.test(email)) redirect(withMsg(back, 'err', 'Enter the approver email for ' + domain));
+  if (domain.startsWith('*.') && (method === 'http' || method === 'https')) redirect(withMsg(back, 'err', 'Wildcard domains can only use DNS or email validation'));
+  try {
+    await gg.changeDomainDcv(order.gg_order_id, domain, method === 'email' ? email : method);
+    await addEvent(order.id, 'validation', `Validation for ${domain} changed to ${method === 'email' ? email : method.toUpperCase()}`, ctx.user.id);
+    await syncOrder(order);
+  } catch (e) {
+    if (String(e?.digest || '').startsWith('NEXT_REDIRECT')) throw e;
+    redirect(withMsg(back, 'err', 'GoGetSSL: ' + e.message));
+  }
+  redirect(withMsg(back, 'ok', `Validation for ${domain} changed. The new details are below.`));
+}
+
+/** Master admin only: buy extra SAN slots on a multi-domain order. Charged to the GoGetSSL balance. */
+export async function buySanSlots(formData) {
+  const { ctx, order, back } = await loadOrder(formData);
+  if (!ctx.isAdmin) redirect(withMsg(back, 'err', 'Only the master account can add domain slots'));
+  const count = Math.floor(Number(formData.get('count')));
+  if (!(count >= 1 && count <= 100)) redirect(withMsg(back, 'err', 'Choose between 1 and 100 extra domains'));
+  try {
+    const res = await gg.addSanOrder(order.gg_order_id, count);
+    await addEvent(order.id, 'order', `${count} extra domain slot${count === 1 ? '' : 's'} bought${res?.invoice_id ? ` (invoice ${res.invoice_id})` : ''}`, ctx.user.id);
+  } catch (e) {
+    redirect(withMsg(back, 'err', 'GoGetSSL: ' + e.message));
+  }
+  redirect(`/certificates/${order.id}/reissue?ok=${enc(`${count} extra domain slot${count === 1 ? '' : 's'} added. Enter the new domains and reissue.`)}`);
+}
+
+/** Subscriber agreement text for a product, shown before ordering. */
+export async function productAgreement(productId) {
+  await requireWorkspace();
+  try {
+    const res = await gg.getProductAgreement(productId);
+    const raw = res?.agreement || res?.text || res?.description || (typeof res === 'string' ? res : '');
+    const text = String(raw || '').replace(/<\s*br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\n{3,}/g, '\n\n').trim();
+    return { text: text.slice(0, 60000) };
+  } catch (e) {
+    return { text: '', error: e.message };
+  }
 }
