@@ -40,7 +40,8 @@ function months(n) {
 
 export default function BuyWizard({ products, renewal, defaults }) {
   const router = useRouter();
-  const [step, setStep] = useState(renewal ? 2 : 0);
+  const [step, setStepRaw] = useState(renewal ? 2 : 0);
+  const setStep = (n) => { setStepRaw(n); if (typeof window !== 'undefined' && window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const [moreDomains, setMoreDomains] = useState(!!renewal?.sans?.length);
   const [level, setLevel] = useState(null);
   const [showContact, setShowContact] = useState(false);
@@ -154,11 +155,11 @@ export default function BuyWizard({ products, renewal, defaults }) {
 
   return (
     <div className="cx3-wizard" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '28px 24px 48px', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
-      <nav aria-label="Steps" style={{ flex: '1 1 200px', maxWidth: 230 }}>
+      <nav aria-label="Steps" className="bw-steps" style={{ flex: '1 1 200px', maxWidth: 230 }}>
         {renewal ? <div className="alert violet small" style={{ marginBottom: 12 }}>Renewing the order for <span className="mono">{renewal.commonName}</span>. This places a new order. Settings are copied from the current one.</div> : null}
         <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {STEPS.map((label, i) => (
-            <li key={label}>
+            <li key={label} className={i === step ? 'now' : i < step ? 'done' : ''}>
               <button type="button" onClick={() => i < step && setStep(i)} disabled={i > step}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, height: 42, padding: '0 10px', border: 0, borderRadius: 8, background: i === step ? 'var(--accent-soft)' : 'transparent', cursor: i < step ? 'pointer' : 'default', font: 'inherit', color: 'var(--ink)', textAlign: 'left' }}>
                 <span className={`node ${i < step ? 'done' : i === step ? 'now' : 'todo'}`} style={{ width: 24, height: 24, color: i === step ? '#fff' : 'var(--muted)', fontSize: 12, fontWeight: 600, boxShadow: 'none' }}>
@@ -171,8 +172,8 @@ export default function BuyWizard({ products, renewal, defaults }) {
         </ol>
       </nav>
 
-      <section className="card" style={{ flex: '999 1 520px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+      <section className="card bw-main" style={{ flex: '999 1 520px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="bw-body" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
           {step === 0 ? (
             <>
               <div><h1 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Which domain do you want to secure?</h1><p className="sub">Type it and we&apos;ll suggest the certificates that fit. Start with *. for a wildcard.</p></div>
@@ -340,7 +341,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
           {err ? <div role="alert" className="alert red"><Icon name="alert" />{err}</div> : null}
         </div>
 
-        <div className="between" style={{ padding: '16px 28px', borderTop: '1px solid var(--line)' }}>
+        <div className="between bw-foot" style={{ padding: '16px 28px', borderTop: '1px solid var(--line)' }}>
           <button type="button" className="btn" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0 || busy}>Back</button>
           <span className="small muted">Step {step + 1} of {STEPS.length}</span>
           {step < STEPS.length - 1 ? (
@@ -351,7 +352,7 @@ export default function BuyWizard({ products, renewal, defaults }) {
         </div>
       </section>
 
-      <aside className="card pad" aria-label="Summary" style={{ flex: '1 1 260px', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <aside className="card pad bw-aside" aria-label="Summary" style={{ flex: '1 1 260px', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="small muted" style={{ fontWeight: 600, letterSpacing: '.06em' }}>SUMMARY</div>
         {step >= 1 ? <div><div style={{ fontWeight: 600, fontSize: 16 }}>{product.name}</div><div className="small muted">{kindLabel(product)} · {product.brand}</div></div> : <div className="small muted">Your choices appear here.</div>}
         <dl style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, borderTop: '1px solid var(--line-soft)', paddingTop: 12 }}>

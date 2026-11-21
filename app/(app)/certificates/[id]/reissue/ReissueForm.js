@@ -49,7 +49,7 @@ export default function ReissueForm({ orderId, commonName, sans, wildcard, multi
         ))}
       </div>
       {err ? <div role="alert" className="alert red">{err}</div> : null}
-      <button type="button" className="btn primary" style={{ alignSelf: 'flex-start' }} disabled={busy || !csr.csr.includes('BEGIN CERTIFICATE REQUEST')} onClick={submit}>
+      <button type="button" className="btn primary ri-submit" disabled={busy || !csr.csr.includes('BEGIN CERTIFICATE REQUEST')} onClick={submit}>
         {busy ? 'Sending…' : 'Request reissue'}
       </button>
     </div>

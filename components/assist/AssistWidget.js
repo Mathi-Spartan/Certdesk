@@ -102,6 +102,13 @@ export default function AssistWidget({ firstName }) {
     });
   }, []);
 
+  // the phone tab bar opens the chat
+  useEffect(() => {
+    const openIt = () => setOpen(true);
+    window.addEventListener('assist:open', openIt);
+    return () => window.removeEventListener('assist:open', openIt);
+  }, []);
+
   // first load: any open conversation and unread replies
   useEffect(() => {
     let live = true;

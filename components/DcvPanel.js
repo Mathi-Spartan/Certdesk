@@ -4,45 +4,46 @@ import { checkNow, changeDcvMethod, resendEmail, revalidateDomain, changeDomainD
 import { timeAgo } from './ui';
 import SubmitButton from './SubmitButton';
 
+function Field({ label, value, copy = true }) {
+  return (
+    <div className="dcv-f">
+      <span className="dcv-k">{label}</span>
+      <code className="dcv-v">{value}</code>
+      {copy && value ? <CopyButton text={value} label="Copy" /> : null}
+    </div>
+  );
+}
+
 function Record({ item }) {
   if (item.dns?.raw || item.dns?.value) {
     const d = item.dns;
     return (
-      <div className="table-wrap" style={{ border: '1px solid var(--line)', borderRadius: 10 }}>
-        <table className="t" style={{ minWidth: 560 }}>
-          <thead><tr><th style={{ width: 80 }}>Type</th><th>Name</th><th>Value</th><th><span className="sr">Copy</span></th></tr></thead>
-          <tbody>
-            {d.name ? (
-              <tr>
-                <td className="mono">{d.type || 'CNAME'}</td>
-                <td className="mono" style={{ overflowWrap: 'anywhere' }}>{d.name}</td>
-                <td className="mono" style={{ overflowWrap: 'anywhere' }}>{d.value}</td>
-                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <CopyButton text={d.name} label="Copy name" /> <CopyButton text={d.value} label="Copy value" />
-                </td>
-              </tr>
-            ) : (
-              <tr><td colSpan={3} className="mono" style={{ overflowWrap: 'anywhere' }}>{d.raw}</td><td><CopyButton text={d.raw} /></td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="dcv-card">
+        {d.name ? (
+          <>
+            <Field label="Type" value={d.type || 'CNAME'} copy={false} />
+            <Field label="Name / Host" value={d.name} />
+            <Field label="Value / Points to" value={d.value} />
+            <p className="dcv-tip">If your DNS panel adds the domain automatically, enter only the part before your domain as the name.</p>
+          </>
+        ) : <Field label="Record" value={d.raw} />}
       </div>
     );
   }
   const h = item.http || item.https;
   if (h?.url || h?.content) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div className="code"><span className="k">File URL </span>{h.url}</div>
-        <div className="code" style={{ whiteSpace: 'pre-wrap' }}><span className="k">File content{'\n'}</span>{h.content}</div>
-        <div style={{ display: 'flex', gap: 8 }}><CopyButton text={h.url} label="Copy URL" /><CopyButton text={h.content} label="Copy content" /></div>
+      <div className="dcv-card">
+        <Field label="File URL" value={h.url} />
+        <Field label="File content" value={h.content} />
+        <p className="dcv-tip">The file must open at exactly this URL, with no redirect.</p>
       </div>
     );
   }
   if (item.email) {
     return <div className="small">An approval link was sent to <strong>{item.email}</strong>. Open it and click approve.</div>;
   }
-  return <div className="small muted">Validation details will appear here once GoGetSSL provides them. Use “Check now” in a minute.</div>;
+  return <div className="small muted">Validation details will appear here once GoGetSSL provides them. Use “Check status now” in a minute.</div>;
 }
 
 function emailsFor(domain) {
@@ -95,7 +96,7 @@ export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
         </div>
       ))}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+      <div className="dcv-actions">
         <form action={checkNow}>
           <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
           <SubmitButton className="btn sm primary" pendingText="Checking…">Check status now</SubmitButton>
@@ -111,7 +112,7 @@ export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
             <SubmitButton pendingText="Sending…" lockedSeconds={locks.resend || 0} lockLabel="Resend available in">Resend approval email</SubmitButton>
           </form>
         ) : null}
-        <span className="small muted" style={{ marginLeft: 'auto' }}>Last checked {timeAgo(order.last_synced_at)}</span>
+        <span className="small muted dcv-last">Last checked {timeAgo(order.last_synced_at)}</span>
       </div>
       <div className="small muted">
         <strong>Check status now</strong> asks GoGetSSL for the latest state and can be used any time.{' '}
@@ -120,7 +121,7 @@ export default function DcvPanel({ order, back, approverEmails, locks = {} }) {
 
       <details>
         <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{multi ? 'Change validation method for all domains' : 'Change validation method'}</summary>
-        <form action={changeDcvMethod} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginTop: 12 }}>
+        <form action={changeDcvMethod} className="dcv-change">
           <input type="hidden" name="order_id" value={order.id} /><input type="hidden" name="back" value={back} />
           <div className="field" style={{ flex: '1 1 160px' }}>
             <label htmlFor={`m-${order.id}`}>Method</label>

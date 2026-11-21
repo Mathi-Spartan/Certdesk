@@ -44,10 +44,10 @@ export default function CsrStep({ commonName, sans = [], value, onChange }) {
     }
   }
 
-  async function check() {
+  async function check(text = v.csr) {
     setBusy(true);
     setErr(null);
-    const r = await decodeCsr(v.csr);
+    const r = await decodeCsr(text);
     setBusy(false);
     if (r.error) setErr('GoGetSSL could not read this CSR: ' + r.error);
     else setDecoded(r);
@@ -58,7 +58,7 @@ export default function CsrStep({ commonName, sans = [], value, onChange }) {
       <div className="seg" role="radiogroup" aria-label="CSR source">
         {[
           ['generate', 'Generate for me'],
-          ['paste', 'Paste my CSR']
+          ['paste', 'Upload or paste CSR']
         ].map(([m, label]) => (
           <button key={m} type="button" role="radio" aria-checked={v.mode === m} className={v.mode === m ? 'on' : ''} onClick={() => set({ mode: m, csr: '', keySaved: false })}>
             {label}
@@ -88,7 +88,7 @@ export default function CsrStep({ commonName, sans = [], value, onChange }) {
           </div>
           <div className="alert violet">
             <Icon name="lock" stroke="var(--accent)" />
-            <span style={{ flex: '1 1 300px' }}>The private key is created in your browser and saved to your computer as <span className="mono">{keyName}</span>. It is never sent to CertDesk or the CA, so keep that file safe.</span>
+            <span style={{ flex: '1 1 300px' }}>The private key is created in your browser and saved to your computer as <span className="mono">{keyName}</span>. It is never sent to CertDesk or the CA, so keep that file safe. On a phone it goes to your Downloads (Files app on iPhone).</span>
           </div>
           {v.csr ? (
             <div className="alert green">
@@ -97,20 +97,36 @@ export default function CsrStep({ commonName, sans = [], value, onChange }) {
               {key ? <button type="button" className="btn sm" onClick={() => download(keyName, key)}>Download key again</button> : null}
             </div>
           ) : (
-            <button type="button" className="btn primary" disabled={busy || !commonName} onClick={generate} style={{ alignSelf: 'flex-start' }}>
+            <button type="button" className="btn primary csr-gen" disabled={busy || !commonName} onClick={generate}>
               {busy ? 'Creating key…' : 'Generate key and CSR'}
             </button>
           )}
         </>
       ) : (
         <>
+          <label className="csr-drop">
+            <input type="file" accept=".csr,.pem,.txt,.req,text/plain,application/pkcs10,application/x-pem-file" onChange={async (e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (!f) return;
+              if (f.size > 64 * 1024) { setErr('That file is too large to be a CSR.'); return; }
+              const text = (await f.text()).trim();
+              if (!text.includes('BEGIN CERTIFICATE REQUEST') && !text.includes('BEGIN NEW CERTIFICATE REQUEST')) { setErr(`“${f.name}” doesn’t look like a CSR. It should start with -----BEGIN CERTIFICATE REQUEST-----.`); return; }
+              setDecoded(null);
+              set({ csr: text });
+              check(text);
+            }} />
+            <span className="csr-drop-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg></span>
+            <span><b>Choose CSR file</b><small>.csr, .pem or .txt from your phone or computer</small></span>
+          </label>
+          <div className="csr-or"><span>or paste it</span></div>
           <div className="field">
             <label htmlFor="csr">CSR</label>
             <textarea className="input" id="csr" rows={8} value={v.csr} onChange={(e) => { set({ csr: e.target.value }); setDecoded(null); }}
               placeholder={'-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----'} />
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn sm" disabled={busy || !v.csr.includes('BEGIN CERTIFICATE REQUEST')} onClick={check}>{busy ? 'Checking…' : 'Check CSR'}</button>
+            <button type="button" className="btn sm" disabled={busy || !v.csr.includes('BEGIN CERTIFICATE REQUEST')} onClick={() => check()}>{busy ? 'Checking…' : 'Check CSR'}</button>
             {decoded ? (
               <span className="small" style={{ color: decoded.cn && commonName && decoded.cn.toLowerCase() !== commonName.toLowerCase() ? 'var(--red-strong)' : 'var(--green)' }}>
                 CN {decoded.cn || '?'}{decoded.o ? ` · ${decoded.o}` : ''}{decoded.keySize ? ` · ${decoded.keySize}` : ''}

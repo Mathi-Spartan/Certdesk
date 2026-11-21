@@ -4,6 +4,7 @@ import CustomerNav, { Crumbs } from './CustomerNav';
 import { logout } from '@/app/actions/auth';
 import { exitWorkspace } from '@/app/actions/admin';
 import AssistWidget from './assist/AssistWidget';
+import MobileTabBar from './MobileTabBar';
 
 function initials(name) {
   return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
@@ -13,7 +14,7 @@ function initials(name) {
 export default function CustomerShell({ user, workspace, counts, help, admin = false, children }) {
   const wsName = workspace?.name || 'Partner account';
   return (
-    <div className="cx3">
+    <div className={`cx3 ${workspace ? 'has-tabs' : ''}`}>
       <aside className="cx3-side">
         <Link href={workspace ? '/orders' : '/partner'} className="cx3-ws" title={wsName}>
           <span className={`cx3-ws-mark ${workspace ? '' : 'accent'}`}>{initials(wsName)}</span>
@@ -70,6 +71,7 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
         <div className="cx3-main">{children}</div>
       </div>
       {workspace ? <AssistWidget firstName={String(user.name || '').split(' ')[0]} /> : null}
+      {workspace ? <MobileTabBar attention={counts?.attention || 0} /> : null}
     </div>
   );
 }

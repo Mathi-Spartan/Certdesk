@@ -83,6 +83,15 @@ export default async function CertificateDetail({ params, searchParams }) {
   const certDaysAny = order.valid_till ? daysLeft(order.valid_till) : null;
   const alert = item.group === 'action' && !validating ? item.next : null;
 
+  // Exactly one main action: the next step if there is one, else Reissue while the subscription runs, else Renew.
+  const mainAction = (() => {
+    if (ended) return null;
+    if (item.next?.cta && !validating) return <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link>;
+    if (validating) return null;
+    if (life.canReissue) return <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link>;
+    if (!sub || sub.days <= 60) return <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link>;
+    return null;
+  })();
   return (
     <>
       {ctx.isAdmin ? <TopBar crumbs={[{ label: 'Certificates', href: '/orders' }, { label: order.common_name || 'Pending order' }]} /> : null}
@@ -103,19 +112,16 @@ export default async function CertificateDetail({ params, searchParams }) {
           </div>
           <div className="cx3-row">
             {issued ? <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download</a> : null}
-            {(() => {
-              // Exactly one main action: the next step if there is one, else Reissue while the subscription runs, else Renew.
-              if (ended) return null;
-              if (item.next?.cta && !validating) return <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link>;
-              if (validating) return null;
-              if (life.canReissue) return <Link className="cx3-btn" href={`/certificates/${order.id}/reissue`}>Reissue</Link>;
-              if (!sub || sub.days <= 60) return <Link className="cx3-btn primary" href={`/buy?renew=${order.id}`}>Renew</Link>;
-              return null;
-            })()}
+            {mainAction}
           </div>
         </div>
 
         <FlashFromSearch searchParams={sp} />
+        <div className="cx3-mbar" role="toolbar" aria-label="Certificate actions">
+          {validating ? <a className="cx3-btn primary" href="#dcv">Validation steps</a> : null}
+          {issued ? <a className={`cx3-btn ${mainAction ? '' : 'primary'}`} href={`/api/orders/${order.id}/download?format=zip`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download ZIP</a> : null}
+          {mainAction}
+        </div>
         {syncError ? <div className="cx3-alert amber">{svg(<><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></>, 18)}<div>Could not refresh from the certificate authority just now. Showing the last known state.</div></div> : null}
         {alert ? (
           <div role="alert" className="cx3-alert red">
