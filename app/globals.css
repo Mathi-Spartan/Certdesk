@@ -1888,3 +1888,7 @@ h1, h2, h3, .cx3-head h1, .cc-page-head h1, .mc-head h1 { font-family: var(--fon
 }
 .cx3-field textarea { padding: 10px; border: 1px solid #D4D4D4; border-radius: 8px; background: #fff; font: inherit; font-weight: 400; color: var(--cx-ink); resize: vertical; }
 .cx3-field textarea:focus { outline: none; border-color: var(--cx-accent); box-shadow: 0 0 0 3px var(--cx-accent-soft); }
+.as-title strong span { font-weight: 500; color: #A3A3A3; margin-left: 4px; font-size: 13px; }
+.as-hbtn:disabled { opacity: .35; cursor: default; }
+.as-confirm { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: #FFFBEB; border-bottom: 1px solid #FDE68A; font-size: 13px; color: #78350F; }
+.as-confirm > div { display: flex; gap: 8px; justify-content: flex-end; }

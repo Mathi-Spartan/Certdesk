@@ -11,7 +11,7 @@ import Thread from './Thread';
 export const metadata = { title: 'Conversation · CertDesk' };
 export const dynamic = 'force-dynamic';
 
-const LABEL = { bot: 'With the assistant', waiting: 'Waiting for you', human: 'In conversation', resolved: 'Resolved' };
+const LABEL = { bot: 'With Arivu', waiting: 'Waiting for you', human: 'In conversation', resolved: 'Resolved' };
 
 export default async function Conversation({ params }) {
   const { id } = await params;
@@ -45,7 +45,7 @@ export default async function Conversation({ params }) {
           </div>
           <div className="sp-thread-actions">
             {c.status !== 'human' && c.status !== 'resolved' ? <form action={claimChat}><input type="hidden" name="id" value={c.id} /><button className="cx3-btn primary" type="submit">Take over chat</button></form> : null}
-            {c.status === 'human' || c.status === 'waiting' ? <form action={returnToBot}><input type="hidden" name="id" value={c.id} /><button className="cx3-btn" type="submit">Return to assistant</button></form> : null}
+            {c.status === 'human' || c.status === 'waiting' ? <form action={returnToBot}><input type="hidden" name="id" value={c.id} /><button className="cx3-btn" type="submit">Return to Arivu</button></form> : null}
             {c.status !== 'resolved' ? <form action={resolveChat}><input type="hidden" name="id" value={c.id} /><button className="cx3-btn" type="submit">Mark resolved</button></form> : null}
           </div>
         </div>

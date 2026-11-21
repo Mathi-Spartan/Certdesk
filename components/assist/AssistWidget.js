@@ -6,6 +6,7 @@ const QUICK = [
   ['Why isn’t my certificate issued?', 'Why is my certificate not issued?'],
   ['What needs my attention?', 'What needs my attention?'],
   ['When does it expire?', 'When does my certificate expire?'],
+  ['Due in the next 30 days', 'List orders to reissue or renew in the next 30 days'],
   ['Reissue or renew?', 'Do I need to reissue or renew?'],
   ['Download my files', 'Download my certificate files'],
   ['How do I install it?', 'How do I install my certificate?']
@@ -89,6 +90,7 @@ export default function AssistWidget({ firstName }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [voted, setVoted] = useState({});
+  const [confirmClear, setConfirmClear] = useState(false);
   const listRef = useRef(null);
   const lastId = msgs.length ? msgs[msgs.length - 1].id : 0;
 
@@ -164,12 +166,20 @@ export default function AssistWidget({ firstName }) {
     fetch('/api/assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'feedback', messageId: id, helpful }) }).catch(() => {});
   };
 
+  async function clearChat() {
+    setConfirmClear(false);
+    if (conv) {
+      try { await fetch('/api/assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'clear', c: conv.id }) }); } catch { /* still clear locally */ }
+    }
+    setMsgs([]); setConv(null); setErr(null); setVoted({});
+  }
+
   const status = conv?.status === 'waiting' ? ['wait', 'Waiting for support'] : conv?.status === 'human' ? ['human', 'Support is here'] : ['bot', 'Instant answers'];
   const last = msgs[msgs.length - 1];
 
   return (
     <>
-      <button type="button" className={`as-fab ${open ? 'on' : ''}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="as-panel" aria-label={open ? 'Close support chat' : 'Open support chat'}>
+      <button type="button" className={`as-fab ${open ? 'on' : ''}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="as-panel" aria-label={open ? 'Close Arivu, the support assistant' : 'Open Arivu, the support assistant'}>
         {open ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         ) : (
@@ -184,20 +194,26 @@ export default function AssistWidget({ firstName }) {
             <span className="as-avatar" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z" /><path d="m9 12 2 2 4-4" /></svg>
             </span>
-            <div className="as-title"><strong>CertDesk Assist</strong><small className={`as-st ${status[0]}`}><i />{status[1]}</small></div>
-            <button type="button" className="as-hbtn" onClick={() => { setMsgs([]); setConv(null); setErr(null); }} title="New conversation" aria-label="Start a new conversation">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            <div className="as-title"><strong>Arivu <span lang="ta">அறிவு</span></strong><small className={`as-st ${status[0]}`}><i />{status[1]}</small></div>
+            <button type="button" className="as-hbtn" onClick={() => setConfirmClear(true)} title="Clear chat" aria-label="Clear chat" disabled={!msgs.length}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
             </button>
             <button type="button" className="as-hbtn" onClick={() => setOpen(false)} aria-label="Close">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
           </header>
 
+          {confirmClear ? (
+            <div className="as-confirm" role="alertdialog" aria-label="Clear chat">
+              <span>{conv?.status === 'waiting' || conv?.status === 'human' ? 'Clear this chat? The support team’s conversation with you will be closed too.' : 'Clear this chat and start fresh?'}</span>
+              <div><button type="button" className="as-btn" onClick={() => setConfirmClear(false)}>Cancel</button><button type="button" className="as-btn primary" onClick={clearChat}>Clear chat</button></div>
+            </div>
+          ) : null}
           <div className="as-list" ref={listRef} aria-live="polite">
             {!msgs.length ? (
               <div className="as-msg bot">
                 <div className="as-bubble">
-                  <Md text={`Hi${firstName ? ` ${firstName}` : ''}! I check your certificates live, explain validation and get you the right files. Ask anything, type a domain name, or tap a question:`} />
+                  <Md text={`Hi${firstName ? ` ${firstName}` : ''}! I’m **Arivu** (அறிவு), your CertDesk assistant. I check your certificates live, explain validation and get you the right files. Ask anything, type a domain name, or tap a question:`} />
                 </div>
                 <div className="as-btns">{QUICK.map(([l, t]) => <button key={l} type="button" className="as-btn" onClick={() => send(t)}>{l}</button>)}</div>
               </div>
@@ -213,7 +229,7 @@ export default function AssistWidget({ firstName }) {
                       : <button key={i} type="button" className={`as-btn ${b.primary ? 'primary' : ''} ${b.kind === 'handoff' ? 'handoff' : ''}`} onClick={() => press(b)} disabled={busy}>{b.label}{b.note ? <small>{b.note}</small> : null}</button>)}
                   </div>
                 ) : null}
-                {m.role === 'bot' && m.intent && !['greet', 'helpme', 'thanks', 'clarify'].includes(m.intent) ? (
+                {m.role === 'bot' && m.intent && !['greet', 'helpme', 'thanks', 'clarify'].includes(m.intent) && !m.data?.buttons?.some((b) => b.kind === 'pick' && /Which|which/.test(m.body.slice(0, 60))) ? (
                   <div className="as-vote">
                     {voted[m.id] === undefined && m.helpful === null ? (
                       <>Helpful?

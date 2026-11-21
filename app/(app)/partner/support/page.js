@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const TABS = [
   ['open', 'Needs you'],
   ['human', 'In conversation'],
-  ['bot', 'With the assistant'],
+  ['bot', 'With Arivu'],
   ['resolved', 'Resolved'],
   ['all', 'All']
 ];
@@ -21,7 +21,7 @@ const WHERE = {
   resolved: `c.status = 'resolved'`,
   all: 'true'
 };
-const STATUS = { bot: ['Assistant', ''], waiting: ['Waiting for you', 'red'], human: ['In conversation', 'blue'], resolved: ['Resolved', 'gray'] };
+const STATUS = { bot: ['Arivu', ''], waiting: ['Waiting for you', 'red'], human: ['In conversation', 'blue'], resolved: ['Resolved', 'gray'] };
 const TOPIC = {
   why_pending: 'Not issued / pending', status: 'Order status', validate_how: 'How to validate', dns_check: 'DNS check', expiry: 'Expiry dates',
   reissue: 'Reissue / renew', renew: 'Reissue / renew', download: 'Download files', install: 'Install', convert: 'Formats (PFX/JKS)',
@@ -91,7 +91,7 @@ export default async function SupportInbox({ searchParams }) {
       <main className="page">
         <div>
           <h1 className="title">Support inbox</h1>
-          <p className="sub">CertDesk Assist answers customers from their live orders. Chats it can’t solve, or where a customer asks for a person, land here.</p>
+          <p className="sub">Arivu (அறிவு), the CertDesk assistant, answers customers from their live orders. Chats it can’t solve, or where a customer asks for a person, land here.</p>
         </div>
         <FlashFromSearch searchParams={sp} />
         {!ready ? (
@@ -100,7 +100,7 @@ export default async function SupportInbox({ searchParams }) {
           <>
             <div className="sp-kpis">
               <div className="cx3-card cx3-pad"><span className="bl-k">Chats · 30 days</span><b className="bl-big">{stats.chats || 0}</b></div>
-              <div className="cx3-card cx3-pad"><span className="bl-k">Solved by assistant</span><b className="bl-big">{solved === null ? '—' : `${solved}%`}</b><span className="cx3-muted">{stats.handoffs || 0} passed to you</span></div>
+              <div className="cx3-card cx3-pad"><span className="bl-k">Solved by Arivu</span><b className="bl-big">{solved === null ? '—' : `${solved}%`}</b><span className="cx3-muted">{stats.handoffs || 0} passed to you</span></div>
               <div className="cx3-card cx3-pad"><span className="bl-k">Questions understood</span><b className="bl-big">{understood === null ? '—' : `${understood}%`}</b><span className="cx3-muted">{stats.missed || 0} not understood</span></div>
               <div className="cx3-card cx3-pad"><span className="bl-k">Answers rated helpful</span><b className="bl-big">{helpful === null ? '—' : `${helpful}%`}</b><span className="cx3-muted">{stats.up || 0} 👍 · {stats.down || 0} 👎</span></div>
             </div>
@@ -113,7 +113,7 @@ export default async function SupportInbox({ searchParams }) {
                     return <Link key={k} href={`/partner/support?tab=${k}`} className={tab === k ? 'on' : ''}>{l}{n ? <em className={k === 'open' ? 'hot' : ''}>{n}</em> : null}</Link>;
                   })}
                 </nav>
-                {!list.length ? <p className="cx3-muted" style={{ padding: 20, margin: 0 }}>{tab === 'open' ? 'Nothing waiting. The assistant has it covered.' : 'No conversations here.'}</p> : (
+                {!list.length ? <p className="cx3-muted" style={{ padding: 20, margin: 0 }}>{tab === 'open' ? 'Nothing waiting. Arivu has it covered.' : 'No conversations here.'}</p> : (
                   <ul className="sp-rows">
                     {list.map((c) => {
                       const st = STATUS[c.status] || [c.status, ''];

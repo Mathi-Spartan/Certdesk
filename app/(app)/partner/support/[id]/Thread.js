@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { replyChat } from '@/app/actions/assist';
 import { Md } from '@/components/assist/AssistWidget';
 
-const WHO = { user: 'Customer', bot: 'Assistant', agent: 'You (support)', system: '' };
+const WHO = { user: 'Customer', bot: 'Arivu', agent: 'You (support)', system: '' };
 
 export default function Thread({ id, initial, status: st0 }) {
   const [msgs, setMsgs] = useState(initial);

@@ -69,6 +69,15 @@ export async function POST(req) {
       return json({ ok: true });
     }
 
+    if (op === 'clear') {
+      const c = input.c ? await getConversation(ctx, input.c) : null;
+      if (c && c.status !== 'resolved') {
+        await q(`update console.assist_conversations set status = 'resolved', resolved_at = now(), unread_customer = 0, context = context || '{"cleared":true}'::jsonb where id = $1`, [c.id]);
+        await addMessage(c.id, { role: 'system', body: 'The customer cleared this chat.' });
+      }
+      return json({ ok: true });
+    }
+
     let conv = input.c ? await getConversation(ctx, input.c) : null;
     if (op === 'new' || !conv || conv.status === 'resolved') conv = await createConversation(ctx);
     const after = Number(input.after) || 0;
