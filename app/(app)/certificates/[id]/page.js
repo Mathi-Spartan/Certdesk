@@ -234,6 +234,10 @@ export default async function CertificateDetail({ params, searchParams }) {
             {issued ? (
               <section className="cx3-card cx3-pad">
                 <h2>Download for your server</h2>
+                <a className="cx3-btn primary cx3-dlall" href={`/api/orders/${order.id}/download?format=zip`}>
+                  {svg(<><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></>, 16)}Download all files (.zip)
+                </a>
+                <p className="cx3-dlsub">Certificate, CA bundle, full chain and CSR in one file. Or download them one at a time:</p>
                 <div className="cx3-dlgrid">
                   <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=fullchain`}>Nginx / full chain</a>
                   <a className="cx3-btn" href={`/api/orders/${order.id}/download?format=crt`}>Certificate (.crt)</a>
