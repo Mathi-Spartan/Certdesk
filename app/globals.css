@@ -1695,3 +1695,14 @@ h1, h2, h3, .cx3-head h1, .cc-page-head h1, .mc-head h1 { font-family: var(--fon
 .cx3-outbtn { width: auto; padding: 0 14px; gap: 8px; font: inherit; font-size: 13.5px; font-weight: 600; color: #404040; cursor: pointer; }
 .cx3-outbtn:hover { color: #B91C1C; border-color: #FECACA; background: #FEF2F2; }
 @media (max-width: 760px) { .cx3-outbtn { width: 40px; padding: 0; } .cx3-outbtn span { display: none; } }
+.cx3-out-m { display: none; margin: 0; }
+@media (max-width: 900px) {
+  .cx3-out-m { display: block; flex: none; }
+  .cx3-out-m button { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border: 1px solid #E4E4E4; border-radius: 999px; background: #fff; font: inherit; font-size: 13.5px; font-weight: 600; color: #404040; cursor: pointer; }
+  .cx3-out-m button:active { background: #FEF2F2; color: #B91C1C; }
+  .cx3-ws { flex: 1 1 0; min-width: 0; }
+  .cx3-bar { flex-wrap: wrap; }
+  .cx3-bar > :first-child { min-width: 0; overflow: hidden; }
+  .cx3-bar-actions { margin-left: auto; }
+  .cx3-bar .cx3-out { display: none; }
+}
