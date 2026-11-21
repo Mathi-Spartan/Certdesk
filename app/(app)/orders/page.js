@@ -7,7 +7,7 @@ import { fmtDate, FlashFromSearch } from '@/components/ui';
 import { fmtMoney } from '@/lib/pricing';
 import { certFacts } from '@/lib/certs';
 import { brandOf } from '@/components/site/SiteChrome';
-import CertTable from './CertTable';
+import CertBrowser from './CertBrowser';
 
 export const metadata = { title: 'My certificates · CertDesk' };
 
@@ -74,11 +74,6 @@ export default async function Certificates({ searchParams }) {
     reissue: act.filter((i) => i.next?.cta === 'Reissue').length,
     validate: act.filter((i) => i.next?.cta === 'Validate').length
   };
-  const rows = all.filter(TEST[f]).filter((i) => !term || [i.domain, i.product, String(i.ref || ''), ...(i.tags || [])].join(' ').toLowerCase().includes(term));
-  const href = (key, withTerm = true) => {
-    const qs = new URLSearchParams({ ...(key ? { f: key } : {}), ...(term && withTerm ? { q: term } : {}) }).toString();
-    return '/orders' + (qs ? '?' + qs : '');
-  };
 
   return (
     <>
@@ -95,50 +90,19 @@ export default async function Certificates({ searchParams }) {
           </Link>
         </div>
         <FlashFromSearch searchParams={sp} />
-        {need.total ? (
-          <div className="mc-chips" aria-label="What needs you">
-            {need.validate ? <Link href={href('action')} className="mc-chip amber"><b>{need.validate}</b>to validate</Link> : null}
-            {need.reissue ? <Link href={href('action')} className="mc-chip amber"><b>{need.reissue}</b>to reissue</Link> : null}
-            {need.renew ? <Link href={href('action')} className="mc-chip red"><b>{need.renew}</b>to renew</Link> : null}
-          </div>
-        ) : null}
-
-        <div className="mc-bar">
-          <nav className="mc-seg" aria-label="Filter certificates">
-            {[
-              { key: '', label: 'All' },
-              { key: 'action', label: 'Needs action', hot: true },
-              { key: 'expiring', label: 'Expiring soon' },
-              { key: 'ok', label: 'Valid' },
-              ...(counts.pending ? [{ key: 'pending', label: 'In progress' }] : []),
-              ...(counts.auto ? [{ key: 'auto', label: 'Automated' }] : []),
-              ...(counts.closed ? [{ key: 'closed', label: 'Closed' }] : [])
-            ].map((t) => (
-              <Link key={t.key || 'all'} href={href(t.key)} className={f === t.key ? 'on' : ''} aria-current={f === t.key ? 'page' : undefined}>
-                {t.label}<em className={t.hot && counts[t.key] ? 'hot' : ''}>{counts[t.key]}</em>
-              </Link>
-            ))}
-          </nav>
-          <form action="/orders" className="mc-search" role="search">
-            {f ? <input type="hidden" name="f" value={f} /> : null}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-            <input type="search" name="q" defaultValue={term} placeholder="Search domain or order" aria-label="Search certificates" />
-            {term ? <Link href={href(f, false)} className="mc-x" aria-label="Clear search">×</Link> : null}
-          </form>
-        </div>
-
-        <CertTable
-          rows={rows.map((r) => ({
+        <CertBrowser
+          rows={all.map((r) => ({
             key: r.type + r.id, id: r.id, type: r.type, href: r.href, domain: r.domain, extra: r.extra || null, ref: r.ref || null,
             product: r.product, kind: kind(r), brand: brandOf({ name: r.product || '', brand: r.brand || '' })?.slug || 'sectigo',
             status: r.detail?.label && r.group !== 'ok' ? r.detail.label : r.status.label, group: r.group, method: METHOD[r.method] || null,
             cert: r.cert || null, certFrom: r.certFrom || null, sub: r.sub || null, autoDate: r.type === 'auto' && r.date?.at ? r.date : null,
             autoRenew: !!r.autoRenew, price: r.price || null, cost: r.cost || null, next: r.next?.cta ? { cta: r.next.cta, href: r.next.href } : null,
-            facts: r.facts || null, synced: r.synced || null, canDownload: !!r.canDownload, tags: r.tags || []
+            facts: r.facts || null, synced: r.synced || null, canDownload: !!r.canDownload, tags: r.tags || [],
+            fk: Object.keys(TEST).filter((k) => TEST[k](r))
           }))}
+          initialFilter={f}
+          initialTerm={term}
           admin={!!ctx.isAdmin}
-          back={href(f)}
-          empty={all.length ? 'none' : 'first'}
         />
       </main>
     </>

@@ -1619,13 +1619,13 @@ a.cx3-kpi:hover { color: var(--cx-ink); border-color: #D4D4D4; box-shadow: 0 8px
 .mc-head .cx3-btn.primary:hover{background:#404040}
 .mc-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid #E4E4E4}
 .mc-seg{display:flex;gap:4px;flex-wrap:wrap}
-.mc-seg a{display:inline-flex;align-items:center;gap:7px;padding:10px 12px;margin-bottom:-1px;font-size:13.5px;font-weight:500;color:#535353;text-decoration:none;border-bottom:2px solid transparent}
-.mc-seg a:hover{color:#0A0A0A}
-.mc-seg a.on{color:#0A0A0A;font-weight:600;border-bottom-color:#0A0A0A}
+.mc-seg a,.mc-seg button{display:inline-flex;align-items:center;gap:7px;padding:10px 12px;margin-bottom:-1px;font-size:13.5px;font-weight:500;color:#535353;text-decoration:none;border-bottom:2px solid transparent}
+.mc-seg a:hover,.mc-seg button:hover{color:#0A0A0A}
+.mc-seg a.on,.mc-seg button.on{color:#0A0A0A;font-weight:600;border-bottom-color:#0A0A0A}
 .mc-seg em{font-style:normal;font-size:12px;font-weight:600;color:#727272;background:#F4F4F4;border-radius:6px;padding:0 6px;line-height:19px}
-.mc-seg a.on em{background:#0A0A0A;color:#fff}
+.mc-seg a.on em,.mc-seg button.on em{background:#0A0A0A;color:#fff}
 .mc-seg em.hot{background:#FEE2E2;color:#B91C1C}
-.mc-seg a.on em.hot{background:#DC2626;color:#fff}
+.mc-seg a.on em.hot,.mc-seg button.on em.hot{background:#DC2626;color:#fff}
 .mc-search{display:flex;align-items:center;gap:8px;height:36px;width:260px;padding:0 11px;margin-bottom:8px;border:1px solid #E4E4E4;border-radius:9px;background:#fff;color:#727272}
 .mc-search:focus-within{border-color:#0A0A0A}
 .mc-search input{flex:1;min-width:0;border:0;outline:none;background:none;font:inherit;font-size:13.5px;color:#0A0A0A}
@@ -1658,7 +1658,7 @@ h1, h2, h3, .cx3-head h1, .cc-page-head h1, .mc-head h1 { font-family: var(--fon
 @media (max-width: 760px) {
   .mc-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
   .mc-seg::-webkit-scrollbar { display: none; }
-  .mc-seg a { white-space: nowrap; flex: none; }
+  .mc-seg a, .mc-seg button { white-space: nowrap; flex: none; }
 }
 
 /* ═════════ Certificates table → stacked rows on phones ═════════ */
@@ -2068,9 +2068,9 @@ html { -webkit-text-size-adjust: 100%; }
   .mc-chip.red b { color: #DC2626; } .mc-chip.amber b { color: #D97706; }
   .mc-bar { gap: 10px !important; border: 0 !important; padding: 0 !important; }
   .mc-seg { gap: 6px !important; border: 0 !important; }
-  .mc-seg a { border: 1px solid #E5E5E5 !important; border-radius: 99px !important; padding: 7px 13px !important; margin: 0 !important; background: #fff; font-size: 13px !important; }
-  .mc-seg a.on { background: #0A0A0A; color: #fff !important; border-color: #0A0A0A !important; }
-  .mc-seg a.on em { background: rgba(255,255,255,.18); color: #fff; }
+  .mc-seg a, .mc-seg button { border: 1px solid #E5E5E5 !important; border-radius: 99px !important; padding: 7px 13px !important; margin: 0 !important; background: #fff; font-size: 13px !important; }
+  .mc-seg a.on, .mc-seg button.on { background: #0A0A0A; color: #fff !important; border-color: #0A0A0A !important; }
+  .mc-seg a.on em, .mc-seg button.on em { background: rgba(255,255,255,.18); color: #fff; }
   .mc-search { width: 100%; }
   .mc-search input { height: 44px !important; border-radius: 12px !important; }
 
@@ -2109,3 +2109,10 @@ html { -webkit-text-size-adjust: 100%; }
   .mx-act:active { transform: scale(.99); }
 }
 @media (max-width: 360px) { .mx-bars { grid-template-columns: 1fr; gap: 8px; } }
+
+.mc-seg button { font: inherit; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mc-chip { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mc-chip.on { background: #0A0A0A; color: #fff; border-color: #0A0A0A; }
+.mc-chip.on b { color: #fff !important; }
+.mc-x { border: 0; background: none; font: inherit; font-size: 18px; line-height: 1; color: #737373; cursor: pointer; padding: 4px 8px; }
+.mc-seg button, .mc-chip, .mx-card { transition: background .12s, color .12s, border-color .12s; }
