@@ -412,15 +412,12 @@ function safeBack(v) {
   return s.startsWith('/orders') ? s : '/orders';
 }
 
-const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
-
-/** Multi-domain: switch the validation method for one domain on the order. */
 export async function changeDomainDcv(formData) {
   const { ctx, order, back } = await loadOrder(formData);
   const domain = String(formData.get('domain') || '').trim().toLowerCase();
   const method = String(formData.get('method') || '');
   const email = String(formData.get('approver_email') || '').trim();
-  if (!DOMAIN_RE.test(domain)) redirect(withMsg(back, 'err', 'Pick a domain from this order'));
+  if (!/^(\*\.)?([a-z0-9-]+\.)+[a-z]{2,}$/i.test(domain)) redirect(withMsg(back, 'err', 'Pick a domain from this order'));
   if (!['dns', 'http', 'https', 'email'].includes(method)) redirect(withMsg(back, 'err', 'Pick a validation method'));
   if (method === 'email' && !/^[^@\s]+@[^@\s]+$/.test(email)) redirect(withMsg(back, 'err', 'Enter the approver email for ' + domain));
   if (domain.startsWith('*.') && (method === 'http' || method === 'https')) redirect(withMsg(back, 'err', 'Wildcard domains can only use DNS or email validation'));
