@@ -168,8 +168,66 @@ export default function CertTable({ rows, admin, back, empty }) {
     { k: 'later', title: 'Later', items: sorted.filter((r) => (r.group === 'ok' && Math.min(certDays(r), subDays(r)) > 60) || r.group === 'ended') }
   ].filter((g) => g.items.length);
 
+  // Phone list: one compact card per certificate, grouped by what to do.
+  const short = (d) => (d == null ? '—' : d < 0 ? `${-d}d ago` : d === 0 ? 'today' : `${d}d`);
+  const Mini = ({ label, days, pct, warn, hot, note }) => {
+    const t = days == null ? 'mute' : tone(days, warn, hot);
+    return (
+      <div className={`mx-mini ${t}`}>
+        <div className="mx-mini-top"><span>{label}</span><b>{note || (days == null ? '—' : days < 0 ? `expired ${short(days)}` : `${short(days)} left`)}</b></div>
+        <div className="mx-track"><i style={{ width: `${Math.max(3, Math.min(100, pct ?? 0))}%` }} /></div>
+      </div>
+    );
+  };
+  const mGroups = [
+    { k: 'action', title: 'Needs you', items: sorted.filter((r) => r.group === 'action') },
+    { k: 'progress', title: 'In progress', items: sorted.filter((r) => r.group === 'progress') },
+    { k: 'ok', title: 'Valid', items: sorted.filter((r) => r.group === 'ok') },
+    { k: 'ended', title: 'Closed', items: sorted.filter((r) => r.group === 'ended') }
+  ].filter((g) => g.items.length);
+  const MobileList = () => (
+    <div className="mx">
+      {mGroups.map((g) => (
+        <section key={g.k} className={`mx-group ${g.k}`}>
+          <h3 className="mx-gh"><i />{g.title}<span>{g.items.length}</span></h3>
+          <ul>
+            {g.items.map((r) => {
+              const c = r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
+              return (
+                <li key={r.key} className={`mx-card ${c}`}>
+                  <Link href={r.href} className="mx-main">
+                    <span className="mx-top">
+                      <span className="mx-dom">{r.domain}</span>
+                      {r.extra ? <span className="mx-extra">{r.extra}</span> : null}
+                    </span>
+                    <span className="mx-sub"><Brand slug={r.brand} /><span>{stripBrand(r.product, r.brand)} · {r.kind}</span></span>
+                    <span className={`mx-status ${c}`}><i />{r.status}{r.method && r.group !== 'ok' ? <em>{r.method}</em> : null}</span>
+                  </Link>
+                  {r.group !== 'ended' ? (
+                    <div className="mx-bars">
+                      {r.type === 'cert'
+                        ? <Mini label="Certificate" days={r.cert?.days ?? null} pct={certPct(r)} warn={30} hot={14} note={r.cert ? null : 'not issued yet'} />
+                        : <Mini label="Renews" days={r.autoDate?.days ?? null} pct={70} warn={14} hot={3} note={r.autoDate ? null : 'automatic'} />}
+                      {r.type === 'cert' ? <Mini label="Subscription" days={r.sub?.days ?? null} pct={subPct(r)} warn={60} hot={30} note={r.sub ? null : '—'} /> : <Mini label="Subscription" days={null} pct={100} note="renews on its own" />}
+                    </div>
+                  ) : null}
+                  {r.next?.cta ? (
+                    <div className="mx-foot">
+                      <Link className={`mx-act ${r.next.cta === 'Renew' ? 'renew' : ''}`} href={r.next.href}>{r.next.cta}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></Link>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+
   return (
     <div className="ct">
+      <MobileList />
       <div className={`ct-toolbar ${ids.length ? 'sel' : ''}`}>
         {ids.length ? (
           <form className="ct-bulk">

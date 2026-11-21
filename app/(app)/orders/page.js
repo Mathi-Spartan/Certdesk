@@ -95,6 +95,13 @@ export default async function Certificates({ searchParams }) {
           </Link>
         </div>
         <FlashFromSearch searchParams={sp} />
+        {need.total ? (
+          <div className="mc-chips" aria-label="What needs you">
+            {need.validate ? <Link href={href('action')} className="mc-chip amber"><b>{need.validate}</b>to validate</Link> : null}
+            {need.reissue ? <Link href={href('action')} className="mc-chip amber"><b>{need.reissue}</b>to reissue</Link> : null}
+            {need.renew ? <Link href={href('action')} className="mc-chip red"><b>{need.renew}</b>to renew</Link> : null}
+          </div>
+        ) : null}
 
         <div className="mc-bar">
           <nav className="mc-seg" aria-label="Filter certificates">
