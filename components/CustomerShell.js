@@ -46,6 +46,12 @@ export default function CustomerShell({ user, workspace, counts, help, admin = f
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               Buy certificate
             </Link> : null}
+            <form action={logout} className="cx3-out">
+              <button type="submit" className="cx3-iconbtn cx3-outbtn" aria-label="Sign out" title="Sign out">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+                <span>Sign out</span>
+              </button>
+            </form>
           </div>
         </header>
         {admin && workspace ? (
