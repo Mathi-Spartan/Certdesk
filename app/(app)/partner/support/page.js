@@ -26,7 +26,7 @@ const TOPIC = {
   why_pending: 'Not issued / pending', status: 'Order status', validate_how: 'How to validate', dns_check: 'DNS check', expiry: 'Expiry dates',
   reissue: 'Reissue / renew', renew: 'Reissue / renew', download: 'Download files', install: 'Install', convert: 'Formats (PFX/JKS)',
   privatekey: 'Private key', autorenew: 'Auto-renew', cancel: 'Cancel / refund', adddomain: 'Add domains', buy: 'Buying', browsererror: 'Browser errors',
-  lifetime: 'Lifetimes', csr: 'CSR', overview: 'What needs attention', caa: 'CAA', kb: 'Knowledge base', action: 'Buttons (re-check, resend…)', human: 'Asked for a person', none: 'Not understood'
+  lifetime: 'Lifetimes', csr: 'CSR', overview: 'What needs attention', caa: 'CAA', kb: 'Help articles', count: 'How many certificates', covers: 'Is a domain covered', details: 'Order details', expired_list: 'Expired list', autorenew_list: 'Auto-renew list', by_method: 'List by validation method', by_type: 'List by type', by_brand: 'List by brand', list_all: 'List all certificates', contact: 'Support contact', topics: 'Browsed topics', change_method: 'Change validation method', list_due: 'Due in N days', action: 'Buttons (re-check, resend…)', human: 'Asked for a person', none: 'Not understood'
 };
 
 export default async function SupportInbox({ searchParams }) {

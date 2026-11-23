@@ -9,20 +9,24 @@ const QUICK = [
   ['Due in the next 30 days', 'List orders to reissue or renew in the next 30 days'],
   ['Reissue or renew?', 'Do I need to reissue or renew?'],
   ['Download my files', 'Download my certificate files'],
-  ['How do I install it?', 'How do I install my certificate?']
+  ['How do I install it?', 'How do I install my certificate?'],
+  ['Browse all help topics', 'Help topics']
 ];
 
 // ── tiny, safe markdown: **bold**, `code`, "- " lists, "1. " lists, --- rules, paragraphs
 function inline(text, key) {
   const parts = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  const re = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(\/[^)\s]*\))/g;
   let last = 0;
   let m;
   let i = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) parts.push(text.slice(last, m.index));
     const tok = m[0];
-    parts.push(tok.startsWith('**') ? <strong key={`${key}-${i++}`}>{tok.slice(2, -2)}</strong> : <code key={`${key}-${i++}`}>{tok.slice(1, -1)}</code>);
+    if (tok.startsWith('[')) {
+      const mm = /^\[([^\]]+)\]\((\/[^)\s]*)\)$/.exec(tok);
+      parts.push(<a key={`${key}-${i++}`} href={mm[2]} className="as-a">{mm[1]}</a>);
+    } else parts.push(tok.startsWith('**') ? <strong key={`${key}-${i++}`}>{tok.slice(2, -2)}</strong> : <code key={`${key}-${i++}`}>{tok.slice(1, -1)}</code>);
     last = m.index + tok.length;
   }
   if (last < text.length) parts.push(text.slice(last));
