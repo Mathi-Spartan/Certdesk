@@ -10,6 +10,7 @@ import DcvPanel from '@/components/DcvPanel';
 import SubmitButton from '@/components/SubmitButton';
 import { fmtDate, FlashFromSearch, timeAgo } from '@/components/ui';
 import { itemFromOrder } from '@/lib/portfolio';
+import { cancelWindow, CANCEL_DAYS } from '@/lib/cancel';
 import { supportEmail, helpHref } from '@/lib/support';
 
 export const metadata = { title: 'Certificate · CertDesk' };
@@ -78,6 +79,7 @@ export default async function CertificateDetail({ params, searchParams }) {
   if (ended) steps.push({ label: 'Closed', sub: order.status === 'cancel_requested' ? 'Cancellation requested' : 'Cancelled', state: 'done' });
 
   const sub = subscriptionOf(order);
+  const cancelWin = cancelWindow(order);
   const multi = (order.sans || []).length > 0 || /multi|ucc|\bsan\b|flex/i.test(order.product_name || '');
   const subPct = sub?.start ? Math.max(0, Math.min(100, Math.round(((Date.now() - new Date(sub.start)) / (new Date(sub.end) - new Date(sub.start))) * 100))) : null;
   const certDaysAny = order.valid_till ? daysLeft(order.valid_till) : null;
@@ -273,16 +275,30 @@ export default async function CertificateDetail({ params, searchParams }) {
 
             {help ? <a className="cx3-help" href={help}>{svg(<><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17h.01" /></>, 16)}Questions about this certificate? Ask us</a> : null}
 
-            {!ended ? (
-              <details className="cx3-card cx3-danger">
-                <summary>Cancel this order</summary>
-                <form action={requestCancel} className="cx3-form">
-                  <input type="hidden" name="order_id" value={order.id} />
-                  <label className="cx3-field"><span>Reason</span><input name="reason" placeholder="No longer needed" /></label>
-                  <SubmitButton className="cx3-btn sm danger" pendingText="Sending…">Request cancellation</SubmitButton>
-                  <span className="cx3-muted">Refunds depend on the certificate authority&apos;s refund window.</span>
-                </form>
-              </details>
+            {order.status === 'cancel_requested' ? (
+              <section className="cx3-card cx3-pad cx3-cancel-note" id="cancel">
+                <h2>Cancellation requested</h2>
+                <p className="cx3-muted" style={{ margin: 0 }}>The support team confirms it, usually within 1–2 business days.</p>
+              </section>
+            ) : !ended ? (
+              cancelWin.allowed ? (
+                <details className="cx3-card cx3-danger" id="cancel">
+                  <summary>Cancel this order <span className="cx3-cancel-days">{cancelWin.daysLeft} day{cancelWin.daysLeft === 1 ? '' : 's'} left</span></summary>
+                  <form action={requestCancel} className="cx3-form">
+                    <input type="hidden" name="order_id" value={order.id} />
+                    <p className="cx3-cancel-info">Orders can be cancelled within <b>{CANCEL_DAYS} days of purchase</b>. This one was purchased on <b>{fmtDate(cancelWin.purchased)}</b>, so you can request cancellation until <b>{fmtDate(cancelWin.deadline)}</b>.</p>
+                    <label className="cx3-field"><span>Reason</span><input name="reason" placeholder="No longer needed" /></label>
+                    <label className="cx3-check"><input type="checkbox" name="understand" required /> I understand the whole order is cancelled and the certificate will stop working.</label>
+                    <SubmitButton className="cx3-btn sm danger" pendingText="Sending…">Request cancellation</SubmitButton>
+                    <span className="cx3-muted">Any refund depends on the certificate authority&apos;s refund rules.</span>
+                  </form>
+                </details>
+              ) : cancelWin.reason === 'expired' ? (
+                <section className="cx3-card cx3-pad cx3-cancel-note" id="cancel">
+                  <h2>Cancellation not available</h2>
+                  <p className="cx3-muted" style={{ margin: 0 }}>Orders can only be cancelled within {CANCEL_DAYS} days of purchase. This order was purchased on {fmtDate(cancelWin.purchased)}; the window closed on {fmtDate(cancelWin.deadline)}.</p>
+                </section>
+              ) : null
             ) : null}
           </aside>
         </div>

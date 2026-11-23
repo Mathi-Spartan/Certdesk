@@ -1,4 +1,5 @@
 'use server';
+import { cancelWindow, CANCEL_DAYS } from '@/lib/cancel';
 
 import { redirect } from 'next/navigation';
 import { q, one } from '@/lib/db';
@@ -161,6 +162,8 @@ export async function setAutoRenewal(formData) {
 
 export async function cancelSub(formData) {
   await withSub(formData, async (sub, ctx) => {
+    const win = cancelWindow(sub);
+    if (!win.allowed) throw new Error(win.reason === 'already' ? 'A cancellation has already been sent for this subscription.' : `Cancellation is only possible within ${CANCEL_DAYS} days of purchase.`);
     if (String(formData.get('confirm') || '').trim().toLowerCase() !== 'cancel') throw new Error('Type CANCEL to confirm');
     const reason = String(formData.get('reason') || '').trim() || 'Cancelled from CertDesk';
     const refund = formData.get('refund') === 'on';

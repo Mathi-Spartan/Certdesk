@@ -11,6 +11,7 @@ import SecretValue from '@/components/SecretValue';
 import SubmitButton from '@/components/SubmitButton';
 import { fmtDate, FlashFromSearch } from '@/components/ui';
 import { itemFromSub } from '@/lib/portfolio';
+import { cancelWindow, CANCEL_DAYS } from '@/lib/cancel';
 import { supportEmail, helpHref } from '@/lib/support';
 
 export const metadata = { title: 'Subscription · CertDesk' };
@@ -71,6 +72,7 @@ export default async function SubscriptionDetail({ params, searchParams }) {
   const isCaas = sub.kind === 'caas';
   const method = isCaas ? 'acme' : String(sub.install_method || '').includes('acme') ? 'acme' : 'autoinstall';
   const closed = ['cancelled', 'expired'].includes(sub.status);
+  const cancelWin = cancelWindow(sub);
   const active = sub.status === 'active';
   const until = sub.next_renewal_at || sub.end_at;
   const left = daysTo(until);
@@ -241,10 +243,17 @@ export default async function SubscriptionDetail({ params, searchParams }) {
               </div>
               <SubmitButton className="btn" pendingText="Saving…">Save</SubmitButton>
             </form>
-            {!closed && !sub.cancel_requested_at ? (
+            {!closed && !sub.cancel_requested_at && !cancelWin.allowed && cancelWin.reason === 'expired' ? (
+              <div style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 18 }}>
+                <div style={{ fontWeight: 600 }}>Cancellation not available</div>
+                <p className="small muted" style={{ margin: '4px 0 0' }}>Subscriptions can only be cancelled within {CANCEL_DAYS} days of purchase. This one was purchased on {fmtDate(cancelWin.purchased)}; the window closed on {fmtDate(cancelWin.deadline)}.</p>
+              </div>
+            ) : null}
+            {!closed && !sub.cancel_requested_at && cancelWin.allowed ? (
               <form action={cancelSub} style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 18 }}>
                 {hidden}
-                <div style={{ fontWeight: 600, color: 'var(--red-strong)' }}>Cancel subscription</div>
+                <div style={{ fontWeight: 600, color: 'var(--red-strong)' }}>Cancel subscription · {cancelWin.daysLeft} day{cancelWin.daysLeft === 1 ? '' : 's'} left</div>
+                <p className="small muted" style={{ margin: 0 }}>Cancellation is possible within {CANCEL_DAYS} days of purchase: until {fmtDate(cancelWin.deadline)}.</p>
                 <div className="grid-form">
                   <div className="field"><label htmlFor="reason">Reason</label><input id="reason" name="reason" className="input" placeholder="No longer needed" /></div>
                   <div className="field"><label htmlFor="confirm">Type CANCEL to confirm</label><input id="confirm" name="confirm" className="input" autoComplete="off" required /></div>

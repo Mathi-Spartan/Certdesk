@@ -1,4 +1,5 @@
 'use server';
+import { cancelWindow, CANCEL_DAYS } from '@/lib/cancel';
 
 import dns from 'node:dns/promises';
 import { redirect } from 'next/navigation';
@@ -333,6 +334,13 @@ export async function revalidateDomain(formData) {
 
 export async function requestCancel(formData) {
   const { ctx, order, back } = await loadOrder(formData);
+  const win = cancelWindow(order);
+  if (!win.allowed) {
+    redirect(withMsg(back, 'err', win.reason === 'already'
+      ? 'A cancellation has already been requested for this order.'
+      : `Cancellation is only possible within ${CANCEL_DAYS} days of purchase. This order was purchased on ${win.purchased ? win.purchased.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'an unknown date'}.`));
+  }
+  if (formData.get('understand') !== 'on') redirect(withMsg(back, 'err', 'Please confirm that you understand the whole order will be cancelled.'));
   const reason = String(formData.get('reason') || '').trim() || 'Cancelled by customer from CertDesk';
   try {
     await gg.cancelOrder(order.gg_order_id, reason);
@@ -341,7 +349,7 @@ export async function requestCancel(formData) {
   } catch (e) {
     redirect(withMsg(back, 'err', 'GoGetSSL: ' + e.message));
   }
-  redirect(withMsg(back, 'ok', 'Cancellation requested. GoGetSSL usually answers within 24–48 hours.'));
+  redirect(withMsg(back, 'ok', 'Cancellation requested. The support team confirms it, usually within 1–2 business days.'));
 }
 
 export async function reissue(input) {

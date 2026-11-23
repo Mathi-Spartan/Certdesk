@@ -2117,3 +2117,9 @@ html { -webkit-text-size-adjust: 100%; }
 .mc-x { border: 0; background: none; font: inherit; font-size: 18px; line-height: 1; color: #737373; cursor: pointer; padding: 4px 8px; }
 .mc-seg button, .mc-chip, .mx-card { transition: background .12s, color .12s, border-color .12s; }
 .as-a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.cx3-danger summary { display: flex; align-items: center; gap: 8px; }
+.cx3-cancel-days { margin-left: auto; font-size: 11.5px; font-weight: 600; color: #92400E; background: #FEF3C7; border-radius: 99px; padding: 2px 9px; }
+.cx3-cancel-info { margin: 0; font-size: 13px; color: #404040; line-height: 1.55; }
+.cx3-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: #404040; line-height: 1.45; cursor: pointer; }
+.cx3-check input { width: 18px; height: 18px; margin-top: 1px; flex: none; accent-color: #DC2626; }
+.cx3-cancel-note h2 { font-size: 14px; margin: 0 0 4px; }
