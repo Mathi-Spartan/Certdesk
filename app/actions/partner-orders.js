@@ -22,6 +22,11 @@ export async function importFromAccount() {
   } catch (e) {
     redirect(back('err=' + enc('GoGetSSL: ' + e.message)));
   }
+  await q(
+    `insert into console.kv (key, value, updated_at) values ('auto_import', $1, now())
+     on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [JSON.stringify({ at: new Date().toISOString(), total: r.total, added: r.added, detailed: r.detailed, error: null })]
+  ).catch(() => {});
   const parts = [`${r.total} orders in the GoGetSSL account`, `${r.added} new imported`];
   if (r.already) parts.push(`${r.already} were already here`);
   if (r.added > r.detailed) parts.push(`${r.added - r.detailed} still loading details — run import again to finish`);

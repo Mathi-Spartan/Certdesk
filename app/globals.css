@@ -2123,3 +2123,6 @@ html { -webkit-text-size-adjust: 100%; }
 .cx3-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: #404040; line-height: 1.45; cursor: pointer; }
 .cx3-check input { width: 18px; height: 18px; margin-top: 1px; flex: none; accent-color: #DC2626; }
 .cx3-cancel-note h2 { font-size: 14px; margin: 0 0 4px; }
+.po-sync { display: flex; align-items: center; gap: 7px; margin: 6px 0 0 !important; font-size: 12.5px !important; }
+.po-sync i { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 0 3px #DCFCE7; }
+.po-sync i.bad { background: #DC2626; box-shadow: 0 0 0 3px #FEE2E2; }

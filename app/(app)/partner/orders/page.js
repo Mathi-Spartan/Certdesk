@@ -3,8 +3,9 @@ import { requireAdmin } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { importFromAccount, assignOrders, unassignOrders, bulkAutoRenew } from '@/app/actions/partner-orders';
 import SubmitButton from '@/components/SubmitButton';
-import { FlashFromSearch, fmtDate } from '@/components/ui';
+import { timeAgo, FlashFromSearch, fmtDate } from '@/components/ui';
 import LowBalance from '@/components/console/LowBalance';
+import { maybeImportNew, lastAutoImport } from '@/lib/autosync';
 import { SelectAll } from './BulkBar';
 import { SubPeriod, CertExpiry } from '@/components/SubPeriod';
 import { subscriptionOf, displayStatus } from '@/lib/orders';
@@ -31,6 +32,9 @@ const label = (o) => o.gg_status_description || (o.status ? o.status[0].toUpperC
 export default async function PartnerOrders({ searchParams }) {
   const sp = await searchParams;
   await requireAdmin();
+  // New orders placed directly in GoGetSSL show up here without pressing Import.
+  await maybeImportNew({ minutes: 2, budgetMs: 8000 }).catch(() => null);
+  const auto = await lastAutoImport();
   const view = VIEWS.some((v) => v.key === sp.view) ? sp.view : 'unassigned';
   const term = String(sp.q || '').trim().toLowerCase();
   const wsFilter = /^[0-9a-f-]{36}$/i.test(sp.ws || '') ? sp.ws : '';
@@ -69,9 +73,10 @@ export default async function PartnerOrders({ searchParams }) {
         <div>
           <h1>All orders</h1>
           <p>Every order from your GoGetSSL account. Customers only see orders you assign to their workspace.</p>
+          {auto?.checkedAt ? <p className="cx3-muted po-sync"><i className={auto.error ? 'bad' : ''} />{auto.error ? `Couldn’t reach GoGetSSL on the last check: ${auto.error}` : `New orders are imported automatically · last checked ${timeAgo(auto.checkedAt)}${auto.added ? ` · ${auto.added} new` : ''}`}</p> : null}
         </div>
         <form action={importFromAccount}>
-          <SubmitButton className="cx3-btn primary" pendingText="Importing from GoGetSSL… this can take a few minutes">Import from GoGetSSL</SubmitButton>
+          <SubmitButton className="cx3-btn primary" pendingText="Checking GoGetSSL…">Check GoGetSSL now</SubmitButton>
         </form>
       </div>
       <FlashFromSearch searchParams={sp} />

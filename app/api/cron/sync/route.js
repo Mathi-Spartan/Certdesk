@@ -2,6 +2,7 @@ import { q } from '@/lib/db';
 import { syncOrder } from '@/lib/orders';
 import { syncSubscription } from '@/lib/subscriptions';
 import { v2Configured } from '@/lib/gogetssl-v2';
+import { maybeImportNew } from '@/lib/autosync';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -12,6 +13,10 @@ export async function GET(req) {
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response('Unauthorized', { status: 401 });
   }
+  // New orders placed directly in GoGetSSL
+  let imported = null;
+  try { imported = await maybeImportNew({ minutes: 0, budgetMs: 20000 }); } catch { /* keep going */ }
+
   const rows = await q(
     `select * from console.orders
       where gg_order_id is not null
@@ -47,7 +52,7 @@ export async function GET(req) {
   await q(
     `insert into console.kv (key, value, updated_at) values ('cron_last_run', $1, now())
      on conflict (key) do update set value = excluded.value, updated_at = now()`,
-    [JSON.stringify({ synced, failed, subscriptions: subs })]
+    [JSON.stringify({ synced, failed, subscriptions: subs, imported: imported?.added ?? null })]
   );
-  return Response.json({ synced, failed, subscriptions: subs });
+  return Response.json({ synced, failed, subscriptions: subs, imported: imported?.added ?? null });
 }

@@ -1,4 +1,6 @@
+import { after } from 'next/server';
 import { requireUser } from '@/lib/auth';
+import { maybeImportNew } from '@/lib/autosync';
 import { one } from '@/lib/db';
 import { supportEmail, helpHref } from '@/lib/support';
 import CustomerShell from '@/components/CustomerShell';
@@ -22,6 +24,8 @@ export default async function AppLayout({ children }) {
     );
     counts = { all: c.total, expiring: c.expiring, auto: c.auto, validation: c.validation, renewals: c.expiring, attention: c.attention };
   }
+  // Master account in use: check GoGetSSL for new orders in the background (at most every 10 minutes).
+  if (ctx.isAdmin) after(() => maybeImportNew().catch(() => {}));
   if (ctx.isAdmin && !ctx.workspaceId) {
     try {
       const s = await one(`select count(*)::int as n from console.assist_conversations where status = 'waiting' or (status = 'human' and unread_admin > 0)`);
