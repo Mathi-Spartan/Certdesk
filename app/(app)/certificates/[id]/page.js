@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireWorkspace } from '@/lib/auth';
-import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle, subscriptionOf, daysLeft } from '@/lib/orders';
+import { getOrderForWorkspace, syncOrder, primaryMethod, lifecycle, subscriptionOf, daysLeft, findRenewal } from '@/lib/orders';
+import { q } from '@/lib/db';
 import { lockRemaining, revalidatePath, resendPath } from '@/lib/gogetssl';
 import { certFacts } from '@/lib/certs';
 import { saveReminderSettings, requestCancel, setOrderAutoRenew, buySanSlots } from '@/app/actions/orders';
@@ -54,6 +55,10 @@ export default async function CertificateDetail({ params, searchParams }) {
   const back = `/certificates/${order.id}`;
   const validating = ['validating', 'incomplete', 'reissuing'].includes(order.status);
   const ended = ['cancelled', 'cancel_requested'].includes(order.status);
+  if (order.common_name) {
+    const siblings = await q('select id, common_name, status, created_at, gg_order_id, renewal_of, valid_till, order_expires_at from console.orders where workspace_id = $1 and lower(common_name) = lower($2) and id <> $3', [ctx.workspaceId, order.common_name, order.id]);
+    order.renewedBy = findRenewal(order, [order, ...siblings]);
+  }
   const item = itemFromOrder(order);
   const help = helpHref(await supportEmail(), {
     subject: `Help with ${order.common_name || 'my certificate'} (order ${order.gg_order_id || order.id})`,
@@ -87,6 +92,7 @@ export default async function CertificateDetail({ params, searchParams }) {
 
   // Exactly one main action: the next step if there is one, else Reissue while the subscription runs, else Renew.
   const mainAction = (() => {
+    if (order.renewedBy) return <Link className="cx3-btn primary" href={`/certificates/${order.renewedBy.id}`}>View renewal</Link>;
     if (ended) return null;
     if (item.next?.cta && !validating) return <Link className="cx3-btn primary" href={item.next.href}>{item.next.cta}</Link>;
     if (validating) return null;
@@ -119,6 +125,16 @@ export default async function CertificateDetail({ params, searchParams }) {
         </div>
 
         <FlashFromSearch searchParams={sp} />
+        {order.renewedBy ? (
+          <div className="cx3-renewed" role="status">
+            <span className="cx3-renewed-ico" aria-hidden="true">{svg(<path d="m5 12 5 5L20 7" />, 16)}</span>
+            <div>
+              <strong>Already renewed</strong>
+              <span>This order was replaced by order #{order.renewedBy.gg_order_id}{order.renewedBy.status === 'issued' ? `, active until ${fmtDate(order.renewedBy.order_expires_at || order.renewedBy.valid_till)}` : ', which is waiting for validation'}. Nothing to do here.</span>
+            </div>
+            <Link href={`/certificates/${order.renewedBy.id}`} className="cx3-btn sm">View renewal</Link>
+          </div>
+        ) : null}
         <div className="cx3-mbar" role="toolbar" aria-label="Certificate actions">
           {validating ? <a className="cx3-btn primary" href="#dcv">Validation steps</a> : null}
           {issued ? <a className={`cx3-btn ${mainAction ? '' : 'primary'}`} href={`/api/orders/${order.id}/download?format=zip`}>{svg(<path d="M12 3v12M7 10l5 5 5-5M5 21h14" />)}Download ZIP</a> : null}

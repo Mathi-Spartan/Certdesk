@@ -192,7 +192,7 @@ export default function CertTable({ rows, admin, back, empty }) {
           <h3 className="mx-gh"><i />{g.title}<span>{g.items.length}</span></h3>
           <ul>
             {g.items.map((r) => {
-              const c = r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
+              const c = r.status === 'Renewed' ? 'green' : r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
               return (
                 <li key={r.key} className={`mx-card ${c}`}>
                   <Link href={r.href} className="mx-main">
@@ -278,7 +278,7 @@ export default function CertTable({ rows, admin, back, empty }) {
             </thead>
             <tbody>
               {sorted.map((r) => {
-                const c = r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
+                const c = r.status === 'Renewed' ? 'green' : r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
                 return (
                   <tr key={r.key} className={`ct-row ${c} ${sel.has(r.id) ? 'picked' : ''}`}>
                     <td className="ct-chk">{r.type === 'cert' ? <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.domain}`} /> : null}</td>
@@ -314,7 +314,7 @@ export default function CertTable({ rows, admin, back, empty }) {
               <h3>{g.title}<span>{g.items.length}</span></h3>
               <div className="ct-cards">
                 {g.items.map((r) => {
-                  const c = r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
+                  const c = r.status === 'Renewed' ? 'green' : r.group === 'action' ? (r.next?.cta === 'Renew' ? 'red' : 'amber') : r.group === 'progress' ? 'violet' : r.group === 'ended' ? 'mute' : 'green';
                   return (
                     <article key={r.key} className={`ct-card ${c} ${sel.has(r.id) ? 'picked' : ''}`}>
                       <div className="ct-card-top">

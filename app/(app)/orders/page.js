@@ -3,6 +3,7 @@ import { requireWorkspace } from '@/lib/auth';
 import { q } from '@/lib/db';
 import TopBar from '@/components/TopBar';
 import { itemFromOrder, itemFromSub } from '@/lib/portfolio';
+import { markRenewals } from '@/lib/orders';
 import { fmtDate, FlashFromSearch } from '@/components/ui';
 import { fmtMoney } from '@/lib/pricing';
 import { certFacts } from '@/lib/certs';
@@ -43,6 +44,7 @@ export default async function Certificates({ searchParams }) {
     q(`select * from console.subscriptions where workspace_id = $1`, [ctx.workspaceId]),
     q('select id, validation, wildcard, multidomain from console.products')
   ]);
+  markRenewals(orders);
   const prod = Object.fromEntries(products.map((x) => [x.id, x]));
   const kind = (i) => {
     const pr = prod[i.productId];
